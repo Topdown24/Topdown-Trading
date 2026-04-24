@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IV Indexes — Top Down Trading (pg. 40)</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #08111e;
+  --panel:     #0d1829;
+  --panel-alt: #0a1420;
+  --border:    #1a2d44;
+  --blt:       #243c58;
+  --txt:       #ddeeff;
+  --dim:       #5a7a9a;
+  --mid:       #b8cce0;
+  --accent:    #3090d8;
+  --gold:      #c8a800;
+  --nav-h:     38px;
+  --ttl-h:     42px;
+  --z1: #00cc55; --z2: #88cc44; --z3: #7a9aaa;
+  --z4: #aa9a7a; --z5: #ddcc00; --z6: #e83535;
+}
+
+html, body { background: var(--bg); color: var(--txt); font-family: 'Rajdhani', sans-serif; height: 100%; overflow: hidden; }
+
+/* ── NAV BAR ── */
+.nav-bar {
+  height: var(--nav-h);
+  background: var(--panel-alt);
+  border-bottom: 1px solid var(--blt);
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.back-btn {
+  background: transparent;
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 12px;
+  cursor: pointer;
+  letter-spacing: .05em;
+  transition: all .15s;
+}
+.back-btn:hover { background: rgba(200,168,0,.12); }
+
+.nav-right { margin-left: auto; display: flex; align-items: center; gap: 5px; }
+.search-wrap { display: flex; }
+.search-input {
+  background: var(--bg);
+  border: 1px solid var(--blt);
+  color: var(--txt);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  padding: 3px 8px;
+  width: 160px;
+  outline: none;
+  border-right: none;
+}
+.search-input::placeholder { color: var(--dim); }
+.search-input:focus { border-color: var(--accent); }
+.search-go {
+  background: var(--panel);
+  border: 1px solid var(--blt);
+  color: var(--dim);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.search-go:hover { border-color: var(--accent); color: var(--txt); }
+
+/* ── PAGE TITLE ── */
+.page-title-bar {
+  height: var(--ttl-h);
+  background: var(--panel-alt);
+  border-bottom: 2px solid var(--blt);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.page-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--txt);
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+.page-tag { color: var(--accent); margin-right: 10px; font-size: 13px; opacity: .7; }
+
+/* ── MAIN LAYOUT ── */
+.main-body {
+  display: flex;
+  height: calc(100vh - var(--nav-h) - var(--ttl-h));
+  overflow: hidden;
+}
+
+/* ── LEFT HAND TOGGLE ── */
+.lh-sidebar {
+  width: 285px;
+  min-width: 285px;
+  border-right: 2px solid var(--blt);
+  background: var(--panel-alt);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.lh-hdr {
+  background: var(--panel-alt);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 10px 6px;
+  flex-shrink: 0;
+}
+.lh-title { text-align: center; font-weight: 700; font-size: 12px; color: var(--txt); margin-bottom: 5px; }
+.lh-btns { display: flex; justify-content: center; gap: 4px; }
+.lh-btn {
+  background: #1a2d44;
+  border: 1px solid #1a2d44;
+  color: var(--dim);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 12px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.lh-btn.active { background: #2a7abf; border-color: var(--accent); color: #fff; }
+.lh-btn:hover:not(.active) { border-color: var(--accent); color: var(--txt); }
+
+.lh-scroll { overflow-y: auto; flex: 1; }
+.lh-scroll::-webkit-scrollbar { width: 4px; }
+.lh-scroll::-webkit-scrollbar-track { background: var(--bg); }
+.lh-scroll::-webkit-scrollbar-thumb { background: var(--blt); border-radius: 2px; }
+
+.lh-table { width: 100%; border-collapse: collapse; font-family: 'Courier New', monospace; font-size: 11px; }
+.lh-table th {
+  background: var(--panel-alt);
+  color: var(--dim);
+  padding: 4px 6px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  font-size: 10px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  z-index: 1;
+}
+.lh-table th.sortable { cursor: pointer; user-select: none; }
+.lh-table th.sortable:hover { color: var(--txt); }
+.lh-table th.sort-active { color: var(--accent); }
+.sort-arrow { font-size: 10px; margin-left: 3px; opacity: .5; }
+.sort-arrow.active { opacity: 1; color: var(--accent); }
+.lh-table td { padding: 3px 6px; border-bottom: 1px solid #0e1a28; white-space: nowrap; }
+.lh-table tr:hover td { background: #111e30; }
+
+.col-tick  { color: var(--txt); font-weight: bold; }
+.col-nlh   { color: var(--dim); font-size: 10px; }
+.col-irlh  { text-align: center; }
+.col-zn    { text-align: center; }
+
+.zone-badge { display: inline-block; padding: 1px 5px; font-size: 10px; font-weight: bold; border-radius: 2px; color: #000; }
+.pos { color: #88cc44; }
+.neg { color: #e83535; }
+.zer { color: #b8cce0; }
+
+/* ── RIGHT CONTENT ── */
+.right-content { flex: 1; overflow-y: auto; padding: 10px 14px; }
+.right-content::-webkit-scrollbar { width: 5px; }
+.right-content::-webkit-scrollbar-track { background: var(--bg); }
+.right-content::-webkit-scrollbar-thumb { background: var(--blt); border-radius: 2px; }
+
+/* ── HISTOGRAM ── */
+.histo-wrap { margin-bottom: 14px; }
+.section-title {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--txt);
+  text-align: center;
+  margin-bottom: 6px;
+  letter-spacing: .03em;
+}
+.histo-svg-box { background: var(--panel); border: 1px solid var(--border); overflow: hidden; }
+
+#histo-tip {
+  position: fixed;
+  background: var(--panel);
+  border: 1px solid var(--accent);
+  color: var(--txt);
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  padding: 5px 9px;
+  border-radius: 2px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.6);
+  white-space: nowrap;
+  z-index: 999;
+  pointer-events: none;
+  display: none;
+}
+
+/* ── STOCKS VS IVS ── */
+.stocks-ivs-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 8px 0 12px;
+}
+.stocks-ivs-box {
+  border: 1px solid var(--blt);
+  padding: 5px 28px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--txt);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  background: var(--panel-alt);
+}
+
+/* ── COMBO CHARTS ── */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.combo-block { display: flex; flex-direction: column; }
+.combo-ttl-block { text-align: center; margin-bottom: 5px; }
+.combo-ttl-main { font-size: 13px; font-weight: 700; color: var(--txt); letter-spacing: .02em; }
+.combo-ttl-sub  { font-size: 11px; color: var(--dim); margin-top: 1px; }
+.combo-wrap { background: var(--panel); border: 1px solid var(--border); padding: 8px 8px 6px; flex: 1; }
+.combo-canvas-wrap { position: relative; height: 178px; }
+</style>
+</head>
+<body>
+
+<div id="histo-tip"></div>
+
+<!-- NAV BAR -->
+<div class="nav-bar">
+  <button class="back-btn" onclick="history.back()">← BACK</button>
+  <div class="nav-right">
+    <div class="search-wrap">
+      <input class="search-input" type="text" placeholder="Search symbol or name…" />
+      <button class="search-go">GO</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE TITLE -->
+<div class="page-title-bar">
+  <div class="page-title">
+Implied Volatility Indexes
+  </div>
+</div>
+
+<!-- MAIN BODY -->
+<div class="main-body">
+
+  <!-- LEFT HAND TOGGLE -->
+  <div class="lh-sidebar">
+    <div class="lh-hdr">
+      <div class="lh-title">IV Indexes</div>
+      <div class="lh-btns">
+        <button class="lh-btn active" data-period="90" onclick="lhPeriod(this)">90 IR</button>
+        <button class="lh-btn"        data-period="10" onclick="lhPeriod(this)">10 IR</button>
+      </div>
+    </div>
+    <div class="lh-scroll">
+      <table class="lh-table">
+        <thead><tr>
+          <th>Tick</th>
+          <th>Name</th>
+          <th class="sortable sort-active" id="lh-th-ir" onclick="lhSort()" style="text-align:center">
+            IR <span class="sort-arrow active" id="lh-arr">↓</span>
+          </th>
+          <th style="text-align:center">Zn</th>
+        </tr></thead>
+        <tbody id="lh-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- RIGHT CONTENT -->
+  <div class="right-content">
+
+    <!-- HISTOGRAM -->
+    <div class="histo-wrap">
+      <div class="section-title">Implied Volatility (IV) Indexes Histogram</div>
+      <div class="histo-svg-box">
+        <svg id="mainHisto" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block"></svg>
+      </div>
+    </div>
+
+    <!-- STOCKS VS IVS TITLE -->
+    <div class="stocks-ivs-row">
+      <div class="stocks-ivs-box">Stocks vs IVs</div>
+    </div>
+
+    <!-- ROW 1: GOOG -->
+    <div class="two-col">
+      <div class="combo-block">
+        <div class="combo-ttl-block">
+          <div class="combo-ttl-main">GOOG vs GOOG VIX</div>
+          <div class="combo-ttl-sub">90-day IR</div>
+        </div>
+        <div class="combo-wrap"><div class="combo-canvas-wrap"><canvas id="c-goog-90"></canvas></div></div>
+      </div>
+      <div class="combo-block">
+        <div class="combo-ttl-block">
+          <div class="combo-ttl-main">GOOG vs GOOG VIX</div>
+          <div class="combo-ttl-sub">10-day IR</div>
+        </div>
+        <div class="combo-wrap"><div class="combo-canvas-wrap"><canvas id="c-goog-10"></canvas></div></div>
+      </div>
+    </div>
+
+    <!-- ROW 2: GS -->
+    <div class="two-col">
+      <div class="combo-block">
+        <div class="combo-ttl-block">
+          <div class="combo-ttl-main">GS vs GS VIX</div>
+          <div class="combo-ttl-sub">90-day IR</div>
+        </div>
+        <div class="combo-wrap"><div class="combo-canvas-wrap"><canvas id="c-gs-90"></canvas></div></div>
+      </div>
+      <div class="combo-block">
+        <div class="combo-ttl-block">
+          <div class="combo-ttl-main">GS vs GS VIX</div>
+          <div class="combo-ttl-sub">10-day IR</div>
+        </div>
+        <div class="combo-wrap"><div class="combo-canvas-wrap"><canvas id="c-gs-10"></canvas></div></div>
+      </div>
+    </div>
+
+    <!-- ROW 3: AAPL -->
+    <div class="two-col">
+      <div class="combo-block">
+        <div class="combo-ttl-block">
+          <div class="combo-ttl-main">AAPL vs AAPL VIX</div>
+          <div class="combo-ttl-sub">90-day IR</div>
+        </div>
+        <div class="combo-wrap"><div class="combo-canvas-wrap"><canvas id="c-aapl-90"></canvas></div></div>
+      </div>
+      <div class="combo-block">
+        <div class="combo-ttl-block">
+          <div class="combo-ttl-main">AAPL vs AAPL VIX</div>
+          <div class="combo-ttl-sub">10-day IR</div>
+        </div>
+        <div class="combo-wrap"><div class="combo-canvas-wrap"><canvas id="c-aapl-10"></canvas></div></div>
+      </div>
+    </div>
+
+    <!-- ROW 4: AMZN -->
+    <div class="two-col">
+      <div class="combo-block">
+        <div class="combo-ttl-block">
+          <div class="combo-ttl-main">AMZN vs AMZN VIX</div>
+          <div class="combo-ttl-sub">90-day IR</div>
+        </div>
+        <div class="combo-wrap"><div class="combo-canvas-wrap"><canvas id="c-amzn-90"></canvas></div></div>
+      </div>
+      <div class="combo-block">
+        <div class="combo-ttl-block">
+          <div class="combo-ttl-main">AMZN vs AMZN VIX</div>
+          <div class="combo-ttl-sub">10-day IR</div>
+        </div>
+        <div class="combo-wrap"><div class="combo-canvas-wrap"><canvas id="c-amzn-10"></canvas></div></div>
+      </div>
+    </div>
+
+    <!-- ROW 5: IBM -->
+    <div class="two-col">
+      <div class="combo-block">
+        <div class="combo-ttl-block">
+          <div class="combo-ttl-main">IBM vs IBM VIX</div>
+          <div class="combo-ttl-sub">90-day IR</div>
+        </div>
+        <div class="combo-wrap"><div class="combo-canvas-wrap"><canvas id="c-ibm-90"></canvas></div></div>
+      </div>
+      <div class="combo-block">
+        <div class="combo-ttl-block">
+          <div class="combo-ttl-main">IBM vs IBM VIX</div>
+          <div class="combo-ttl-sub">10-day IR</div>
+        </div>
+        <div class="combo-wrap"><div class="combo-canvas-wrap"><canvas id="c-ibm-10"></canvas></div></div>
+      </div>
+    </div>
+
+  </div><!-- /right-content -->
+</div><!-- /main-body -->
+
+<script>
+'use strict';
+
+// ============================================================
+// MASTER DATA — 21 IV INDEXES
+// ============================================================
+const LH_DATA = [
+  { symbol:'VIX',  name:'Volatility Index',             ir_90: 45,  ir_10: 52  },
+  { symbol:'VXV',  name:'3-Month VIX',                  ir_90: 38,  ir_10: 41  },
+  { symbol:'VXMT', name:'6-Month VIX',                  ir_90: 22,  ir_10: 18  },
+  { symbol:'VIXY', name:'1-Yr VIX',                     ir_90: 67,  ir_10: 72  },
+  { symbol:'VXMO', name:'Standard Monthly VIX',         ir_90: 55,  ir_10: 48  },
+  { symbol:'VIN',  name:'Near Term VIX',                ir_90: 78,  ir_10: 82  },
+  { symbol:'VIF',  name:'Far Term VIX',                 ir_90: 35,  ir_10: 29  },
+  { symbol:'VVIX', name:'VIX of VIX',                   ir_90:-15,  ir_10:-22  },
+  { symbol:'VTLT', name:'20-Yr T-Bond VIX',             ir_90: 12,  ir_10:  8  },
+  { symbol:'VXHY', name:'High Yield Bond VIX',          ir_90:  8,  ir_10: 15  },
+  { symbol:'GVZ',  name:'Gold VIX',                     ir_90:-28,  ir_10:-35  },
+  { symbol:'VXSL', name:'Silver VIX',                   ir_90:-42,  ir_10:-38  },
+  { symbol:'OVX',  name:'Crude Oil VIX',                ir_90: 88,  ir_10: 91  },
+  { symbol:'VXNG', name:'US Natural Gas VIX',           ir_90:-65,  ir_10:-58  },
+  { symbol:'VXGO', name:'Google VIX',                   ir_90:-72,  ir_10:-68  },
+  { symbol:'VXGS', name:'Goldman-Sachs VIX',            ir_90: 18,  ir_10: 24  },
+  { symbol:'VXAP', name:'Apple VIX',                    ir_90:-33,  ir_10:-28  },
+  { symbol:'VXAZ', name:'Amazon VIX',                   ir_90:-55,  ir_10:-62  },
+  { symbol:'VXIB', name:'IBM VIX',                      ir_90:  5,  ir_10: 11  },
+  { symbol:'VXN',  name:'NASDAQ 100 Volatility (30d)',  ir_90: 32,  ir_10: 28  },
+  { symbol:'LTV',  name:'S&P 500 Left Tail Vol (10d)', ir_90:-80,  ir_10:-75  },
+];
+
+const ZCL = ['#00cc55','#88cc44','#7a9aaa','#aa9a7a','#ddcc00','#e83535'];
+const ZONE_COLORS = {1:'#00cc55',2:'#88cc44',3:'#7a9aaa',4:'#aa9a7a',5:'#ddcc00',6:'#e83535'};
+
+function irToZone(ir){
+  if(ir>=67) return 1; if(ir>=34) return 2; if(ir>=1) return 3;
+  if(ir>=-33) return 4; if(ir>=-66) return 5; return 6;
+}
+function zoneBadge(z){
+  return `<span class="zone-badge" style="background:${ZONE_COLORS[z]}">${z}</span>`;
+}
+function irFmt(v)  { return (v>0?'+':'')+v; }
+function irCls(v)  { return v>0?'pos':v<0?'neg':'zer'; }
+function trunc(s,n){ return s.length>n ? s.slice(0,n)+'…' : s; }
+
+// ============================================================
+// LEFT HAND TOGGLE
+// ============================================================
+let lhPeriod$ = '90';
+let lhDir     = 1;  // 1 = descending (weakest/oversold first)
+
+function lhPeriod(btn){
+  document.querySelectorAll('.lh-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  lhPeriod$ = btn.dataset.period;
+  renderLH();
+}
+
+function lhSort(){
+  lhDir *= -1;
+  document.getElementById('lh-arr').textContent = lhDir===1?'↓':'↑';
+  renderLH();
+}
+
+function renderLH(){
+  const f = lhPeriod$==='90' ? 'ir_90' : 'ir_10';
+  const rows = [...LH_DATA].sort((a,b) => (b[f]-a[f]) * lhDir);
+  document.getElementById('lh-tbody').innerHTML = rows.map(r => {
+    const ir = r[f];
+    const z  = irToZone(ir);
+    return `<tr>
+      <td class="col-tick">${r.symbol}</td>
+      <td class="col-nlh">${trunc(r.name,22)}</td>
+      <td class="col-irlh"><span class="${irCls(ir)}">${irFmt(ir)}</span></td>
+      <td class="col-zn">${zoneBadge(z)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ============================================================
+// HISTOGRAM
+// ============================================================
+function getSlotIdx(ir){
+  // Returns global slot index 0–23 for a given ir value.
+  // Zone 1 slots (leftmost, highest positive IR):
+  if(ir>=91) return 0;  if(ir>=83) return 1;
+  if(ir>=75) return 2;  if(ir>=67) return 3;
+  // Zone 2:
+  if(ir>=59) return 4;  if(ir>=52) return 5;
+  if(ir>=43) return 6;  if(ir>=34) return 7;
+  // Zone 3:
+  if(ir>=26) return 8;  if(ir>=18) return 9;
+  if(ir>=9)  return 10; if(ir>=1)  return 11;
+  // Zone 4:
+  if(ir>=-8) return 12; if(ir>=-17) return 13;
+  if(ir>=-25) return 14; if(ir>=-33) return 15;
+  // Zone 5:
+  if(ir>=-42) return 16; if(ir>=-51) return 17;
+  if(ir>=-58) return 18; if(ir>=-66) return 19;
+  // Zone 6:
+  if(ir>=-74) return 20; if(ir>=-82) return 21;
+  if(ir>=-90) return 22; return 23;
+}
+
+function getZoneOfSlot(slotIdx){ return Math.floor(slotIdx/4); } // 0-indexed zone
+
+function buildHistogram(){
+  const W=920, OW=28, BX=28, BW=864, ZW=144, SLOT_PITCH=36;
+  let BY=205; const SH=13;
+
+  // Build 24-slot arrays
+  const slots = Array.from({length:24}, ()=>[]);
+  const oobL=[], oobR=[];
+
+  LH_DATA.forEach(d=>{
+    const ir  = d.ir_90;
+    const sym3 = d.symbol.slice(0,3);
+    const tip  = `${d.symbol} — ${d.name}  |  90-IR: ${irFmt(ir)}  |  Zone ${irToZone(ir)}`;
+    if(ir>=99){ oobL.push({sym3, tip}); return; }
+    if(ir<=-99){ oobR.push({sym3, tip}); return; }
+    const si = getSlotIdx(ir);
+    slots[si].push({sym3, tip});
+  });
+
+  // Sort alphabetically within each slot (A at top = lowest y)
+  slots.forEach(s => s.sort((a,b) => a.sym3.localeCompare(b.sym3)));
+
+  // Dynamic height
+  const maxStk = Math.max(1, ...slots.map(s=>s.length));
+  if(maxStk*SH+20 > BY) BY = maxStk*SH+20;
+  const H = BY+63;
+  const LY_RANGE=BY+18, LY_ZONE=BY+31;
+
+  // Bell curve
+  const BELL_A=168, BELL_FLOOR=16, BELL_SIG=ZW, BCX=460;
+  function bellY(px){ const dx=px-BCX; return BY-(BELL_A*Math.exp(-dx*dx/(2*BELL_SIG*BELL_SIG))+BELL_FLOOR); }
+  function bellPath(){
+    let p='';
+    for(let px=BX; px<=BX+BW; px+=2){
+      const y=bellY(px);
+      p += (px===BX ? `M${px},${y}` : `L${px},${y}`);
+    }
+    return p;
+  }
+
+  const ZONE_RANGES=['+99 to +67','+66 to +34','+33 to +1','−1 to −33','−34 to −66','−67 to −99'];
+  const ZONE_LABELS=['Zone 1','Zone 2','Zone 3','Zone 4','Zone 5','Zone 6'];
+
+  let s = '';
+
+  // Defs
+  s += `<defs>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2.8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softglow">
+      <feGaussianBlur stdDeviation="1.5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>`;
+
+  // OOB backgrounds
+  s += `<rect x="0" y="0" width="${OW}" height="${H}" fill="${ZCL[0]}" opacity="0.07"/>`;
+  s += `<rect x="${W-OW}" y="0" width="${OW}" height="${H}" fill="${ZCL[5]}" opacity="0.07"/>`;
+
+  // Zone backgrounds
+  for(let z=0;z<6;z++){
+    s += `<rect x="${BX+z*ZW}" y="0" width="${ZW}" height="${BY}" fill="${ZCL[z]}" opacity="0.07"/>`;
+  }
+
+  // OOB boundary lines
+  s += `<line x1="${BX}" y1="0" x2="${BX}" y2="${BY}" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>`;
+  s += `<line x1="${BX+BW}" y1="0" x2="${BX+BW}" y2="${BY}" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>`;
+
+  // Zone dividers (5 inner boundaries)
+  for(let z=1;z<6;z++){
+    const x=BX+z*ZW;
+    s += `<line x1="${x}" y1="0" x2="${x}" y2="${BY}" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>`;
+  }
+
+  // Slot dividers — 23 dashed lines at BX + i×SLOT_PITCH for i=1..23
+  for(let i=1;i<24;i++){
+    const x=BX+i*SLOT_PITCH;
+    s += `<line x1="${x}" y1="8" x2="${x}" y2="${BY}" stroke="rgba(255,255,255,0.055)" stroke-width="0.5" stroke-dasharray="3,6"/>`;
+  }
+
+  // Baseline
+  s += `<line x1="0" y1="${BY}" x2="${W}" y2="${BY}" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>`;
+
+  // Bell curve — 3 passes
+  const bp = bellPath();
+  s += `<path d="${bp}" fill="none" stroke="rgba(120,185,255,0.14)" stroke-width="8"/>`;
+  s += `<path d="${bp}" fill="none" stroke="rgba(155,210,255,0.72)" stroke-width="1.6" stroke-dasharray="8,4" filter="url(#glow)"/>`;
+  s += `<path d="${bp}" fill="none" stroke="rgba(205,235,255,0.38)" stroke-width="0.8" stroke-dasharray="8,4"/>`;
+
+  // Symbols — stacked upward from baseline
+  slots.forEach((slot, i) => {
+    const scx = BX + (i+0.5)*SLOT_PITCH;
+    const zIdx = getZoneOfSlot(i); // 0-indexed
+    const color = ZCL[zIdx];
+    slot.forEach((item, rowIdx) => {
+      const sy = BY - SH*(rowIdx+1) + 2;
+      s += `<text x="${scx}" y="${sy}" text-anchor="middle" font-family="'Courier New',monospace" font-size="9" font-weight="bold" fill="${color}" filter="url(#softglow)" cursor="pointer" data-tip="${item.tip}">${item.sym3}</text>`;
+    });
+  });
+
+  // OOB panels — labels & symbols
+  const lmx = OW/2;
+  s += `<text x="${lmx}" y="16" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[0]}" opacity="0.7">OOB</text>`;
+  s += `<text x="${lmx}" y="26" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[0]}" opacity="0.7">Weak</text>`;
+  s += `<text x="${lmx}" y="36" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[0]}">[${oobL.length}]</text>`;
+  s += `<text x="${lmx}" y="46" text-anchor="middle" font-family="'Courier New',monospace" font-size="6" fill="${ZCL[0]}" opacity="0.6">≥+99</text>`;
+  oobL.forEach((item,i) => {
+    s += `<text x="${lmx}" y="${58+i*12}" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[0]}" data-tip="${item.tip}">${item.sym3}</text>`;
+  });
+
+  const rmx = W-OW/2;
+  s += `<text x="${rmx}" y="16" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[5]}" opacity="0.7">OOB</text>`;
+  s += `<text x="${rmx}" y="26" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[5]}" opacity="0.7">Str</text>`;
+  s += `<text x="${rmx}" y="36" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[5]}">[${oobR.length}]</text>`;
+  s += `<text x="${rmx}" y="46" text-anchor="middle" font-family="'Courier New',monospace" font-size="6" fill="${ZCL[5]}" opacity="0.6">≤−99</text>`;
+  oobR.forEach((item,i) => {
+    s += `<text x="${rmx}" y="${58+i*12}" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[5]}" data-tip="${item.tip}">${item.sym3}</text>`;
+  });
+
+  // Zone range labels and bold zone labels
+  for(let z=0;z<6;z++){
+    const zx = BX + z*ZW + ZW/2;
+    s += `<text x="${zx}" y="${LY_RANGE}" text-anchor="middle" font-family="'Courier New',monospace" font-size="8.5" fill="rgba(255,255,255,0.48)">${ZONE_RANGES[z]}</text>`;
+    s += `<text x="${zx}" y="${LY_ZONE}" text-anchor="middle" font-family="'Trebuchet MS',sans-serif" font-size="10.5" font-weight="bold" fill="${ZCL[z]}">${ZONE_LABELS[z]}</text>`;
+  }
+
+  // Direction legend
+  s += `<text x="${BX+4}" y="${H-5}" font-family="'Trebuchet MS',sans-serif" font-size="7.5" fill="rgba(0,212,160,0.40)">← Weak / Oversold</text>`;
+  s += `<text x="${BX+BW-4}" y="${H-5}" text-anchor="end" font-family="'Trebuchet MS',sans-serif" font-size="7.5" fill="rgba(232,53,53,0.40)">Overbought / Strong →</text>`;
+
+  // Inject
+  const svg = document.getElementById('mainHisto');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = s;
+
+  // Tooltip
+  const tip = document.getElementById('histo-tip');
+  svg.addEventListener('mousemove', e => {
+    const el = e.target;
+    if(el.dataset.tip){
+      tip.textContent = el.dataset.tip;
+      tip.style.display = 'block';
+      tip.style.left = (e.clientX+14)+'px';
+      tip.style.top  = (e.clientY-30)+'px';
+    } else { tip.style.display='none'; }
+  });
+  svg.addEventListener('mouseleave', () => { tip.style.display='none'; });
+}
+
+// ============================================================
+// COMBO CHARTS — Modified 90/10 Matchup
+// Zone-scaled Y-axis: Z6 at top (overbought), Z1 at bottom (oversold)
+// Bar = stock zone arc; Line = VIX zone (perfect inverse of bar)
+// ============================================================
+
+// 30 business-day date labels ending Apr 24 2026
+function genDates(n){
+  const dates=[];
+  let d = new Date(2026,3,24);
+  let count=0;
+  while(count<n){
+    if(d.getDay()!==0 && d.getDay()!==6){
+      dates.unshift(d.toLocaleDateString('en-US',{month:'numeric',day:'numeric'}));
+      count++;
+    }
+    d.setDate(d.getDate()-1);
+  }
+  return dates;
+}
+const DATES30 = genDates(30);
+
+// Arc generator: stock travels start → peak (around 65% through) → end
+// Deterministic noise via sin/cos — no Math.random() so chart is stable
+function makeArc(startZ, peakZ, endZ, n, noiseAmp, seed){
+  const data=[];
+  for(let i=0; i<n; i++){
+    const t = i/(n-1);
+    // Piecewise linear arc: rises to peak at 65%, then falls to end
+    let base;
+    if(t <= 0.65){ base = startZ + (peakZ-startZ)*(t/0.65); }
+    else          { base = peakZ  + (endZ-peakZ)*((t-0.65)/0.35); }
+    // Controlled noise — feels like daily price movement
+    const noise = (Math.sin(i*1.7+seed)*0.7 + Math.cos(i*2.9+seed*1.5)*0.4) * noiseAmp;
+    data.push(Math.round(Math.max(1, Math.min(6, base+noise))));
+  }
+  return data;
+}
+
+// Perfect inverse: Zone 1 ↔ Zone 6, Zone 2 ↔ Zone 5, Zone 3 ↔ Zone 4
+// This is the key insight: when stock is overbought its IV is oversold and vice-versa
+function invertZones(data){ return data.map(z => 7-z); }
+
+// ── PAIR DATA ──────────────────────────────────────────────
+// Each 90-day arc: stock oversold → overbought → partial reversion
+// Each 10-day arc: same story, more volatile (larger noise amp)
+// Line = invertZones(bar) — the IV inverse relationship is perfect
+
+// GOOG / VXGO
+const GOOG_90_bar  = makeArc(1, 6, 3, 30, 0.55, 1.0);
+const VXGO_90_line = invertZones(GOOG_90_bar);
+const GOOG_10_bar  = makeArc(1, 5, 4, 30, 0.85, 2.1);
+const VXGO_10_line = invertZones(GOOG_10_bar);
+
+// GS / VXGS — starts slightly less oversold, peaks firmly at 5
+const GS_90_bar    = makeArc(2, 5, 3, 30, 0.60, 3.3);
+const VXGS_90_line = invertZones(GS_90_bar);
+const GS_10_bar    = makeArc(2, 6, 4, 30, 0.90, 4.5);
+const VXGS_10_line = invertZones(GS_10_bar);
+
+// AAPL / VXAP — clean full arc Z1→Z6→Z2
+const AAPL_90_bar  = makeArc(1, 6, 2, 30, 0.50, 5.7);
+const VXAP_90_line = invertZones(AAPL_90_bar);
+const AAPL_10_bar  = makeArc(2, 5, 3, 30, 0.80, 6.9);
+const VXAP_10_line = invertZones(AAPL_10_bar);
+
+// AMZN / VXAZ — fastest arc, hits Z6 early, longer tail
+const AMZN_90_bar  = makeArc(1, 6, 4, 30, 0.45, 8.1);
+const VXAZ_90_line = invertZones(AMZN_90_bar);
+const AMZN_10_bar  = makeArc(1, 5, 3, 30, 0.85, 9.3);
+const VXAZ_10_line = invertZones(AMZN_10_bar);
+
+// IBM / VXIB — more moderate arc, Z2→Z5→Z3
+const IBM_90_bar   = makeArc(2, 5, 3, 30, 0.55, 10.5);
+const VXIB_90_line = invertZones(IBM_90_bar);
+const IBM_10_bar   = makeArc(1, 4, 3, 30, 0.80, 11.7);
+const VXIB_10_line = invertZones(IBM_10_bar);
+
+// Zone background plugin — Z6 red at top, Z1 green at bottom
+const zoneBgPlugin = {
+  id: 'zoneBg',
+  beforeDraw(chart){
+    const {ctx, chartArea:{left,right}, scales:{y}} = chart;
+    for(let z=1; z<=6; z++){
+      const yTop = y.getPixelForValue(z+0.5);
+      const yBot = y.getPixelForValue(z-0.5);
+      ctx.save();
+      ctx.fillStyle = ZCL[z-1]+'14';
+      ctx.fillRect(left, Math.min(yTop,yBot), right-left, Math.abs(yBot-yTop));
+      ctx.restore();
+    }
+  }
+};
+Chart.register(zoneBgPlugin);
+
+function barBgColors(data){ return data.map(z => ZCL[z-1]+'88'); }
+function barBdColors(data){ return data.map(z => ZCL[z-1]+'cc'); }
+
+function makeCombo(canvasId, barData, lineData, barLbl, lineLbl){
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: DATES30,
+      datasets: [
+        {
+          type: 'bar',
+          label: barLbl,
+          data: barData,
+          backgroundColor: barBgColors(barData),
+          borderColor:     barBdColors(barData),
+          borderWidth: 1,
+          borderRadius: 1,
+          order: 2,
+        },
+        {
+          type: 'line',
+          label: lineLbl,
+          data: lineData,
+          borderColor: 'rgba(255,210,80,0.92)',
+          backgroundColor: 'rgba(255,210,80,0.06)',
+          borderWidth: 1.8,
+          pointRadius: 0,
+          tension: 0.35,
+          fill: false,
+          order: 1,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      plugins: {
+        legend: {
+          display: true,
+          position: 'top',
+          labels: {
+            color: '#5a7a9a',
+            font: { size: 9, family: "'Courier New',monospace" },
+            padding: 6, boxWidth: 10, boxHeight: 8,
+          }
+        },
+        tooltip: {
+          mode: 'index',
+          backgroundColor: '#0d1829',
+          borderColor: '#3090d8',
+          borderWidth: 1,
+          titleColor: '#ddeeff',
+          bodyColor: '#5a7a9a',
+          titleFont: { size: 9, family: "'Courier New',monospace" },
+          bodyFont:  { size: 9, family: "'Courier New',monospace" },
+          callbacks: {
+            label: ctx => `${ctx.dataset.label}: Zone ${ctx.parsed.y}`
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: '#5a7a9a',
+            font: { size: 8, family: "'Courier New',monospace" },
+            maxTicksLimit: 8,
+            maxRotation: 0,
+          },
+          grid:   { color: 'rgba(255,255,255,0.04)' },
+          border: { color: 'rgba(255,255,255,0.12)' }
+        },
+        y: {
+          // Z6 (overbought) at top, Z1 (oversold) at bottom — natural Chart.js order
+          // min:0/max:7 ensures ticks land on integers 1–6, not 0.5, 1.5…
+          min: 0,
+          max: 7,
+          ticks: {
+            color: '#5a7a9a',
+            font: { size: 8, family: "'Courier New',monospace" },
+            stepSize: 1,
+            callback: v => (v >= 1 && v <= 6) ? `Z${v}` : ''
+          },
+          grid: {
+            color: ctx => {
+              const v = ctx.tick.value;
+              // Highlight Z3/Z4 boundary — the mean
+              return (v===3||v===4) ? 'rgba(255,255,255,0.20)' : 'rgba(255,255,255,0.05)';
+            }
+          },
+          border: { color: 'rgba(255,255,255,0.12)' }
+        }
+      }
+    }
+  });
+}
+
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('DOMContentLoaded', () => {
+  renderLH();
+  buildHistogram();
+
+  // GOOG / VXGO
+  makeCombo('c-goog-90', GOOG_90_bar,  VXGO_90_line, 'GOOG 90 IR', 'VXGO 90 IR');
+  makeCombo('c-goog-10', GOOG_10_bar,  VXGO_10_line, 'GOOG 10 IR', 'VXGO 10 IR');
+  // GS / VXGS
+  makeCombo('c-gs-90',   GS_90_bar,    VXGS_90_line, 'GS 90 IR',   'VXGS 90 IR');
+  makeCombo('c-gs-10',   GS_10_bar,    VXGS_10_line, 'GS 10 IR',   'VXGS 10 IR');
+  // AAPL / VXAP
+  makeCombo('c-aapl-90', AAPL_90_bar,  VXAP_90_line, 'AAPL 90 IR', 'VXAP 90 IR');
+  makeCombo('c-aapl-10', AAPL_10_bar,  VXAP_10_line, 'AAPL 10 IR', 'VXAP 10 IR');
+  // AMZN / VXAZ
+  makeCombo('c-amzn-90', AMZN_90_bar,  VXAZ_90_line, 'AMZN 90 IR', 'VXAZ 90 IR');
+  makeCombo('c-amzn-10', AMZN_10_bar,  VXAZ_10_line, 'AMZN 10 IR', 'VXAZ 10 IR');
+  // IBM / VXIB  (Vol.15 typo corrected: VXIB 10 IR for both)
+  makeCombo('c-ibm-90',  IBM_90_bar,   VXIB_90_line, 'IBM 90 IR',  'VXIB 90 IR');
+  makeCombo('c-ibm-10',  IBM_10_bar,   VXIB_10_line, 'IBM 10 IR',  'VXIB 10 IR');
+});
+</script>
+</body>
+</html>

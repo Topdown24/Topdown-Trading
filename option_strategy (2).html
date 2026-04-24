@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Option Strategy ETFs and Indexes — Top Down Trading</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #08111e;
+  --panel:     #0d1829;
+  --panel-alt: #0a1420;
+  --border:    #1a2d44;
+  --blt:       #243c58;
+  --txt:       #ddeeff;
+  --dim:       #5a7a9a;
+  --mid:       #b8cce0;
+  --accent:    #3090d8;
+  --gold:      #c8a800;
+  --nav-h:     38px;
+  --ttl-h:     42px;
+  --z1: #00cc55; --z2: #88cc44; --z3: #7a9aaa;
+  --z4: #aa9a7a; --z5: #ddcc00; --z6: #e83535;
+}
+
+html, body { background: var(--bg); color: var(--txt); font-family: 'Rajdhani', sans-serif; height: 100%; overflow: hidden; }
+
+/* ── NAV BAR ── */
+.nav-bar {
+  height: var(--nav-h);
+  background: var(--panel-alt);
+  border-bottom: 1px solid var(--blt);
+  display: flex; align-items: center;
+  padding: 0 10px; gap: 8px; flex-shrink: 0;
+}
+.back-btn {
+  background: transparent; border: 1px solid var(--gold);
+  color: var(--gold); font-family: 'Rajdhani', sans-serif;
+  font-size: 12px; font-weight: 700; padding: 3px 12px;
+  cursor: pointer; letter-spacing: .05em; transition: all .15s;
+}
+.back-btn:hover { background: rgba(200,168,0,.12); }
+.nav-right { margin-left: auto; display: flex; align-items: center; gap: 5px; }
+.search-input {
+  background: var(--bg); border: 1px solid var(--blt); border-right: none;
+  color: var(--txt); font-family: 'Share Tech Mono', monospace;
+  font-size: 11px; padding: 3px 8px; width: 160px; outline: none;
+}
+.search-input::placeholder { color: var(--dim); }
+.search-input:focus { border-color: var(--accent); }
+.search-go {
+  background: var(--panel); border: 1px solid var(--blt);
+  color: var(--dim); font-family: 'Rajdhani', sans-serif;
+  font-size: 11px; font-weight: 600; padding: 3px 10px;
+  cursor: pointer; transition: all .15s;
+}
+.search-go:hover { border-color: var(--accent); color: var(--txt); }
+
+/* ── PAGE TITLE ── */
+.page-title-bar {
+  height: var(--ttl-h); background: var(--panel-alt);
+  border-bottom: 2px solid var(--blt);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.page-title { font-size: 17px; font-weight: 700; color: var(--txt); letter-spacing: .06em; text-transform: uppercase; }
+
+/* ── MAIN LAYOUT ── */
+.main-body {
+  display: flex;
+  height: calc(100vh - var(--nav-h) - var(--ttl-h));
+  overflow: hidden;
+}
+
+/* ── LEFT HAND TOGGLE ── */
+.lh-sidebar {
+  width: 285px; min-width: 285px;
+  border-right: 2px solid var(--blt);
+  background: var(--panel-alt);
+  display: flex; flex-direction: column;
+  overflow: hidden; flex-shrink: 0;
+}
+.lh-hdr { background: var(--panel-alt); border-bottom: 1px solid var(--border); padding: 8px 10px 6px; flex-shrink: 0; }
+.lh-title { text-align: center; font-weight: 700; font-size: 12px; color: var(--txt); margin-bottom: 5px; }
+.lh-btns { display: flex; justify-content: center; gap: 4px; }
+.lh-btn {
+  background: #1a2d44; border: 1px solid #1a2d44;
+  color: var(--dim); font-family: 'Rajdhani', sans-serif;
+  font-size: 11px; font-weight: 600; padding: 2px 12px;
+  cursor: pointer; transition: all .15s;
+}
+.lh-btn.active { background: #2a7abf; border-color: var(--accent); color: #fff; }
+.lh-btn:hover:not(.active) { border-color: var(--accent); color: var(--txt); }
+.lh-scroll { overflow-y: auto; flex: 1; }
+.lh-scroll::-webkit-scrollbar { width: 4px; }
+.lh-scroll::-webkit-scrollbar-track { background: var(--bg); }
+.lh-scroll::-webkit-scrollbar-thumb { background: var(--blt); border-radius: 2px; }
+.lh-table { width: 100%; border-collapse: collapse; font-family: 'Courier New', monospace; font-size: 11px; }
+.lh-table th {
+  background: var(--panel-alt); color: var(--dim); padding: 4px 6px; text-align: left;
+  border-bottom: 1px solid var(--border); position: sticky; top: 0;
+  font-size: 10px; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; z-index: 1;
+}
+.lh-table th.sortable { cursor: pointer; user-select: none; }
+.lh-table th.sortable:hover { color: var(--txt); }
+.lh-table th.sort-active { color: var(--accent); }
+.sort-arrow { font-size: 10px; margin-left: 3px; opacity: .5; }
+.sort-arrow.active { opacity: 1; color: var(--accent); }
+.lh-table td { padding: 3px 6px; border-bottom: 1px solid #0e1a28; white-space: nowrap; }
+.lh-table tr:hover td { background: #111e30; }
+.col-tick { color: var(--txt); font-weight: bold; }
+.col-nlh  { color: var(--dim); font-size: 10px; }
+.col-irlh { text-align: center; }
+.col-zn   { text-align: center; }
+.zone-badge { display: inline-block; padding: 1px 5px; font-size: 10px; font-weight: bold; border-radius: 2px; color: #000; }
+.pos { color: #88cc44; } .neg { color: #e83535; } .zer { color: #b8cce0; }
+
+/* ── RIGHT CONTENT ── */
+.right-content { flex: 1; overflow-y: auto; padding: 10px 14px; }
+.right-content::-webkit-scrollbar { width: 5px; }
+.right-content::-webkit-scrollbar-track { background: var(--bg); }
+.right-content::-webkit-scrollbar-thumb { background: var(--blt); border-radius: 2px; }
+
+/* ── HISTOGRAM ── */
+.histo-wrap { margin-bottom: 14px; }
+.section-title { font-weight: 700; font-size: 13px; color: var(--txt); text-align: center; margin-bottom: 6px; letter-spacing: .03em; }
+.histo-svg-box { background: var(--panel); border: 1px solid var(--border); overflow: hidden; }
+#histo-tip {
+  position: fixed; background: var(--panel); border: 1px solid var(--accent);
+  color: var(--txt); font-family: 'Courier New', monospace; font-size: 11px;
+  padding: 5px 9px; border-radius: 2px; box-shadow: 0 2px 12px rgba(0,0,0,.6);
+  white-space: nowrap; z-index: 999; pointer-events: none; display: none;
+}
+
+/* ── SECTION DIVIDERS ── */
+.page-section {
+  text-align: center;
+  margin: 18px 0 14px;
+  position: relative;
+}
+.page-section::before, .page-section::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 28%;
+  height: 1px;
+  background: linear-gradient(to var(--dir, right), var(--blt), transparent);
+}
+.page-section::before { left: 0; --dir: right; }
+.page-section::after  { right: 0; --dir: left; }
+.page-section-text {
+  display: inline-block;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--txt);
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  padding: 0 14px;
+}
+
+/* ── REGULAR TOGGLES ── */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.toggle-wrap { background: var(--panel); border: 1px solid var(--border); overflow: hidden; }
+.toggle-header {
+  background: var(--panel-alt); border-bottom: 1px solid var(--border);
+  padding: 6px 10px; display: flex; align-items: center; justify-content: space-between;
+}
+.toggle-title { font-weight: bold; font-size: 12px; color: var(--txt); }
+.toggle-btns { display: flex; gap: 0; }
+.toggle-btn {
+  background: #1a2d44; border: 1px solid #1a2d44; color: var(--dim);
+  font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 600;
+  padding: 3px 10px; cursor: pointer; transition: all .15s;
+}
+.toggle-btn.active { background: #2a7abf; border-color: var(--accent); color: #fff; }
+.toggle-btn:hover:not(.active) { border-color: var(--accent); color: var(--txt); }
+.scroll-table { max-height: 340px; overflow-y: auto; }
+.scroll-table::-webkit-scrollbar { width: 4px; }
+.scroll-table::-webkit-scrollbar-track { background: var(--bg); }
+.scroll-table::-webkit-scrollbar-thumb { background: var(--blt); border-radius: 2px; }
+.ir-table { width: 100%; border-collapse: collapse; font-family: 'Courier New', monospace; font-size: 11px; }
+.ir-table th {
+  background: var(--panel); color: var(--dim); padding: 4px 6px; text-align: left;
+  border-bottom: 1px solid var(--border); position: sticky; top: 0;
+  font-size: 10px; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap;
+}
+.ir-table th.sortable { cursor: pointer; user-select: none; }
+.ir-table th.sortable:hover { color: var(--txt); }
+.ir-table th.sort-active { color: var(--accent); }
+.ir-table td { padding: 3px 6px; border-bottom: 1px solid #0e1a28; white-space: nowrap; }
+.ir-table tr:hover td { background: #111e30; }
+.col-symbol { color: var(--txt); font-weight: bold; }
+.col-ir     { text-align: center; }
+.col-zone   { text-align: center; }
+.col-3mo    { text-align: center; font-size: 10px; padding-left: 14px !important; }
+
+/* ── COMBO CHARTS ── */
+.combo-block { display: flex; flex-direction: column; }
+.combo-ttl-block { text-align: center; margin-bottom: 5px; }
+.combo-ttl-main { font-size: 13px; font-weight: 700; color: var(--txt); letter-spacing: .02em; }
+.combo-ttl-sub  { font-size: 11px; color: var(--dim); margin-top: 1px; }
+.combo-wrap { background: var(--panel); border: 1px solid var(--border); padding: 8px 8px 6px; flex: 1; }
+.combo-canvas-wrap { position: relative; height: 178px; }
+</style>
+</head>
+<body>
+<div id="histo-tip"></div>
+
+<!-- NAV BAR -->
+<div class="nav-bar">
+  <button class="back-btn" onclick="history.back()">← BACK</button>
+  <div class="nav-right">
+    <input class="search-input" type="text" placeholder="Search symbol or name…" />
+    <button class="search-go">GO</button>
+  </div>
+</div>
+
+<!-- PAGE TITLE -->
+<div class="page-title-bar">
+  <div class="page-title">Option Strategy ETFs and Indexes</div>
+</div>
+
+<!-- MAIN BODY -->
+<div class="main-body">
+
+  <!-- LEFT HAND TOGGLE — all 40 tickers -->
+  <div class="lh-sidebar">
+    <div class="lh-hdr">
+      <div class="lh-title">Option Strategy<br>ETFs and Indexes</div>
+      <div class="lh-btns" style="margin-top:4px">
+        <button class="lh-btn active" data-period="90" onclick="lhPeriod(this)">90 IR</button>
+        <button class="lh-btn"        data-period="10" onclick="lhPeriod(this)">10 IR</button>
+      </div>
+    </div>
+    <div class="lh-scroll">
+      <table class="lh-table">
+        <thead><tr>
+          <th>Tick</th>
+          <th>Name</th>
+          <th class="sortable sort-active" id="lh-th-ir" onclick="lhSort()" style="text-align:center">
+            IR <span class="sort-arrow active" id="lh-arr">↓</span>
+          </th>
+          <th style="text-align:center">Zn</th>
+        </tr></thead>
+        <tbody id="lh-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- RIGHT CONTENT -->
+  <div class="right-content">
+
+    <!-- HISTOGRAM -->
+    <div class="histo-wrap">
+      <div class="section-title">Option Strategy ETFs and Indexes Histogram</div>
+      <div class="histo-svg-box">
+        <svg id="mainHisto" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block"></svg>
+      </div>
+    </div>
+
+    <!-- SECTION TITLE: SPX Option Strategies -->
+    <div class="page-section">
+      <span class="page-section-text">S&amp;P 500 (SPX) Option Strategies</span>
+    </div>
+
+    <!-- REGULAR TOGGLES — two across -->
+    <div class="two-col">
+
+      <!-- ElementOpStrat.6 — SPX Option Strategy ETFs and Indexes -->
+      <div class="toggle-wrap">
+        <div class="toggle-header">
+          <span class="toggle-title">SPX Option Strategy ETFs &amp; Indexes</span>
+          <div class="toggle-btns">
+            <button class="toggle-btn active" data-group="spx" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+            <button class="toggle-btn"        data-group="spx" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+          </div>
+        </div>
+        <div class="scroll-table">
+          <table class="ir-table">
+            <thead><tr>
+              <th style="text-align:left">Ticker</th>
+              <th style="text-align:left">Name</th>
+              <th class="sortable sort-active" id="spx-th-ir"  onclick="handleSortClick('spx','ir')"  style="text-align:center">IR  <span class="sort-arrow active" id="spx-arr-ir">↓</span></th>
+              <th style="text-align:center">Zn</th>
+              <th class="sortable"            id="spx-th-3mo" onclick="handleSortClick('spx','3mo')" style="text-align:center;padding-left:14px">3Mo Ago <span class="sort-arrow" id="spx-arr-3mo">↕</span></th>
+            </tr></thead>
+            <tbody id="spx-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ElementOpStrat.7 — SPX Sector Buy/Write ETFs -->
+      <div class="toggle-wrap">
+        <div class="toggle-header">
+          <span class="toggle-title">SPX Sector Buy/Write ETFs</span>
+          <div class="toggle-btns">
+            <button class="toggle-btn active" data-group="sector" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+            <button class="toggle-btn"        data-group="sector" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+          </div>
+        </div>
+        <div class="scroll-table">
+          <table class="ir-table">
+            <thead><tr>
+              <th style="text-align:left">Ticker</th>
+              <th style="text-align:left">Name</th>
+              <th class="sortable sort-active" id="sector-th-ir"  onclick="handleSortClick('sector','ir')"  style="text-align:center">IR  <span class="sort-arrow active" id="sector-arr-ir">↓</span></th>
+              <th style="text-align:center">Zn</th>
+              <th class="sortable"             id="sector-th-3mo" onclick="handleSortClick('sector','3mo')" style="text-align:center;padding-left:14px">3Mo Ago <span class="sort-arrow" id="sector-arr-3mo">↕</span></th>
+            </tr></thead>
+            <tbody id="sector-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /two-col toggles -->
+
+    <!-- SECTION TITLE: SPX vs Index Option Strategies -->
+    <div class="page-section">
+      <span class="page-section-text">S&amp;P 500 (SPX) vs Index Option Strategies</span>
+    </div>
+
+    <!-- EXPLANATORY NOTE -->
+    <div style="display:flex;justify-content:center;margin-bottom:14px;">
+      <div style="border:1px solid var(--blt);background:var(--panel-alt);padding:7px 18px;max-width:620px;text-align:center;">
+        <span style="font-family:'Courier New',monospace;font-size:10.5px;color:var(--dim);line-height:1.6;">
+          The options strategy indexes used in these comparison graphs don't offer options trading.
+          To enable these comparisons, we substitute the underlying SPX implied volatility for the missing market-derived measure.
+        </span>
+      </div>
+    </div>
+
+    <!-- ROW 1: SPX vs BXM -->
+    <div class="two-col">
+      <div class="combo-block">
+        <div class="combo-ttl-block">
+          <div class="combo-ttl-main">SPX vs BXM</div>
+          <div class="combo-ttl-sub">90-day IR</div>
+        </div>
+        <div class="combo-wrap"><div class="combo-canvas-wrap"><canvas id="c-bxm-90"></canvas></div></div>
+      </div>
+      <div class="combo-block">
+        <div class="combo-ttl-block">
+          <div class="combo-ttl-main">SPX vs BXM</div>
+          <div class="combo-ttl-sub">10-day IR</div>
+        </div>
+        <div class="combo-wrap"><div class="combo-canvas-wrap"><canvas id="c-bxm-10"></canvas></div></div>
+      </div>
+    </div>
+
+    <!-- ROW 2: SPX vs PUT -->
+    <div class="two-col">
+      <div class="combo-block">
+        <div class="combo-ttl-block">
+          <div class="combo-ttl-main">SPX vs PUT</div>
+          <div class="combo-ttl-sub">90-day IR</div>
+        </div>
+        <div class="combo-wrap"><div class="combo-canvas-wrap"><canvas id="c-put-90"></canvas></div></div>
+      </div>
+      <div class="combo-block">
+        <div class="combo-ttl-block">
+          <div class="combo-ttl-main">SPX vs PUT</div>
+          <div class="combo-ttl-sub">10-day IR</div>
+        </div>
+        <div class="combo-wrap"><div class="combo-canvas-wrap"><canvas id="c-put-10"></canvas></div></div>
+      </div>
+    </div>
+
+    <!-- ROW 3: SPX vs XCLR -->
+    <div class="two-col">
+      <div class="combo-block">
+        <div class="combo-ttl-block">
+          <div class="combo-ttl-main">SPX vs XCLR</div>
+          <div class="combo-ttl-sub">90-day IR</div>
+        </div>
+        <div class="combo-wrap"><div class="combo-canvas-wrap"><canvas id="c-xclr-90"></canvas></div></div>
+      </div>
+      <div class="combo-block">
+        <div class="combo-ttl-block">
+          <div class="combo-ttl-main">SPX vs XCLR</div>
+          <div class="combo-ttl-sub">10-day IR</div>
+        </div>
+        <div class="combo-wrap"><div class="combo-canvas-wrap"><canvas id="c-xclr-10"></canvas></div></div>
+      </div>
+    </div>
+
+    <!-- ROW 4: SPX vs BFLY -->
+    <div class="two-col">
+      <div class="combo-block">
+        <div class="combo-ttl-block">
+          <div class="combo-ttl-main">SPX vs BFLY</div>
+          <div class="combo-ttl-sub">90-day IR</div>
+        </div>
+        <div class="combo-wrap"><div class="combo-canvas-wrap"><canvas id="c-bfly-90"></canvas></div></div>
+      </div>
+      <div class="combo-block">
+        <div class="combo-ttl-block">
+          <div class="combo-ttl-main">SPX vs BFLY</div>
+          <div class="combo-ttl-sub">10-day IR</div>
+        </div>
+        <div class="combo-wrap"><div class="combo-canvas-wrap"><canvas id="c-bfly-10"></canvas></div></div>
+      </div>
+    </div>
+
+    <!-- ROW 5: SPX vs SPRO -->
+    <div class="two-col">
+      <div class="combo-block">
+        <div class="combo-ttl-block">
+          <div class="combo-ttl-main">SPX vs SPRO</div>
+          <div class="combo-ttl-sub">90-day IR</div>
+        </div>
+        <div class="combo-wrap"><div class="combo-canvas-wrap"><canvas id="c-spro-90"></canvas></div></div>
+      </div>
+      <div class="combo-block">
+        <div class="combo-ttl-block">
+          <div class="combo-ttl-main">SPX vs SPRO</div>
+          <div class="combo-ttl-sub">10-day IR</div>
+        </div>
+        <div class="combo-wrap"><div class="combo-canvas-wrap"><canvas id="c-spro-10"></canvas></div></div>
+      </div>
+    </div>
+
+    <!-- ROW 6: SPX vs RXM -->
+    <div class="two-col">
+      <div class="combo-block">
+        <div class="combo-ttl-block">
+          <div class="combo-ttl-main">SPX vs RXM</div>
+          <div class="combo-ttl-sub">90-day IR</div>
+        </div>
+        <div class="combo-wrap"><div class="combo-canvas-wrap"><canvas id="c-rxm-90"></canvas></div></div>
+      </div>
+      <div class="combo-block">
+        <div class="combo-ttl-block">
+          <div class="combo-ttl-main">SPX vs RXM</div>
+          <div class="combo-ttl-sub">10-day IR</div>
+        </div>
+        <div class="combo-wrap"><div class="combo-canvas-wrap"><canvas id="c-rxm-10"></canvas></div></div>
+      </div>
+    </div>
+
+  </div><!-- /right-content -->
+</div><!-- /main-body -->
+
+<script>
+'use strict';
+
+// ============================================================
+// MASTER DATA — 40 unique Option Strategy ETFs and Indexes
+// ============================================================
+const ALL_DATA = [
+  { symbol:'CALD', name:'Validus S&P 500 Dyn Call BuyWrite', ir_90: 42,  ir_10: 38,  ir_90_3mo:-18,  ir_10_3mo:-22 },
+  { symbol:'PUTD', name:'Validus S&P 500 Dyn PutWrite',      ir_90: 35,  ir_10: 29,  ir_90_3mo:-12,  ir_10_3mo:-15 },
+  { symbol:'BXMN', name:'S&P 500 BuyWrite NTR Index',        ir_90: 28,  ir_10: 22,  ir_90_3mo: -8,  ir_10_3mo:-10 },
+  { symbol:'BXM',  name:'S&P 500 BuyWrite Index',            ir_90: 31,  ir_10: 25,  ir_90_3mo:-10,  ir_10_3mo:-12 },
+  { symbol:'PUT',  name:'S&P 500 PutWrite Index',            ir_90: 38,  ir_10: 32,  ir_90_3mo:-14,  ir_10_3mo:-16 },
+  { symbol:'XCLR', name:'S&P 500 95-110 Collar Index',       ir_90: 18,  ir_10: 14,  ir_90_3mo: -5,  ir_10_3mo: -7 },
+  { symbol:'BFLY', name:'S&P 500 Iron Butterfly Index',      ir_90: 10,  ir_10:  6,  ir_90_3mo: -2,  ir_10_3mo: -4 },
+  { symbol:'RXM',  name:'S&P 500 Risk Reversal Index',       ir_90:-25,  ir_10:-32,  ir_90_3mo: 15,  ir_10_3mo: 20 },
+  { symbol:'SPRO', name:'S&P 500 Buffer Protect Index',      ir_90: 22,  ir_10: 17,  ir_90_3mo: -7,  ir_10_3mo: -9 },
+  { symbol:'BXTB', name:'TLT 2% OTM BuyWrite Index',         ir_90: 65,  ir_10: 72,  ir_90_3mo:-32,  ir_10_3mo:-38 },
+  { symbol:'BXLB', name:'LQD BuyWrite Index',                ir_90: 48,  ir_10: 55,  ir_90_3mo:-22,  ir_10_3mo:-28 },
+  { symbol:'BXHB', name:'HYG BuyWrite Index',                ir_90: 55,  ir_10: 62,  ir_90_3mo:-28,  ir_10_3mo:-35 },
+  { symbol:'TLTW', name:'20+ Yr Treasury Bond BuyWrite ETF', ir_90: 72,  ir_10: 78,  ir_90_3mo:-38,  ir_10_3mo:-45 },
+  { symbol:'IWMW', name:'Russell 2000 BuyWrite ETF',         ir_90: 45,  ir_10: 52,  ir_90_3mo:-20,  ir_10_3mo:-25 },
+  { symbol:'DJIA', name:'Dow 30 Covered Call ETF',           ir_90: 32,  ir_10: 27,  ir_90_3mo:-11,  ir_10_3mo:-14 },
+  { symbol:'XYLD', name:'S&P 500 Covered Call ETF',          ir_90: 27,  ir_10: 22,  ir_90_3mo: -8,  ir_10_3mo:-11 },
+  { symbol:'QYLD', name:'Nasdaq Covered Call ETF',           ir_90:-16,  ir_10:-23,  ir_90_3mo:  8,  ir_10_3mo: 12 },
+  { symbol:'RYLD', name:'Russell 2000 Covered Call Index',   ir_90: 58,  ir_10: 65,  ir_90_3mo:-30,  ir_10_3mo:-38 },
+  { symbol:'BCCC', name:'Bitcoin Covered Call ETF',          ir_90: 88,  ir_10: 92,  ir_90_3mo:-55,  ir_10_3mo:-62 },
+  { symbol:'HECO', name:'SPDR Galaxy Hedged Digital ETF',    ir_90: 78,  ir_10: 85,  ir_90_3mo:-48,  ir_10_3mo:-55 },
+  { symbol:'XLCI', name:'Comm Svcs Premium Income ETF',      ir_90:-35,  ir_10:-42,  ir_90_3mo: 18,  ir_10_3mo: 22 },
+  { symbol:'XLYI', name:'Cons Discretionary Premium Income', ir_90:-28,  ir_10:-35,  ir_90_3mo: 12,  ir_10_3mo: 18 },
+  { symbol:'XLSI', name:'Cons Staples Premium Income ETF',   ir_90:-48,  ir_10:-55,  ir_90_3mo: 25,  ir_10_3mo: 32 },
+  { symbol:'XLEI', name:'Energy Premium Income ETF',         ir_90: 15,  ir_10: 18,  ir_90_3mo: -5,  ir_10_3mo: -8 },
+  { symbol:'XLFI', name:'Financial Premium Income ETF',      ir_90:-12,  ir_10:-18,  ir_90_3mo:  5,  ir_10_3mo:  8 },
+  { symbol:'XLVI', name:'Health Care Premium Income ETF',    ir_90:-58,  ir_10:-65,  ir_90_3mo: 32,  ir_10_3mo: 38 },
+  { symbol:'XLII', name:'Industrial Premium Income ETF',     ir_90:-22,  ir_10:-28,  ir_90_3mo: 10,  ir_10_3mo: 15 },
+  { symbol:'XLBI', name:'Materials Premium Income ETF',      ir_90: 25,  ir_10: 32,  ir_90_3mo: -8,  ir_10_3mo:-12 },
+  { symbol:'XLRI', name:'Real Estate Premium Income ETF',    ir_90: 68,  ir_10: 75,  ir_90_3mo:-35,  ir_10_3mo:-42 },
+  { symbol:'XLKI', name:'Technology Premium Income ETF',     ir_90:-45,  ir_10:-52,  ir_90_3mo: 22,  ir_10_3mo: 28 },
+  { symbol:'XLUI', name:'Utilities Premium Income ETF',      ir_90: 82,  ir_10: 88,  ir_90_3mo:-48,  ir_10_3mo:-55 },
+  { symbol:'IVVW', name:'S&P 500 BuyWrite ETF',              ir_90: 25,  ir_10: 20,  ir_90_3mo: -8,  ir_10_3mo:-10 },
+  { symbol:'PBP',  name:'S&P 500 Index BuyWrite ETF',        ir_90: 21,  ir_10: 16,  ir_90_3mo: -6,  ir_10_3mo: -8 },
+  { symbol:'PHDG', name:'S&P 500 Downside Hedged ETF',       ir_90:  7,  ir_10:  4,  ir_90_3mo: -1,  ir_10_3mo: -2 },
+  { symbol:'IGLD', name:'Gold Strategy Target Income ETF',   ir_90: 52,  ir_10: 58,  ir_90_3mo:-25,  ir_10_3mo:-30 },
+  { symbol:'FTHI', name:'BuyWrite Income ETF',               ir_90: 38,  ir_10: 43,  ir_90_3mo:-15,  ir_10_3mo:-18 },
+  { symbol:'FTQI', name:'Nasdaq BuyWrite Income ETF',        ir_90: -8,  ir_10:-14,  ir_90_3mo:  3,  ir_10_3mo:  6 },
+  { symbol:'FTKI', name:'Small Cap BuyWrite Income ETF',     ir_90: 44,  ir_10: 51,  ir_90_3mo:-19,  ir_10_3mo:-24 },
+  { symbol:'BUFQ', name:'Laddered Nasdaq Buffer ETF',        ir_90:-18,  ir_10:-25,  ir_90_3mo:  8,  ir_10_3mo: 12 },
+  { symbol:'DOGG', name:'DJIA Dogs 10 Target Income ETF',    ir_90: 35,  ir_10: 42,  ir_90_3mo:-12,  ir_10_3mo:-18 },
+];
+
+// Sub-lists for Regular Toggles (reference into ALL_DATA by symbol)
+const SPX_SYMS    = ['BXMN','BXM','PUT','XCLR','BFLY','RXM','SPRO','XYLD','IVVW','PBP','PHDG'];
+const SECTOR_SYMS = ['XLCI','XLYI','XLSI','XLEI','XLFI','XLVI','XLII','XLBI','XLRI','XLKI','XLUI'];
+
+function bySymbol(syms){ return syms.map(s => ALL_DATA.find(d => d.symbol===s)); }
+const DATA = {
+  spx:    bySymbol(SPX_SYMS),
+  sector: bySymbol(SECTOR_SYMS),
+};
+
+// ── Shared helpers ────────────────────────────────────────
+const ZCL = ['#00cc55','#88cc44','#7a9aaa','#aa9a7a','#ddcc00','#e83535'];
+const ZONE_COLORS = {1:'#00cc55',2:'#88cc44',3:'#7a9aaa',4:'#aa9a7a',5:'#ddcc00',6:'#e83535'};
+
+function irToZone(ir){ if(ir>=67)return 1;if(ir>=34)return 2;if(ir>=1)return 3;if(ir>=-33)return 4;if(ir>=-66)return 5;return 6; }
+function zoneBadge(z){ return `<span class="zone-badge" style="background:${ZONE_COLORS[z]}">${z}</span>`; }
+function irFmt(v)  { return (v>0?'+':'')+v; }
+function irCls(v)  { return v>0?'pos':v<0?'neg':'zer'; }
+function trunc(s,n){ return s.length>n?s.slice(0,n)+'…':s; }
+
+// ============================================================
+// LEFT HAND TOGGLE
+// ============================================================
+let lhPeriod$ = '90', lhDir = 1;
+
+function lhPeriod(btn){
+  document.querySelectorAll('.lh-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  lhPeriod$ = btn.dataset.period;
+  renderLH();
+}
+function lhSort(){
+  lhDir *= -1;
+  document.getElementById('lh-arr').textContent = lhDir===1?'↓':'↑';
+  renderLH();
+}
+function renderLH(){
+  const f = lhPeriod$==='90'?'ir_90':'ir_10';
+  const rows = [...ALL_DATA].sort((a,b)=>(b[f]-a[f])*lhDir);
+  document.getElementById('lh-tbody').innerHTML = rows.map(r=>{
+    const ir=r[f], z=irToZone(ir);
+    return `<tr>
+      <td class="col-tick">${r.symbol}</td>
+      <td class="col-nlh">${trunc(r.name,22)}</td>
+      <td class="col-irlh"><span class="${irCls(ir)}">${irFmt(ir)}</span></td>
+      <td class="col-zn">${zoneBadge(z)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ============================================================
+// REGULAR TOGGLES
+// ============================================================
+const sortState   = {};
+const periodState = {};
+
+function handleSortClick(groupId, field){
+  if(!sortState[groupId]) sortState[groupId]={field:'ir',dir:1};
+  const s=sortState[groupId];
+  sortState[groupId] = (s.field===field)?{field,dir:s.dir*-1}:{field,dir:1};
+  renderToggleTable(groupId);
+}
+function updateSortArrows(groupId){
+  const {field,dir}=sortState[groupId];
+  ['ir','3mo'].forEach(f=>{
+    const th  = document.getElementById(`${groupId}-th-${f}`);
+    const arr = document.getElementById(`${groupId}-arr-${f}`);
+    if(!th||!arr) return;
+    const on = f===field;
+    if(on){ th.classList.add('sort-active');    arr.classList.add('active');    arr.textContent=dir===1?'↓':'↑'; }
+    else  { th.classList.remove('sort-active'); arr.classList.remove('active'); arr.textContent='↕'; }
+  });
+}
+function handlePeriodToggle(btn){
+  btn.closest('.toggle-btns').querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  periodState[btn.dataset.group] = btn.dataset.period;
+  renderToggleTable(btn.dataset.group);
+}
+function renderToggleTable(groupId){
+  if(!sortState[groupId])  sortState[groupId]  = {field:'ir',dir:1};
+  if(!periodState[groupId]) periodState[groupId]= '90';
+  const p  = periodState[groupId];
+  const iF = p==='90'?'ir_90':'ir_10';
+  const mF = p==='90'?'ir_90_3mo':'ir_10_3mo';
+  const {field,dir}=sortState[groupId];
+  const sF = field==='ir'?iF:mF;
+  const rows=[...DATA[groupId]].sort((a,b)=>(b[sF]-a[sF])*dir);
+  document.getElementById(groupId+'-tbody').innerHTML = rows.map(r=>{
+    const ir=r[iF], mo=r[mF], z=irToZone(ir);
+    const nm=trunc(r.name,22);
+    return `<tr>
+      <td class="col-symbol">${r.symbol}</td>
+      <td style="color:var(--dim);font-size:10px">${nm}</td>
+      <td class="col-ir"><span class="${irCls(ir)}">${irFmt(ir)}</span></td>
+      <td class="col-zone">${zoneBadge(z)}</td>
+      <td class="col-3mo" style="padding-left:14px"><span class="${irCls(mo)}">${irFmt(mo)}</span></td>
+    </tr>`;
+  }).join('');
+  updateSortArrows(groupId);
+}
+
+// ============================================================
+// HISTOGRAM — 40 tickers
+// ============================================================
+function getSlotIdx(ir){
+  if(ir>=91)return 0;  if(ir>=83)return 1;  if(ir>=75)return 2;  if(ir>=67)return 3;
+  if(ir>=59)return 4;  if(ir>=52)return 5;  if(ir>=43)return 6;  if(ir>=34)return 7;
+  if(ir>=26)return 8;  if(ir>=18)return 9;  if(ir>=9) return 10; if(ir>=1) return 11;
+  if(ir>=-8) return 12;if(ir>=-17)return 13;if(ir>=-25)return 14;if(ir>=-33)return 15;
+  if(ir>=-42)return 16;if(ir>=-51)return 17;if(ir>=-58)return 18;if(ir>=-66)return 19;
+  if(ir>=-74)return 20;if(ir>=-82)return 21;if(ir>=-90)return 22;return 23;
+}
+function getZoneOfSlot(i){ return Math.floor(i/4); }
+
+function buildHistogram(){
+  const W=920,OW=28,BX=28,BW=864,ZW=144,SLOT_PITCH=36;
+  let BY=205; const SH=13;
+
+  const slots=Array.from({length:24},()=>[]);
+  const oobL=[],oobR=[];
+
+  ALL_DATA.forEach(d=>{
+    const ir=d.ir_90, sym3=d.symbol.slice(0,3);
+    const tip=`${d.symbol} — ${d.name}  |  90-IR: ${irFmt(ir)}  |  Zone ${irToZone(ir)}`;
+    if(ir>=99){oobL.push({sym3,tip});return;}
+    if(ir<=-99){oobR.push({sym3,tip});return;}
+    slots[getSlotIdx(ir)].push({sym3,tip});
+  });
+  slots.forEach(s=>s.sort((a,b)=>a.sym3.localeCompare(b.sym3)));
+
+  const maxStk=Math.max(1,...slots.map(s=>s.length));
+  if(maxStk*SH+20>BY) BY=maxStk*SH+20;
+  const H=BY+63, LY_RANGE=BY+18, LY_ZONE=BY+31;
+
+  const BELL_A=168,BELL_FLOOR=16,BELL_SIG=ZW,BCX=460;
+  function bellY(px){const dx=px-BCX;return BY-(BELL_A*Math.exp(-dx*dx/(2*BELL_SIG*BELL_SIG))+BELL_FLOOR);}
+  function bellPath(){let p='';for(let px=BX;px<=BX+BW;px+=2){const y=bellY(px);p+=(px===BX?`M${px},${y}`:`L${px},${y}`);}return p;}
+
+  const ZONE_RANGES=['+99 to +67','+66 to +34','+33 to +1','−1 to −33','−34 to −66','−67 to −99'];
+  const ZONE_LABELS=['Zone 1','Zone 2','Zone 3','Zone 4','Zone 5','Zone 6'];
+  let s='';
+
+  s+=`<defs>
+    <filter id="glow"><feGaussianBlur stdDeviation="2.8" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="softglow"><feGaussianBlur stdDeviation="1.5" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>`;
+
+  s+=`<rect x="0" y="0" width="${OW}" height="${H}" fill="${ZCL[0]}" opacity="0.07"/>`;
+  s+=`<rect x="${W-OW}" y="0" width="${OW}" height="${H}" fill="${ZCL[5]}" opacity="0.07"/>`;
+  for(let z=0;z<6;z++) s+=`<rect x="${BX+z*ZW}" y="0" width="${ZW}" height="${BY}" fill="${ZCL[z]}" opacity="0.07"/>`;
+  s+=`<line x1="${BX}" y1="0" x2="${BX}" y2="${BY}" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>`;
+  s+=`<line x1="${BX+BW}" y1="0" x2="${BX+BW}" y2="${BY}" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>`;
+  for(let z=1;z<6;z++) s+=`<line x1="${BX+z*ZW}" y1="0" x2="${BX+z*ZW}" y2="${BY}" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>`;
+  for(let i=1;i<24;i++) s+=`<line x1="${BX+i*SLOT_PITCH}" y1="8" x2="${BX+i*SLOT_PITCH}" y2="${BY}" stroke="rgba(255,255,255,0.055)" stroke-width="0.5" stroke-dasharray="3,6"/>`;
+  s+=`<line x1="0" y1="${BY}" x2="${W}" y2="${BY}" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>`;
+
+  const bp=bellPath();
+  s+=`<path d="${bp}" fill="none" stroke="rgba(120,185,255,0.14)" stroke-width="8"/>`;
+  s+=`<path d="${bp}" fill="none" stroke="rgba(155,210,255,0.72)" stroke-width="1.6" stroke-dasharray="8,4" filter="url(#glow)"/>`;
+  s+=`<path d="${bp}" fill="none" stroke="rgba(205,235,255,0.38)" stroke-width="0.8" stroke-dasharray="8,4"/>`;
+
+  slots.forEach((slot,i)=>{
+    const scx=BX+(i+0.5)*SLOT_PITCH;
+    const color=ZCL[getZoneOfSlot(i)];
+    slot.forEach((item,rowIdx)=>{
+      const sy=BY-SH*(rowIdx+1)+2;
+      s+=`<text x="${scx}" y="${sy}" text-anchor="middle" font-family="'Courier New',monospace" font-size="9" font-weight="bold" fill="${color}" filter="url(#softglow)" cursor="pointer" data-tip="${item.tip}">${item.sym3}</text>`;
+    });
+  });
+
+  const lmx=OW/2;
+  s+=`<text x="${lmx}" y="16" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[0]}" opacity="0.7">OOB</text>`;
+  s+=`<text x="${lmx}" y="26" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[0]}" opacity="0.7">Weak</text>`;
+  s+=`<text x="${lmx}" y="36" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[0]}">[${oobL.length}]</text>`;
+  s+=`<text x="${lmx}" y="46" text-anchor="middle" font-family="'Courier New',monospace" font-size="6" fill="${ZCL[0]}" opacity="0.6">≥+99</text>`;
+
+  const rmx=W-OW/2;
+  s+=`<text x="${rmx}" y="16" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[5]}" opacity="0.7">OOB</text>`;
+  s+=`<text x="${rmx}" y="26" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[5]}" opacity="0.7">Str</text>`;
+  s+=`<text x="${rmx}" y="36" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[5]}">[${oobR.length}]</text>`;
+  s+=`<text x="${rmx}" y="46" text-anchor="middle" font-family="'Courier New',monospace" font-size="6" fill="${ZCL[5]}" opacity="0.6">≤−99</text>`;
+
+  for(let z=0;z<6;z++){
+    const zx=BX+z*ZW+ZW/2;
+    s+=`<text x="${zx}" y="${LY_RANGE}" text-anchor="middle" font-family="'Courier New',monospace" font-size="8.5" fill="rgba(255,255,255,0.48)">${ZONE_RANGES[z]}</text>`;
+    s+=`<text x="${zx}" y="${LY_ZONE}" text-anchor="middle" font-family="'Trebuchet MS',sans-serif" font-size="10.5" font-weight="bold" fill="${ZCL[z]}">${ZONE_LABELS[z]}</text>`;
+  }
+  s+=`<text x="${BX+4}" y="${H-5}" font-family="'Trebuchet MS',sans-serif" font-size="7.5" fill="rgba(0,212,160,0.40)">← Weak / Oversold</text>`;
+  s+=`<text x="${BX+BW-4}" y="${H-5}" text-anchor="end" font-family="'Trebuchet MS',sans-serif" font-size="7.5" fill="rgba(232,53,53,0.40)">Overbought / Strong →</text>`;
+
+  const svg=document.getElementById('mainHisto');
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  svg.innerHTML=s;
+
+  const tip=document.getElementById('histo-tip');
+  svg.addEventListener('mousemove',e=>{
+    const el=e.target;
+    if(el.dataset.tip){tip.textContent=el.dataset.tip;tip.style.display='block';tip.style.left=(e.clientX+14)+'px';tip.style.top=(e.clientY-30)+'px';}
+    else tip.style.display='none';
+  });
+  svg.addEventListener('mouseleave',()=>{tip.style.display='none';});
+}
+
+// ============================================================
+// COMBO CHARTS — SPX vs Strategy
+// SPX as bar (zone-colored), Strategy as amber line
+// Strategies move same direction as SPX but dampened toward mean
+// ============================================================
+function genDates(n){
+  const dates=[]; let d=new Date(2026,3,24); let count=0;
+  while(count<n){
+    if(d.getDay()!==0&&d.getDay()!==6){dates.unshift(d.toLocaleDateString('en-US',{month:'numeric',day:'numeric'}));count++;}
+    d.setDate(d.getDate()-1);
+  }
+  return dates;
+}
+const DATES30=genDates(30);
+
+// Arc generator: travels start → peak (at 65%) → end with controlled noise
+function makeArc(startZ,peakZ,endZ,n,noiseAmp,seed){
+  const data=[];
+  for(let i=0;i<n;i++){
+    const t=i/(n-1);
+    const base=t<=0.65?startZ+(peakZ-startZ)*(t/0.65):peakZ+(endZ-peakZ)*((t-0.65)/0.35);
+    const noise=(Math.sin(i*1.7+seed)*0.7+Math.cos(i*2.9+seed*1.5)*0.4)*noiseAmp;
+    data.push(Math.round(Math.max(1,Math.min(6,base+noise))));
+  }
+  return data;
+}
+
+// Dampen strategy toward the mean (Zone 3.5) by factor
+// factor=1.0 → identical to SPX; factor=0.0 → flat at mean
+function dampen(spxData, factor, noiseAmp, seed){
+  const MID=3.5;
+  return spxData.map((z,i)=>{
+    const dist=z-MID;
+    const noise=(Math.sin(i*2.3+seed)*0.5+Math.cos(i*1.1+seed*2)*0.3)*noiseAmp;
+    return Math.round(Math.max(1,Math.min(6,MID+dist*factor+noise)));
+  });
+}
+
+// SPX arcs — the underlying. Full amplitude.
+const SPX_90=makeArc(1,6,4,30,0.55,1.0);  // 90-day: oversold → very overbought → moderately overbought
+const SPX_10=makeArc(1,6,3,30,0.90,2.3);  // 10-day: noisier
+
+// Strategy lines — same direction, dampened toward mean
+// BXM ~75% of SPX vol (short call caps upside)
+const BXM_90=dampen(SPX_90,0.75,0.35,3.1);
+const BXM_10=dampen(SPX_10,0.75,0.55,4.2);
+
+// PUT ~80% of SPX vol (short put, similar profile to BXM)
+const PUT_90=dampen(SPX_90,0.80,0.35,5.3);
+const PUT_10=dampen(SPX_10,0.80,0.55,6.4);
+
+// XCLR ~60% — collar protects both sides
+const XCLR_90=dampen(SPX_90,0.60,0.30,7.5);
+const XCLR_10=dampen(SPX_10,0.60,0.50,8.6);
+
+// BFLY ~35% — iron butterfly, very dampened, stays near mean
+const BFLY_90=dampen(SPX_90,0.35,0.25,9.7);
+const BFLY_10=dampen(SPX_10,0.35,0.45,10.8);
+
+// SPRO ~65% — buffer absorbs first 10% of decline
+const SPRO_90=dampen(SPX_90,0.65,0.30,11.9);
+const SPRO_10=dampen(SPX_10,0.65,0.50,13.0);
+
+// RXM ~105% — risk reversal slightly amplifies SPX
+// Long OTM call / short OTM put adds leverage; tracks SPX closely, slight amplification
+const RXM_90=dampen(SPX_90,1.05,0.45,14.1);
+const RXM_10=dampen(SPX_10,1.05,0.70,15.2);
+
+// Zone background plugin
+const zoneBgPlugin={
+  id:'zoneBg',
+  beforeDraw(chart){
+    const{ctx,chartArea:{left,right},scales:{y}}=chart;
+    for(let z=1;z<=6;z++){
+      const yT=y.getPixelForValue(z+0.5),yB=y.getPixelForValue(z-0.5);
+      ctx.save();ctx.fillStyle=ZCL[z-1]+'14';
+      ctx.fillRect(left,Math.min(yT,yB),right-left,Math.abs(yB-yT));
+      ctx.restore();
+    }
+  }
+};
+Chart.register(zoneBgPlugin);
+
+function barBg(data){return data.map(z=>ZCL[z-1]+'88');}
+function barBd(data){return data.map(z=>ZCL[z-1]+'cc');}
+
+function makeCombo(canvasId,barData,lineData,barLbl,lineLbl){
+  const ctx=document.getElementById(canvasId).getContext('2d');
+  new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:DATES30,
+      datasets:[
+        {type:'bar',label:barLbl,data:barData,backgroundColor:barBg(barData),borderColor:barBd(barData),borderWidth:1,borderRadius:1,order:2},
+        {type:'line',label:lineLbl,data:lineData,borderColor:'rgba(255,210,80,0.92)',backgroundColor:'rgba(255,210,80,0.06)',borderWidth:1.8,pointRadius:0,tension:0.35,fill:false,order:1}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,animation:false,
+      plugins:{
+        legend:{display:true,position:'top',labels:{color:'#5a7a9a',font:{size:9,family:"'Courier New',monospace"},padding:6,boxWidth:10,boxHeight:8}},
+        tooltip:{mode:'index',backgroundColor:'#0d1829',borderColor:'#3090d8',borderWidth:1,titleColor:'#ddeeff',bodyColor:'#5a7a9a',
+          titleFont:{size:9,family:"'Courier New',monospace"},bodyFont:{size:9,family:"'Courier New',monospace"},
+          callbacks:{label:ctx=>`${ctx.dataset.label}: Zone ${ctx.parsed.y}`}}
+      },
+      scales:{
+        x:{ticks:{color:'#5a7a9a',font:{size:8,family:"'Courier New',monospace"},maxTicksLimit:8,maxRotation:0},
+           grid:{color:'rgba(255,255,255,0.04)'},border:{color:'rgba(255,255,255,0.12)'}},
+        y:{min:0,max:7,
+           ticks:{color:'#5a7a9a',font:{size:8,family:"'Courier New',monospace"},stepSize:1,callback:v=>(v>=1&&v<=6)?`Z${v}`:''},
+           grid:{color:ctx=>(ctx.tick.value===3||ctx.tick.value===4)?'rgba(255,255,255,0.22)':'rgba(255,255,255,0.05)'},
+           border:{color:'rgba(255,255,255,0.12)'}}
+      }
+    }
+  });
+}
+
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('DOMContentLoaded',()=>{
+  renderLH();
+  buildHistogram();
+
+  // Regular Toggles
+  ['spx','sector'].forEach(g=>{
+    sortState[g]={field:'ir',dir:1};
+    periodState[g]='90';
+    renderToggleTable(g);
+  });
+
+  // Combo charts — SPX bar vs Strategy line
+  makeCombo('c-bxm-90',  SPX_90, BXM_90,  'SPX',  'SPX BuyWrite');
+  makeCombo('c-bxm-10',  SPX_10, BXM_10,  'SPX',  'SPX BuyWrite');
+  makeCombo('c-put-90',  SPX_90, PUT_90,  'SPX',  'SPX PutWrite');
+  makeCombo('c-put-10',  SPX_10, PUT_10,  'SPX',  'SPX PutWrite');
+  makeCombo('c-xclr-90', SPX_90, XCLR_90, 'SPX',  'SPX 95-110 Collar');
+  makeCombo('c-xclr-10', SPX_10, XCLR_10, 'SPX',  'SPX 95-110 Collar');
+  makeCombo('c-bfly-90', SPX_90, BFLY_90, 'SPX',  'SPX Iron Butterfly');
+  makeCombo('c-bfly-10', SPX_10, BFLY_10, 'SPX',  'SPX Iron Butterfly');
+  makeCombo('c-spro-90', SPX_90, SPRO_90, 'SPX',  'SPX Buffer Protect');
+  makeCombo('c-spro-10', SPX_10, SPRO_10, 'SPX',  'SPX Buffer Protect');
+  makeCombo('c-rxm-90',  SPX_90, RXM_90,  'SPX',  'SPX Risk Reversal');
+  makeCombo('c-rxm-10',  SPX_10, RXM_10,  'SPX',  'SPX Risk Reversal');
+});
+</script>
+</body>
+</html>
