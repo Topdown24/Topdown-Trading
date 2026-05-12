@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smaller ETF Sponsors — Combined Page</title>
+<style>
+:root {
+  --bg:#08111e; --panel:#0d1829; --panel-alt:#0a1420;
+  --border:#1a2d44; --border-lite:#243c58;
+  --text:#b8cce0; --text-dim:#5a7a9a; --text-bright:#ddeeff;
+  --accent:#2a7abf; --accent-glow:#3090d8;
+  --z1:#00cc55; --z2:#88cc44; --z3:#7a9aaa;
+  --z4:#aa9a7a; --z5:#ddcc00; --z6:#e83535;
+  --font-mono:'Courier New',Courier,monospace;
+  --font-ui:'Trebuchet MS',Tahoma,Geneva,sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-ui);font-size:13px;min-height:100vh}
+
+.header-bar{background:var(--panel);border-bottom:1px solid var(--border);padding:8px 16px;display:flex;align-items:center;gap:10px}
+.btn-nav{background:#1a2d44;color:var(--text-bright);border:1px solid var(--border-lite);padding:5px 14px;font-family:var(--font-ui);font-size:12px;cursor:pointer;letter-spacing:.05em;text-transform:uppercase;transition:background .15s,border-color .15s}
+.btn-nav:hover{background:#243c58;border-color:var(--accent);color:#fff}
+.search-box{background:#060f1a;border:1px solid var(--border-lite);color:var(--text-bright);padding:5px 10px;font-family:var(--font-mono);font-size:12px;width:180px;outline:none}
+.search-box:focus{border-color:var(--accent)}
+.search-box::placeholder{color:var(--text-dim)}
+
+.sponsor-nav{background:var(--panel-alt);border-bottom:1px solid var(--border);padding:5px 16px;text-align:right;font-size:11px}
+.sponsor-nav a{color:var(--accent-glow);text-decoration:none;margin-left:12px;letter-spacing:.03em}
+.sponsor-nav a:hover{color:#fff;text-decoration:underline}
+.sponsor-nav a.active{color:#fff;font-weight:bold}
+
+.page-title-block{padding:14px 16px 0;text-align:center}
+.page-title{font-size:20px;font-weight:bold;color:var(--text-bright);letter-spacing:.04em;text-transform:uppercase}
+.page-subtitle{font-size:11px;color:var(--text-dim);font-style:italic;margin-top:4px}
+
+.main-body{display:flex;height:calc(100vh - 112px);overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{width:285px;min-width:285px;border-right:2px solid var(--border-lite);display:flex;flex-direction:column;overflow:hidden;background:var(--panel-alt)}
+.sidebar-header{padding:8px 10px 6px;border-bottom:1px solid var(--border);flex-shrink:0}
+.sidebar-title{font-weight:bold;font-size:12px;color:var(--text-bright);text-align:center;display:block;margin-bottom:2px}
+.sidebar-title-2{font-weight:bold;font-size:12px;color:var(--text-bright);text-align:center;display:block;margin-bottom:5px}
+.toggle-btns{display:flex;gap:4px;justify-content:center}
+.toggle-btn{background:#1a2d44;color:var(--text-dim);border:1px solid var(--border);padding:3px 10px;font-size:11px;cursor:pointer;font-family:var(--font-ui);transition:all .15s}
+.toggle-btn.active{background:var(--accent);color:#fff;border-color:var(--accent-glow)}
+.toggle-btn:hover:not(.active){border-color:var(--accent);color:var(--text-bright)}
+.sidebar-scroll{overflow-y:auto;flex:1}
+.sidebar-scroll::-webkit-scrollbar{width:4px}
+.sidebar-scroll::-webkit-scrollbar-track{background:var(--bg)}
+.sidebar-scroll::-webkit-scrollbar-thumb{background:var(--border-lite)}
+
+/* RIGHT CONTENT */
+.right-content{flex:1;overflow-y:auto;padding:10px 14px}
+.right-content::-webkit-scrollbar{width:5px}
+.right-content::-webkit-scrollbar-track{background:var(--bg)}
+.right-content::-webkit-scrollbar-thumb{background:var(--border-lite)}
+
+/* IR TABLE */
+.ir-table{width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:11px}
+.ir-table th{background:#0d1829;color:var(--text-dim);padding:4px 6px;text-align:left;border-bottom:1px solid var(--border);position:sticky;top:0;font-size:10px;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.ir-table th.sortable{cursor:pointer;user-select:none}
+.ir-table th.sortable:hover{color:var(--text-bright)}
+.ir-table th.sort-active{color:var(--accent-glow)}
+.sort-arrow{font-size:10px;margin-left:3px;opacity:0.5}
+.sort-arrow.active{opacity:1;color:var(--accent-glow)}
+.ir-table td{padding:3px 6px;border-bottom:1px solid #0e1a28;white-space:nowrap}
+.ir-table tr:hover td{background:#111e30}
+.col-symbol{color:var(--text-bright);font-weight:bold}
+.zone-badge{display:inline-block;padding:1px 5px;font-size:10px;font-weight:bold;border-radius:2px;color:#000}
+
+/* HISTOGRAM */
+.histo-wrap{margin-bottom:14px}
+.section-title{font-weight:bold;font-size:13px;color:var(--text-bright);text-align:center;margin-bottom:6px;letter-spacing:.03em}
+.histo-svg-box{background:var(--panel);border:1px solid var(--border);overflow:hidden}
+
+/* TWO-COL SPONSOR TOGGLES */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.toggle-wrap{background:var(--panel);border:1px solid var(--border)}
+.toggle-header{background:var(--panel-alt);border-bottom:1px solid var(--border);padding:5px 10px;display:flex;align-items:center;justify-content:space-between}
+.toggle-title{font-weight:bold;font-size:11px;color:var(--text-bright)}
+.toggle-title a{color:var(--accent-glow);text-decoration:none}
+.toggle-title a:hover{text-decoration:underline;color:#fff}
+.scroll-table{max-height:240px;overflow-y:auto}
+.scroll-table::-webkit-scrollbar{width:4px}
+.scroll-table::-webkit-scrollbar-track{background:var(--bg)}
+.scroll-table::-webkit-scrollbar-thumb{background:var(--border-lite)}
+
+#histo-tip{position:fixed;background:#0d1829;border:1px solid #3090d8;color:#ddeeff;font-family:'Courier New',monospace;font-size:11px;padding:5px 9px;pointer-events:none;display:none;z-index:999;white-space:nowrap;border-radius:2px;box-shadow:0 2px 12px rgba(0,0,0,0.6)}
+</style>
+</head>
+<body>
+
+<div id="histo-tip"></div>
+
+<!-- HEADER (Other.1) -->
+<div class="header-bar">
+  <button class="btn-nav" onclick="history.back()">◀ Back</button>
+  <input class="search-box" type="text" placeholder="Search ticker…" id="searchInput"
+    onkeydown="if(event.key==='Enter'){var q=this.value.trim().toUpperCase();if(q)alert('Search: '+q);}">
+  <button class="btn-nav" onclick="var q=document.getElementById('searchInput').value.trim().toUpperCase();if(q)alert('Search: '+q);">Search</button>
+</div>
+
+<!-- SPONSOR NAV (Other.2) -->
+<div class="sponsor-nav">
+  <a href="ishares.html">iShares</a>
+  <a href="statestreet.html">State Street</a>
+  <a href="invesco.html">Invesco</a>
+  <a href="globx.html">Global X</a>
+  <a href="firsttrust.html">First Trust</a>
+  <a href="vanguard.html">Vanguard</a>
+  <a href="vaneck.html">Van Eck</a>
+  <a href="proshares.html">ProShares</a>
+</div>
+
+<!-- PAGE TITLE + EXPLANATION (Other.3) -->
+<div class="page-title-block">
+  <div class="page-title">Smaller ETF Sponsors</div>
+  <div class="page-subtitle">Featuring ETFs sponsored by Franklin, Wisdom Tree, Grayscale, Sprott, USFC, Ark, Aberdeen and Teucrium</div>
+</div>
+
+<!-- MAIN BODY -->
+<div class="main-body">
+
+  <!-- SIDEBAR — Combined All-Sponsor Toggle (Other.4) -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <span class="sidebar-title">Smaller ETF</span>
+      <span class="sidebar-title-2">Sponsors</span>
+      <div class="toggle-btns">
+        <button class="toggle-btn active" data-group="all" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+        <button class="toggle-btn"        data-group="all" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+      </div>
+    </div>
+    <div class="sidebar-scroll">
+      <table class="ir-table">
+        <thead>
+          <tr>
+            <th>Tick</th><th>Name</th>
+            <th class="sortable sort-active" onclick="handleSortClick('all','ir')" id="all-th-ir" style="text-align:center">IR <span class="sort-arrow active" id="all-arr-ir">↓</span></th>
+            <th style="text-align:center">Zn</th>
+          </tr>
+        </thead>
+        <tbody id="all-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- RIGHT CONTENT -->
+  <div class="right-content">
+
+    <!-- HISTOGRAM (Other.5) -->
+    <div class="histo-wrap">
+      <div class="section-title">Smaller ETF Sponsors — 90-day Implied Risk Histogram</div>
+      <div class="histo-svg-box">
+        <svg id="mainHisto" viewBox="0 0 920 268" width="100%"
+             preserveAspectRatio="xMidYMid meet" style="display:block;"></svg>
+      </div>
+    </div>
+
+    <!-- ROW 1: Franklin + WisdomTree (Other.6 & Other.7) -->
+    <div class="two-col">
+      <div class="toggle-wrap">
+        <div class="toggle-header">
+          <span class="toggle-title"><a href="franklin.html">Franklin ETFs</a></span>
+          <div class="toggle-btns">
+            <button class="toggle-btn active" data-group="franklin" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+            <button class="toggle-btn"        data-group="franklin" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+          </div>
+        </div>
+        <div class="scroll-table">
+          <table class="ir-table">
+            <thead><tr><th>Ticker</th><th>Name</th>
+              <th class="sortable sort-active" onclick="handleSortClick('franklin','ir')" id="franklin-th-ir" style="text-align:center">IR <span class="sort-arrow active" id="franklin-arr-ir">↓</span></th>
+              <th style="text-align:center">Zn</th></tr></thead>
+            <tbody id="franklin-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="toggle-wrap">
+        <div class="toggle-header">
+          <span class="toggle-title"><a href="wisdomtree.html">WisdomTree ETFs</a></span>
+          <div class="toggle-btns">
+            <button class="toggle-btn active" data-group="wisdomtree" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+            <button class="toggle-btn"        data-group="wisdomtree" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+          </div>
+        </div>
+        <div class="scroll-table">
+          <table class="ir-table">
+            <thead><tr><th>Ticker</th><th>Name</th>
+              <th class="sortable sort-active" onclick="handleSortClick('wisdomtree','ir')" id="wisdomtree-th-ir" style="text-align:center">IR <span class="sort-arrow active" id="wisdomtree-arr-ir">↓</span></th>
+              <th style="text-align:center">Zn</th></tr></thead>
+            <tbody id="wisdomtree-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 2: Grayscale + Sprott (Other.8 & Other.9) -->
+    <div class="two-col">
+      <div class="toggle-wrap">
+        <div class="toggle-header">
+          <span class="toggle-title"><a href="grayscale.html">Grayscale ETFs</a></span>
+          <div class="toggle-btns">
+            <button class="toggle-btn active" data-group="grayscale" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+            <button class="toggle-btn"        data-group="grayscale" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+          </div>
+        </div>
+        <div class="scroll-table">
+          <table class="ir-table">
+            <thead><tr><th>Ticker</th><th>Name</th>
+              <th class="sortable sort-active" onclick="handleSortClick('grayscale','ir')" id="grayscale-th-ir" style="text-align:center">IR <span class="sort-arrow active" id="grayscale-arr-ir">↓</span></th>
+              <th style="text-align:center">Zn</th></tr></thead>
+            <tbody id="grayscale-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="toggle-wrap">
+        <div class="toggle-header">
+          <span class="toggle-title"><a href="sprott.html">Sprott ETFs</a></span>
+          <div class="toggle-btns">
+            <button class="toggle-btn active" data-group="sprott" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+            <button class="toggle-btn"        data-group="sprott" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+          </div>
+        </div>
+        <div class="scroll-table">
+          <table class="ir-table">
+            <thead><tr><th>Ticker</th><th>Name</th>
+              <th class="sortable sort-active" onclick="handleSortClick('sprott','ir')" id="sprott-th-ir" style="text-align:center">IR <span class="sort-arrow active" id="sprott-arr-ir">↓</span></th>
+              <th style="text-align:center">Zn</th></tr></thead>
+            <tbody id="sprott-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 3: USFC + ARK (Other.10 & Other.11) -->
+    <div class="two-col">
+      <div class="toggle-wrap">
+        <div class="toggle-header">
+          <span class="toggle-title"><a href="usfc.html">USFC ETFs</a></span>
+          <div class="toggle-btns">
+            <button class="toggle-btn active" data-group="usfc" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+            <button class="toggle-btn"        data-group="usfc" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+          </div>
+        </div>
+        <div class="scroll-table">
+          <table class="ir-table">
+            <thead><tr><th>Ticker</th><th>Name</th>
+              <th class="sortable sort-active" onclick="handleSortClick('usfc','ir')" id="usfc-th-ir" style="text-align:center">IR <span class="sort-arrow active" id="usfc-arr-ir">↓</span></th>
+              <th style="text-align:center">Zn</th></tr></thead>
+            <tbody id="usfc-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="toggle-wrap">
+        <div class="toggle-header">
+          <span class="toggle-title"><a href="ark.html">ARK ETFs</a></span>
+          <div class="toggle-btns">
+            <button class="toggle-btn active" data-group="ark" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+            <button class="toggle-btn"        data-group="ark" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+          </div>
+        </div>
+        <div class="scroll-table">
+          <table class="ir-table">
+            <thead><tr><th>Ticker</th><th>Name</th>
+              <th class="sortable sort-active" onclick="handleSortClick('ark','ir')" id="ark-th-ir" style="text-align:center">IR <span class="sort-arrow active" id="ark-arr-ir">↓</span></th>
+              <th style="text-align:center">Zn</th></tr></thead>
+            <tbody id="ark-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 4: Aberdeen + Teucrium (Other.12 & Other.13) -->
+    <div class="two-col">
+      <div class="toggle-wrap">
+        <div class="toggle-header">
+          <span class="toggle-title"><a href="aberdeen.html">Aberdeen ETFs</a></span>
+          <div class="toggle-btns">
+            <button class="toggle-btn active" data-group="aberdeen" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+            <button class="toggle-btn"        data-group="aberdeen" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+          </div>
+        </div>
+        <div class="scroll-table">
+          <table class="ir-table">
+            <thead><tr><th>Ticker</th><th>Name</th>
+              <th class="sortable sort-active" onclick="handleSortClick('aberdeen','ir')" id="aberdeen-th-ir" style="text-align:center">IR <span class="sort-arrow active" id="aberdeen-arr-ir">↓</span></th>
+              <th style="text-align:center">Zn</th></tr></thead>
+            <tbody id="aberdeen-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="toggle-wrap">
+        <div class="toggle-header">
+          <span class="toggle-title"><a href="teucrium.html">Teucrium ETFs</a></span>
+          <div class="toggle-btns">
+            <button class="toggle-btn active" data-group="teucrium" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+            <button class="toggle-btn"        data-group="teucrium" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+          </div>
+        </div>
+        <div class="scroll-table">
+          <table class="ir-table">
+            <thead><tr><th>Ticker</th><th>Name</th>
+              <th class="sortable sort-active" onclick="handleSortClick('teucrium','ir')" id="teucrium-th-ir" style="text-align:center">IR <span class="sort-arrow active" id="teucrium-arr-ir">↓</span></th>
+              <th style="text-align:center">Zn</th></tr></thead>
+            <tbody id="teucrium-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /right-content -->
+</div><!-- /main-body -->
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// DATA — 105 unique ETFs (false IR readings)
+// Groups: noSponsor(3), franklin(26), wisdomtree(14), grayscale(16),
+//         sprott(16), usfc(10), ark(9), aberdeen(6), teucrium(5)
+// Notes: USG duplicate removed; QHY added to WisdomTree
+// ═══════════════════════════════════════════════════════════
+
+// No sponsor page — appear in combined toggle/histo only
+const NOSPONSOR_DATA = [
+  {t:'BITB', name:'Bitwise Bitcoin ETF Trust',              ir90: 88,ir10: 82},
+  {t:'BRRR', name:'Coinshares Valkyrie Bitcoin Fund',        ir90: 85,ir10: 79},
+  {t:'FBTC', name:'Fidelity Wise Origin Bitcoin Fund',       ir90: 82,ir10: 76}
+];
+
+const GRAYSCALE_DATA = [
+  {t:'GBTC', name:'Bitcoin Trust',                           ir90: 92,ir10: 88},
+  {t:'BTC',  name:'Bitcoin Mini Trust ETF',                  ir90: 90,ir10: 86},
+  {t:'GBAT', name:'Basic Attention Token Trust',             ir90: 72,ir10: 66},
+  {t:'BCHG', name:'Bitcoin Cash Trust',                      ir90: 70,ir10: 64},
+  {t:'GTAO', name:'Bittensor Trust',                         ir90: 68,ir10: 62},
+  {t:'MANA', name:'Decentraland Trust',                      ir90: 65,ir10: 59},
+  {t:'DEFG', name:'DeFi Trust',                              ir90: 62,ir10: 56},
+  {t:'ETCG', name:'Ethereum Classic Trust',                  ir90: 60,ir10: 54},
+  {t:'FILG', name:'Filecoin Trust',                          ir90: 58,ir10: 52},
+  {t:'HZEN', name:'Horizen Trust',                           ir90: 55,ir10: 49},
+  {t:'LTCN', name:'Litecoin Trust',                          ir90: 52,ir10: 46},
+  {t:'GLIV', name:'Livepeer Trust',                          ir90: 50,ir10: 44},
+  {t:'GSNR', name:'Near Trust',                              ir90: 48,ir10: 42},
+  {t:'STCK', name:'Stacks Trust',                            ir90: 45,ir10: 39},
+  {t:'GXLM', name:'Stellar Lumens Trust',                    ir90: 42,ir10: 36},
+  {t:'ZCSH', name:'Zcash Trust',                             ir90: 40,ir10: 34}
+];
+
+const FRANKLIN_DATA = [
+  {t:'EZBC', name:'Bitcoin ETF',                             ir90: 86,ir10: 80},
+  {t:'EZPZ', name:'Crypto Index ETF',                        ir90: 75,ir10: 69},
+  {t:'XRPZ', name:'XRP ETF',                                 ir90: 70,ir10: 64},
+  {t:'FLSA', name:'FTSE Saudi Arabia ETF',                   ir90: 55,ir10: 49},
+  {t:'FLTW', name:'FTSE Taiwan ETF',                         ir90: 50,ir10: 44},
+  {t:'FLKR', name:'FTSE South Korea ETF',                    ir90: 48,ir10: 42},
+  {t:'FLIN', name:'FTSE India ETF',                          ir90: 45,ir10: 39},
+  {t:'FLLA', name:'FTSE Latin America ETF',                  ir90: 40,ir10: 34},
+  {t:'FLCH', name:'FTSE China ETF',                          ir90: 38,ir10: 32},
+  {t:'FLBR', name:'FTSE Brazil ETF',                         ir90: 35,ir10: 29},
+  {t:'FLMX', name:'FTSE Mexico ETF',                         ir90: 35,ir10: 29},
+  {t:'FLAU', name:'FTSE Australia ETF',                      ir90: 28,ir10: 22},
+  {t:'FLCA', name:'FTSE Canada ETF',                         ir90: 25,ir10: 19},
+  {t:'FLEE', name:'FTSE Europe ETF',                         ir90: 20,ir10: 14},
+  {t:'FLGB', name:'FTSE United Kingdom ETF',                 ir90: 18,ir10: 12},
+  {t:'FLEU', name:'FTSE Eurozone ETF',                       ir90: 18,ir10: 12},
+  {t:'FLGR', name:'FTSE Germany ETF',                        ir90: 15,ir10:  9},
+  {t:'FLJP', name:'FTSE Japan ETF',                          ir90: 12,ir10:  6},
+  {t:'FLSW', name:'FTSE Switzerland ETF',                    ir90: 10,ir10:  4},
+  {t:'FLJH', name:'FTSE Japan Hedged ETF',                   ir90:  8,ir10:  2},
+  {t:'FTMA', name:'Massachusetts Municipal Income ETF',       ir90:  5,ir10:  1},
+  {t:'FTMN', name:'Minnesota Municipal Income ETF',           ir90:  3,ir10: -1},
+  {t:'FTOH', name:'Ohio Municipal Income ETF',                ir90:  2,ir10: -2},
+  {t:'BUYZ', name:'Disruptive Commerce ETF',                  ir90: 22,ir10: 16},
+  {t:'XDAT', name:'Exponential Data ETF',                     ir90:-15,ir10:-20},
+  {t:'IQM',  name:'Intelligent Machines ETF',                 ir90:-25,ir10:-30}
+];
+
+const WISDOMTREE_DATA = [
+  {t:'BTCW', name:'Bitcoin Fund',                             ir90: 80,ir10: 74},
+  {t:'GDE',  name:'Efficient Gold Plus Equity Strategy Fund', ir90: 62,ir10: 56},
+  {t:'EPI',  name:'India Earnings Fund',                      ir90: 42,ir10: 36},
+  {t:'WDEF', name:'Europe Defense Fund',                      ir90: 38,ir10: 32},
+  {t:'WDGF', name:'Global Defense Fund',                      ir90: 35,ir10: 29},
+  {t:'INDH', name:'India Hedged Equity Fund',                 ir90: 32,ir10: 26},
+  {t:'WDAF', name:'Asia Defense Fund',                        ir90: 32,ir10: 26},
+  {t:'USDU', name:'Bloomberg US Dollar Bullish Fund',          ir90: 25,ir10: 19},
+  {t:'HEDJ', name:'Europe Hedged Equity Fund',                ir90:  5,ir10: -1},
+  {t:'DFJ',  name:'Japan SmallCap Dividend Fund',             ir90: 15,ir10:  9},
+  {t:'OPPJ', name:'Japan Opportunities Fund',                 ir90: -8,ir10:-14},
+  {t:'DXJ',  name:'Japan Hedged Equity Fund',                 ir90: -5,ir10:-11},
+  {t:'EMCB', name:'Emerging Markets Corporate Bond Fund',     ir90:-22,ir10:-28},
+  {t:'QHY',  name:'U.S. High Yield Corporate Bond Fund',      ir90:-38,ir10:-44}
+];
+
+const SPROTT_DATA = [
+  {t:'SPUT', name:'Physical Uranium Trust',                   ir90: 75,ir10: 69},
+  {t:'PHYS', name:'Physical Gold Trust',                      ir90: 68,ir10: 62},
+  {t:'PSLV', name:'Physical Silver Trust',                    ir90: 65,ir10: 59},
+  {t:'CEF',  name:'Physical Gold & Silver Trust',             ir90: 62,ir10: 56},
+  {t:'GBUG', name:'Active Gold & Silver Miners ETF',          ir90: 65,ir10: 59},
+  {t:'SDGM', name:'Junior Gold Miners ETF',                   ir90: 62,ir10: 56},
+  {t:'SLVR', name:'Silver Miners & Physical Silver',          ir90: 60,ir10: 54},
+  {t:'URNM', name:'Uranium Miners ETF',                       ir90: 60,ir10: 54},
+  {t:'URNJ', name:'Junior Uranium Miners ETF',                ir90: 55,ir10: 49},
+  {t:'SPPP', name:'Physical Platinum & Palladium Trust',      ir90: 55,ir10: 49},
+  {t:'COP',  name:'Physical Copper Trust',                    ir90: 52,ir10: 46},
+  {t:'COPP', name:'Junior Copper Miners ETF',                 ir90: 48,ir10: 42},
+  {t:'METL', name:'Active Metals & Miners ETF',               ir90: 50,ir10: 44},
+  {t:'SETM', name:'Critical Materials ETF',                   ir90:-22,ir10:-28},
+  {t:'LITP', name:'Lithium Miners ETF',                       ir90:-25,ir10:-31},
+  {t:'NIKL', name:'Nickel Miners ETF',                        ir90:-15,ir10:-21}
+];
+
+const USFC_DATA = [
+  {t:'UNG',  name:'United States Natural Gas Fund',           ir90: 82,ir10: 76},
+  {t:'WTIB', name:'Oil Plus Bitcoin Strategy Fund',            ir90: 76,ir10: 70},
+  {t:'BNO',  name:'United States Brent Oil Fund',             ir90: 72,ir10: 66},
+  {t:'USO',  name:'United States Oil Fund',                   ir90: 68,ir10: 62},
+  {t:'UGA',  name:'United States Gasoline Fund',              ir90: 62,ir10: 56},
+  {t:'USCI', name:'United States Commodity Index Fund',       ir90: 55,ir10: 49},
+  {t:'CPER', name:'United States Copper Index Fund',          ir90: 52,ir10: 46},
+  {t:'USG',  name:'Gold Strategy Plus Income Fund',           ir90: 58,ir10: 52},
+  {t:'ZSP',  name:'Sustainable Battery Metals Strategy Fund', ir90:-20,ir10:-26},
+  {t:'ZSC',  name:'Sustainable Commodity Strategy Fund',      ir90:-15,ir10:-21}
+];
+
+const ARK_DATA = [
+  {t:'ARKB', name:'21Shares Bitcoin ETF',                     ir90: 90,ir10: 84},
+  {t:'PRNT', name:'3D Printing ETF',                          ir90:-42,ir10:-48},
+  {t:'ARKK', name:'Innovation ETF',                           ir90:-55,ir10:-61},
+  {t:'ARKQ', name:'Autonomous Technology & Robotics ETF',     ir90:-48,ir10:-54},
+  {t:'IZRL', name:'Israel Innovative Technology ETF',         ir90:-35,ir10:-41},
+  {t:'ARKW', name:'Next Generation Internet ETF',             ir90:-62,ir10:-68},
+  {t:'ARKG', name:'Genomic Revolution ETF',                   ir90:-45,ir10:-51},
+  {t:'ARKF', name:'Blockchain & Fintech Innovation ETF',      ir90:-58,ir10:-64},
+  {t:'ARKX', name:'Space & Defense Innovation ETF',           ir90:-68,ir10:-74}
+];
+
+const ABERDEEN_DATA = [
+  {t:'SGOL', name:'Physical Gold Shares ETF',                 ir90: 72,ir10: 66},
+  {t:'PPLT', name:'Physical Platinum Shares',                 ir90: 62,ir10: 56},
+  {t:'GLTR', name:'Physical Precious Metals Basket Shares',   ir90: 60,ir10: 54},
+  {t:'PALL', name:'Physical Palladium Shares',                ir90: 55,ir10: 49},
+  {t:'BCD',  name:'Bloomberg All Commodity Longer Dated ETF', ir90: 42,ir10: 36},
+  {t:'BCI',  name:'Bloomberg All Commodity Strategy ETF',     ir90: 38,ir10: 32}
+];
+
+const TEUCRIUM_DATA = [
+  {t:'WEAT', name:'Wheat Fund',                               ir90: 62,ir10: 56},
+  {t:'CORN', name:'Corn Fund',                                ir90: 55,ir10: 49},
+  {t:'TAGS', name:'Agricultural Fund',                        ir90: 58,ir10: 52},
+  {t:'SOYB', name:'Soybean Fund',                             ir90: 52,ir10: 46},
+  {t:'CANE', name:'Sugar Fund',                               ir90: 48,ir10: 42}
+];
+
+// Combined - deduped by ticker
+const _seen = new Set();
+const ALL_DATA = [
+  ...NOSPONSOR_DATA, ...GRAYSCALE_DATA, ...FRANKLIN_DATA,
+  ...WISDOMTREE_DATA, ...SPROTT_DATA, ...USFC_DATA,
+  ...ARK_DATA, ...ABERDEEN_DATA, ...TEUCRIUM_DATA
+].filter(d=>{ if(_seen.has(d.t))return false; _seen.add(d.t); return true; });
+
+// Add placeholder 3mo fields (not displayed in this page's sub-toggles)
+ALL_DATA.forEach(d=>{
+  if(d.ir90_3mo===undefined){
+    d.ir90_3mo = Math.round(d.ir90 * 0.75);
+    d.ir10_3mo = Math.round(d.ir10 * 0.75);
+  }
+});
+
+// ═══════════════════════════════════════
+// ZONE META
+// ═══════════════════════════════════════
+const ZONE_META = [
+  {label:'Zone 1',range:'+99 to +67',color:'#00cc55',bg:'rgba(0,204,85,0.07)'},
+  {label:'Zone 2',range:'+66 to +34',color:'#88cc44',bg:'rgba(136,204,68,0.07)'},
+  {label:'Zone 3',range:'+33 to +1', color:'#7a9aaa',bg:'rgba(122,154,170,0.07)'},
+  {label:'Zone 4',range:'−1 to −33', color:'#aa9a7a',bg:'rgba(170,154,122,0.07)'},
+  {label:'Zone 5',range:'−34 to −66',color:'#ddcc00',bg:'rgba(221,204,0,0.07)'},
+  {label:'Zone 6',range:'−67 to −99',color:'#e83535',bg:'rgba(232,53,53,0.07)'}
+];
+
+// ═══════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════
+function irToZone(ir){
+  if(ir>=67)return 1; if(ir>=34)return 2; if(ir>=1)return 3;
+  if(ir>=-33)return 4; if(ir>=-66)return 5; return 6;
+}
+function irToGlobalSlot(ir){
+  return Math.min(23,Math.max(0,Math.floor((99-ir)/8.25)));
+}
+const ZC={1:'#00cc55',2:'#88cc44',3:'#7a9aaa',4:'#aa9a7a',5:'#ddcc00',6:'#e83535'};
+function zoneBadge(z){return`<span class="zone-badge" style="background:${ZC[z]};color:#000">Z${z}</span>`}
+function irColor(ir){return ir>0?'#00cc55':ir<0?'#e83535':'#b8cce0'}
+function fmtIR(ir){return(ir>0?'+':'')+ir}
+
+// ═══════════════════════════════════════
+// SORT STATE — one entry per toggle group
+// ═══════════════════════════════════════
+const GROUPS = ['all','franklin','wisdomtree','grayscale','sprott','usfc','ark','aberdeen','teucrium'];
+const sortState   = Object.fromEntries(GROUPS.map(g=>[g,{field:'ir',dir:1}]));
+const periodState = Object.fromEntries(GROUPS.map(g=>[g,'90']));
+
+const DATA_MAP = {
+  all: ALL_DATA,
+  franklin: FRANKLIN_DATA,
+  wisdomtree: WISDOMTREE_DATA,
+  grayscale: GRAYSCALE_DATA,
+  sprott: SPROTT_DATA,
+  usfc: USFC_DATA,
+  ark: ARK_DATA,
+  aberdeen: ABERDEEN_DATA,
+  teucrium: TEUCRIUM_DATA
+};
+
+function renderToggleTable(gid){
+  const data=DATA_MAP[gid]; if(!data)return;
+  const period=periodState[gid];
+  const {field,dir}=sortState[gid];
+  const irField=period==='90'?'ir90':'ir10';
+  const sorted=[...data].sort((a,b)=>dir*(b[irField]-a[irField]));
+  const tbody=document.getElementById(`${gid}-tbody`); if(!tbody)return;
+  tbody.innerHTML=sorted.map(d=>{
+    const ir=d[irField],z=irToZone(ir);
+    const nm=d.name.length>22?d.name.slice(0,22)+'…':d.name;
+    return`<tr>
+      <td class="col-symbol">${d.t}</td>
+      <td style="color:var(--text-dim);font-size:10px" title="${d.name}">${nm}</td>
+      <td style="color:${irColor(ir)};text-align:center;font-family:'Courier New',monospace;font-size:11px">${fmtIR(ir)}</td>
+      <td style="text-align:center">${zoneBadge(z)}</td>
+    </tr>`;
+  }).join('');
+  updateSortArrows(gid);
+}
+
+function updateSortArrows(gid){
+  const {dir}=sortState[gid];
+  const sym=dir===1?'↓':'↑';
+  const th=document.getElementById(`${gid}-th-ir`);
+  const ar=document.getElementById(`${gid}-arr-ir`);
+  if(th&&ar){th.classList.add('sort-active');ar.classList.add('active');ar.textContent=sym;}
+}
+
+function handlePeriodToggle(btn){
+  const{group,period}=btn.dataset;
+  btn.closest('.toggle-btns').querySelectorAll('.toggle-btn')
+     .forEach(b=>b.classList.toggle('active',b===btn));
+  periodState[group]=period;
+  renderToggleTable(group);
+}
+
+function handleSortClick(gid,field){
+  const st=sortState[gid];
+  st.dir*=-1;
+  renderToggleTable(gid);
+}
+
+// ═══════════════════════════════════════
+// HISTOGRAM — dynamic height
+// ═══════════════════════════════════════
+function buildHistogram(){
+  const W=920,OW=28,BX=OW,BW=W-2*OW,ZW=BW/6;
+  const SLOT_PITCH=BW/24;
+  let BY=205; const SH=13,SFS=9;
+  const BELL_A=168,BELL_FLOOR=16,BELL_SIG=ZW,BCX=BX+BW/2;
+
+  const slots=Array.from({length:24},()=>[]);
+  ALL_DATA.forEach(d=>{
+    const i=irToGlobalSlot(d.ir90);
+    slots[i].push({tr:d.t.slice(0,3),full:d.t,name:d.name,ir90:d.ir90});
+  });
+  slots.forEach(sl=>sl.sort((a,b)=>a.tr.localeCompare(b.tr)));
+
+  const _maxStk=Math.max(1,...slots.map(s=>s.length));
+  if(_maxStk*SH+20>BY)BY=_maxStk*SH+20;
+  const H=BY+63;
+  document.getElementById('mainHisto').setAttribute('viewBox',`0 0 ${W} ${H}`);
+  const LY_RANGE=BY+18,LY_ZONE=BY+31;
+
+  let s='';
+  s+=`<defs>
+    <filter id="glow"><feGaussianBlur stdDeviation="2.8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="softglow"><feGaussianBlur stdDeviation="1.5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>`;
+
+  s+=`<rect x="0" y="0" width="${OW}" height="${H}" fill="rgba(0,0,0,0.3)"/>`;
+  s+=`<rect x="${BX+BW}" y="0" width="${OW}" height="${H}" fill="rgba(0,0,0,0.3)"/>`;
+  for(let z=0;z<6;z++){
+    const zm=ZONE_META[z];
+    s+=`<rect x="${(BX+z*ZW).toFixed(1)}" y="0" width="${ZW.toFixed(1)}" height="${BY}" fill="${zm.bg}"/>`;
+  }
+  for(let z=0;z<=6;z++){
+    const x=(BX+z*ZW).toFixed(1),op=(z===0||z===6)?'0.45':'0.22',sw=(z===0||z===6)?1.5:1;
+    s+=`<line x1="${x}" y1="0" x2="${x}" y2="${BY}" stroke="rgba(255,255,255,${op})" stroke-width="${sw}"/>`;
+  }
+  for(let i=1;i<24;i++){
+    const x=(BX+i*SLOT_PITCH).toFixed(1);
+    s+=`<line x1="${x}" y1="8" x2="${x}" y2="${BY}" stroke="rgba(255,255,255,0.055)" stroke-width="0.5" stroke-dasharray="3,6"/>`;
+  }
+  s+=`<line x1="0" y1="${BY}" x2="${W}" y2="${BY}" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>`;
+
+  let cp='';
+  for(let px=BX;px<=BX+BW;px+=2){
+    const dx=px-BCX,fy=BY-(BELL_A*Math.exp(-(dx*dx)/(2*BELL_SIG*BELL_SIG))+BELL_FLOOR);
+    cp+=(px===BX?`M${px.toFixed(1)},${fy.toFixed(1)}`:`L${px.toFixed(1)},${fy.toFixed(1)}`);
+  }
+  s+=`<path d="${cp}" fill="none" stroke="rgba(120,185,255,0.14)" stroke-width="8"/>`;
+  s+=`<path d="${cp}" fill="none" stroke="rgba(155,210,255,0.72)" stroke-width="1.6" stroke-dasharray="8,4" filter="url(#glow)"/>`;
+  s+=`<path d="${cp}" fill="none" stroke="rgba(205,235,255,0.38)" stroke-width="0.8" stroke-dasharray="8,4"/>`;
+
+  for(let i=0;i<24;i++){
+    const syms=slots[i]; if(!syms.length)continue;
+    const zIdx=Math.floor(i/4),color=ZONE_META[zIdx].color,zm=ZONE_META[zIdx];
+    const scx=(BX+(i+0.5)*SLOT_PITCH).toFixed(1),n=syms.length;
+    syms.forEach((sym,i2)=>{
+      const sy=(BY-(n-i2)*SH+SH*0.78).toFixed(1);
+      const sign=sym.ir90>0?'+':'';
+      const tip=`${sym.full} — ${sym.name}  |  90-IR: ${sign}${sym.ir90}  |  ${zm.label}`;
+      s+=`<text x="${scx}" y="${sy}" text-anchor="middle"
+        font-family="'Courier New',monospace" font-size="${SFS}" font-weight="bold"
+        fill="${color}" cursor="pointer" class="hsym" data-tip="${tip}"
+        filter="url(#softglow)">${sym.tr}</text>`;
+    });
+  }
+
+  for(let z=0;z<6;z++){
+    const zm=ZONE_META[z],zx=BX+z*ZW,zcx=(zx+ZW/2).toFixed(1);
+    s+=`<text x="${zcx}" y="${LY_RANGE}" text-anchor="middle" font-family="'Courier New',monospace" font-size="8.5" fill="rgba(255,255,255,0.48)">${zm.range}</text>`;
+    s+=`<text x="${zcx}" y="${LY_ZONE}" text-anchor="middle" font-family="'Trebuchet MS',sans-serif" font-size="10.5" font-weight="bold" fill="${zm.color}">${zm.label}</text>`;
+  }
+
+  const OL=OW/2,OR=BX+BW+OW/2;
+  s+=`<text x="${OL}" y="20" text-anchor="middle" font-family="'Trebuchet MS',sans-serif" font-size="8.5" font-weight="bold" fill="#00cc55">OOB</text>`;
+  s+=`<text x="${OL}" y="32" text-anchor="middle" font-family="'Trebuchet MS',sans-serif" font-size="8" fill="#00cc55" opacity="0.7">Weak</text>`;
+  s+=`<text x="${OL}" y="${BY-8}" text-anchor="middle" font-family="'Courier New',monospace" font-size="12" font-weight="bold" fill="#00cc55">[0]</text>`;
+  s+=`<text x="${OL}" y="${LY_RANGE}" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="rgba(0,204,85,0.45)">≥+99</text>`;
+  s+=`<text x="${OR}" y="20" text-anchor="middle" font-family="'Trebuchet MS',sans-serif" font-size="8.5" font-weight="bold" fill="#e83535">OOB</text>`;
+  s+=`<text x="${OR}" y="32" text-anchor="middle" font-family="'Trebuchet MS',sans-serif" font-size="8" fill="#e83535" opacity="0.7">Strong</text>`;
+  s+=`<text x="${OR}" y="${BY-8}" text-anchor="middle" font-family="'Courier New',monospace" font-size="12" font-weight="bold" fill="#e83535">[0]</text>`;
+  s+=`<text x="${OR}" y="${LY_RANGE}" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="rgba(232,53,53,0.45)">≤−99</text>`;
+  s+=`<text x="${BX+8}" y="${H-5}" font-family="'Trebuchet MS',sans-serif" font-size="7.5" fill="rgba(0,204,85,0.4)">← Weak / Oversold</text>`;
+  s+=`<text x="${BX+BW-8}" y="${H-5}" text-anchor="end" font-family="'Trebuchet MS',sans-serif" font-size="7.5" fill="rgba(232,53,53,0.4)">Overbought / Strong →</text>`;
+
+  document.getElementById('mainHisto').innerHTML=s;
+  document.querySelectorAll('.hsym').forEach(el=>{
+    el.addEventListener('mouseenter',e=>{
+      const tip=document.getElementById('histo-tip');
+      tip.textContent=el.dataset.tip;tip.style.display='block';
+      tip.style.left=(e.clientX+14)+'px';tip.style.top=(e.clientY-8)+'px';
+    });
+    el.addEventListener('mousemove',e=>{
+      const tip=document.getElementById('histo-tip');
+      tip.style.left=(e.clientX+14)+'px';tip.style.top=(e.clientY-8)+'px';
+    });
+    el.addEventListener('mouseleave',()=>document.getElementById('histo-tip').style.display='none');
+  });
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  GROUPS.forEach(g=>renderToggleTable(g));
+  buildHistogram();
+});
+</script>
+</body>
+</html>

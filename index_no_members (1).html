@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CBOE Volatility Index (VIX)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg:          #0e0d18;
+      --panel:       #0d1829;
+      --panel-alt:   #0a1420;
+      --border:      #1a2d44;
+      --border-lite: #243c58;
+      --text:  #ddeeff;
+      --dim:   #5a7a9a;
+      --accent: #3090d8;
+      --gold:   #c9a227;
+      --z1: #00cc55;
+      --z2: #88cc44;
+      --z3: #7a9aaa;
+      --z4: #aa9a7a;
+      --z5: #ddcc00;
+      --z6: #e83535;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Rajdhani', sans-serif;
+      overflow: hidden;
+    }
+
+    /* ── NAV ── */
+    .top-nav {
+      height: 44px;
+      background: var(--panel-alt);
+      border-bottom: 2px solid var(--border-lite);
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      flex-shrink: 0;
+    }
+    .nav-left  { display: flex; align-items: center; }
+    .nav-center { flex: 1; display: flex; justify-content: center; align-items: center; }
+    .nav-right { display: flex; align-items: center; }
+
+    .nav-back {
+      background: var(--panel);
+      border: 1px solid var(--border-lite);
+      color: var(--dim);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      padding: 5px 14px;
+      cursor: pointer;
+      transition: all .15s;
+      white-space: nowrap;
+    }
+    .nav-back:hover { border-color: var(--accent); color: var(--text); }
+
+    .nav-alert-box {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      padding: 3px 16px;
+    }
+    .nav-alert-box.dormant {
+      border: 1px dashed rgba(232,53,53,0.25);
+      color: rgba(232,53,53,0.25);
+    }
+    .nav-alert-box.active {
+      border: 1px solid #e83535;
+      color: #e83535;
+      animation: alertpulse 1.5s ease-in-out infinite;
+    }
+    @keyframes alertpulse { 0%,100%{opacity:1} 50%{opacity:0.55} }
+
+    .search-box {
+      background: var(--panel);
+      border: 1px solid var(--border-lite);
+      color: var(--text);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 12px;
+      padding: 5px 10px;
+      outline: none;
+      width: 190px;
+      transition: border-color .15s;
+    }
+    .search-box::placeholder { color: var(--dim); }
+    .search-box:focus { border-color: var(--accent); }
+
+    /* ── SHELL ── */
+    .shell {
+      height: calc(100vh - 44px);
+      overflow-y: auto;
+      padding: 14px 22px 24px;
+    }
+    .shell::-webkit-scrollbar       { width: 6px; }
+    .shell::-webkit-scrollbar-track { background: #08111e; }
+    .shell::-webkit-scrollbar-thumb { background: #243c58; border-radius: 3px; }
+
+    /* ── ALERT BANNER ── */
+    .alert-banner {
+      display: none;
+      background: rgba(232,53,53,0.10);
+      border: 1px solid #e83535;
+      color: #e83535;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: .05em;
+      text-align: center;
+      padding: 7px 16px;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+    }
+    .alert-banner.active { display: block; }
+
+    /* ── INFO ROW ── */
+    .info-row {
+      display: grid;
+      grid-template-columns: 200px 1fr 130px;
+      gap: 12px;
+      margin-bottom: 14px;
+      align-items: start;
+    }
+    .companions { padding-top: 2px; }
+    .comp-item  { margin-bottom: 6px; }
+    .comp-sym {
+      display: inline-block;
+      color: var(--accent);
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .comp-sym:hover { color: var(--text); text-decoration: underline; }
+    .comp-name { font-size: 10px; color: var(--dim); margin-top: 1px; }
+
+    .index-center { text-align: center; }
+    .index-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: .04em;
+      margin-bottom: 7px;
+    }
+    .index-desc {
+      font-size: 12px;
+      color: var(--dim);
+      line-height: 1.55;
+      max-width: 580px;
+      margin: 0 auto;
+    }
+
+    .exchange-col { text-align: right; padding-top: 2px; }
+    .exchange-label {
+      font-size: 10px;
+      color: rgba(90,122,154,0.55);
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      margin-bottom: 3px;
+    }
+    .exchange-name {
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      font-weight: bold;
+      color: var(--text);
+    }
+
+    /* ── HISTOGRAMS ── */
+    .histo-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .hist-title {
+      font-weight: 700;
+      font-size: 12px;
+      color: var(--text);
+      text-align: center;
+      margin-bottom: 5px;
+      letter-spacing: .03em;
+    }
+    .histo-svg-box {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    .hist-range {
+      text-align: center;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      font-weight: bold;
+      margin-bottom: 5px;
+      letter-spacing: .02em;
+    }
+    .hist-range .r-low  { color: #00cc55; }
+    .hist-range .r-sep  { color: var(--dim); margin: 0 6px; font-weight: normal; }
+    .hist-range .r-high { color: #e83535; }
+
+    /* ── TOOLTIP ── */
+    #histo-tip {
+      position: fixed;
+      background: #0d1829;
+      border: 1px solid #3090d8;
+      color: #ddeeff;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      padding: 5px 9px;
+      border-radius: 2px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.6);
+      white-space: nowrap;
+      z-index: 999;
+      pointer-events: none;
+      display: none;
+    }
+
+    /* ── STATUS / CLOSE-IV ── */
+    .status-text {
+      font-size: 15px;
+      font-style: italic;
+      color: var(--dim);
+      text-align: center;
+      margin-bottom: 8px;
+      line-height: 1.55;
+    }
+    .close-iv {
+      text-align: center;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      color: var(--dim);
+      margin-bottom: 16px;
+    }
+    .close-iv strong { color: var(--text); }
+    .close-iv .sep { margin: 0 22px; opacity: 0.35; }
+
+    /* ── CHARTS ── */
+    .chart-pair {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .chart-wrap {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 8px 12px 10px;
+    }
+    .chart-head {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
+      text-align: center;
+      letter-spacing: .03em;
+      margin-bottom: 2px;
+    }
+    .chart-sub {
+      font-size: 10px;
+      color: var(--dim);
+      text-align: center;
+      margin-bottom: 8px;
+      font-style: italic;
+    }
+    .chart-cv {
+      position: relative;
+      height: 220px;
+    }
+
+    /* ── COMPARE AND CONTRAST ── */
+    .cc-section {
+      text-align: center;
+      margin: 4px 0 14px;
+    }
+    .cc-header-box {
+      display: inline-block;
+      border: 1.5px solid var(--border-lite);
+      color: var(--text);
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      padding: 6px 30px;
+      margin-bottom: 7px;
+    }
+    .cc-subtitle {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--gold);
+      letter-spacing: .03em;
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="top-nav">
+  <div class="nav-left">
+    <button class="nav-back" onclick="navTo('sector.html','sectorPage')">← Back</button>
+  </div>
+  <div class="nav-center">
+    <div class="nav-alert-box dormant" id="nav-alert">⚠ Trading Alert</div>
+  </div>
+  <div class="nav-right">
+    <input class="search-box" type="text" placeholder="Equity, ETF or Index…"
+           onkeydown="if(event.key==='Enter')doSearch(this.value)">
+  </div>
+</nav>
+
+<!-- SHELL -->
+<div class="shell">
+
+  <!-- ALERT BANNER -->
+  <div class="alert-banner" id="alert-banner">
+    ⚠ Trading Alert — <span id="alert-text"></span>
+  </div>
+
+  <!-- INFO ROW: companions | index name+desc | exchange -->
+  <div class="info-row">
+    <div class="companions" id="companions-div"></div>
+
+    <div class="index-center">
+      <div class="index-title" id="index-title"></div>
+      <div class="index-desc"  id="index-desc"></div>
+    </div>
+
+    <div class="exchange-col">
+      <div class="exchange-label">Exchange</div>
+      <div class="exchange-name" id="exchange-name"></div>
+    </div>
+  </div>
+
+  <!-- EMPTY HISTOGRAMS -->
+  <div class="histo-pair">
+    <div>
+      <div class="hist-title">Expected 90-day Trading Range</div>
+      <div class="hist-range" id="range-90"></div>
+      <div class="histo-svg-box">
+        <svg id="histo-90" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block"></svg>
+      </div>
+    </div>
+    <div>
+      <div class="hist-title">Expected 10-day Trading Range</div>
+      <div class="hist-range" id="range-10"></div>
+      <div class="histo-svg-box">
+        <svg id="histo-10" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block"></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- DAILY STATUS -->
+  <p class="status-text" id="status-text"></p>
+
+  <!-- CLOSE / IV -->
+  <div class="close-iv" id="close-iv"></div>
+
+  <!-- PRIMARY CHARTS -->
+  <div class="chart-pair">
+    <div class="chart-wrap">
+      <div class="chart-head" id="ir-head"></div>
+      <div class="chart-sub">90-Day Zone · 10-Day Zone · 30 Days</div>
+      <div class="chart-cv"><canvas id="chart-ir"></canvas></div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-head" id="pm-head"></div>
+      <div class="chart-sub">Closing Price · 90-Day Mean · 30 Days</div>
+      <div class="chart-cv"><canvas id="chart-pm"></canvas></div>
+    </div>
+  </div>
+
+  <!-- COMPARE AND CONTRAST HEADER -->
+  <div class="cc-section">
+    <div class="cc-header-box">Compare and Contrast</div>
+    <div class="cc-subtitle"><a id="cc-subtitle" href="#" style="color:var(--gold);text-decoration:none" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'"></a></div>
+  </div>
+
+  <!-- CC CHARTS -->
+  <div class="chart-pair">
+    <div class="chart-wrap">
+      <div class="chart-head" id="cc-ir-head"></div>
+      <div class="chart-sub">90-Day Zone · 10-Day Zone · 30 Days</div>
+      <div class="chart-cv"><canvas id="chart-cc-ir"></canvas></div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-head" id="cc-pm-head"></div>
+      <div class="chart-sub">Closing Price · 90-Day Mean · 30 Days</div>
+      <div class="chart-cv"><canvas id="chart-cc-pm"></canvas></div>
+    </div>
+  </div>
+
+</div><!-- /shell -->
+
+<div id="histo-tip"></div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+//  DATA
+// ─────────────────────────────────────────────────────────────────────────────
+const VIX = {
+  sym:      'VIX',
+  name:     'CBOE Volatility Index (VIX)',
+  exchange: 'CBOE',
+  desc:     'The Volatility Index is a leading measure of market expectations of near-term volatility conveyed by S&P 500 Index (SPX) option prices. The VIX estimates expected volatility by aggregating the weighted prices of SPX puts and calls over a wide range of strike prices, producing a constant 30-day expected volatility measure derived from real-time mid-quote option prices.',
+  companions: [
+    { sym: 'VVIX', name: 'VIX of VIX Index',           url: 'vvix.html' },
+    { sym: 'VXN',  name: 'Nasdaq 100 Volatility Index', url: 'vxn.html'  }
+  ],
+  cc: { sym: 'VVIX', name: 'VIX of VIX Index (VVIX)', url: 'vvix.html' },
+  ir_90: -17,  ir_10: 21,
+  close: 25,   iv: 25,
+  rangeLow90: 15,  rangeHigh90: 30,
+  rangeLow10: 20,  rangeHigh10: 25,
+
+  // 30 business days of zone history — ending at Zone 4 (ir_90 = -17)
+  z90: [3,3,3,4,4,3,3,3,4,4,4,4,3,3,4,4,4,4,4,4,4,4,4,3,4,4,4,4,4,4],
+  // 10-day more volatile — ending at Zone 3 (ir_10 = +21)
+  z10: [3,4,3,3,4,4,3,3,3,4,5,4,3,3,4,4,3,4,4,5,4,3,3,4,4,3,3,3,3,3],
+
+  // 30-day closing prices — VIX range ~18–28, ending at 25
+  prices: [19.2,21.4,22.8,20.1,18.6,19.9,22.3,24.7,26.1,23.8,
+            21.5,20.2,22.1,24.9,27.3,25.6,23.2,21.8,20.4,22.7,
+            25.1,28.4,26.9,24.3,22.6,23.8,25.4,26.2,24.8,25.0],
+  // 90-day mean drifts slowly — ends ~23.1
+  means:  [22.1,22.2,22.3,22.2,22.1,22.0,22.1,22.3,22.5,22.6,
+            22.5,22.4,22.4,22.5,22.7,22.8,22.7,22.6,22.5,22.5,
+            22.6,22.8,22.9,22.9,22.8,22.8,22.9,23.0,23.0,23.1]
+};
+
+// VVIX — Compare and Contrast
+const VVIX = {
+  sym:  'VVIX',
+  name: 'VIX of VIX Index (VVIX)',
+  ir_90: 15,  ir_10: -8,
+  close: 93.5,
+  // 30-day zone history — Zone 3, slightly volatile 10-day
+  z90: [3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3],
+  z10: [4,4,3,3,3,4,4,3,3,4,4,4,3,3,3,4,4,3,3,4,4,4,4,3,4,4,4,4,4,4],
+  // VVIX prices — typically 80–120 range, ending at 93.5
+  prices: [85.2,87.4,91.2,88.6,86.3,84.7,89.1,92.4,95.8,93.2,
+            90.7,88.4,91.3,94.6,97.9,95.1,92.4,89.8,87.5,90.2,
+            93.6,96.8,94.3,91.7,89.5,91.2,93.8,95.4,93.9,93.5],
+  means:  [87.1,87.2,87.4,87.3,87.2,87.0,87.1,87.3,87.6,87.8,
+            87.9,87.8,87.8,87.9,88.2,88.3,88.3,88.2,88.1,88.1,
+            88.2,88.4,88.5,88.5,88.4,88.4,88.5,88.6,88.5,88.2]
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  CONSTANTS
+// ─────────────────────────────────────────────────────────────────────────────
+const ZCL = ['#00cc55','#88cc44','#7a9aaa','#aa9a7a','#ddcc00','#e83535'];
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  UTILITIES
+// ─────────────────────────────────────────────────────────────────────────────
+function navTo(url, winName) {
+  if (window.innerWidth < 768) { location.href = url; }
+  else { window.open(url, winName); }
+}
+
+function doSearch(val) {
+  const sym = val.trim().toUpperCase();
+  if (sym) navTo(`symbol/${sym}.html`, 'symbolWindow');
+}
+
+function irToZone(ir) {
+  if (ir >= 67) return 1; if (ir >= 34) return 2; if (ir >= 1) return 3;
+  if (ir >= -33) return 4; if (ir >= -66) return 5; return 6;
+}
+
+function irFmt(v) { return (v > 0 ? '+' : '') + v; }
+
+function genDates30() {
+  const d = []; let cur = new Date(); let n = 0;
+  while (n < 30) {
+    if (cur.getDay() !== 0 && cur.getDay() !== 6) {
+      d.unshift(cur.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' }));
+      n++;
+    }
+    cur.setDate(cur.getDate() - 1);
+  }
+  return d;
+}
+const DATES30 = genDates30();
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  EMPTY HISTOGRAM  (HistoEH.2)
+//  Six zone bands + bell curve + single IR dot on baseline + price ends
+// ─────────────────────────────────────────────────────────────────────────────
+function buildEmptyHistogram(svgId, ir, lowPrice, highPrice) {
+  const el = document.getElementById(svgId);
+  if (!el) return;
+
+  const W = 860, H = 148;
+  const BX = 22, BW = 816, ZW = BW / 6;
+  const BY = 96;
+  const BCX = BX + BW / 2;
+  const BELL_A = 66, BELL_FLOOR = 10, BELL_SIG = ZW;
+
+  const Z_RANGES = ['+99 to +67','+66 to +34','+33 to +1','−1 to −33','−34 to −66','−67 to −99'];
+  const Z_LABELS = ['Zone 1','Zone 2','Zone 3','Zone 4','Zone 5','Zone 6'];
+
+  let s = '';
+
+  // Zone background fills
+  for (let z = 0; z < 6; z++) {
+    s += `<rect x="${(BX + z * ZW).toFixed(1)}" y="0" width="${ZW.toFixed(1)}" height="${BY}"
+           fill="${ZCL[z]}" fill-opacity="0.07"/>`;
+  }
+
+  // Zone dividers (inner)
+  for (let z = 1; z < 6; z++) {
+    const x = (BX + z * ZW).toFixed(1);
+    s += `<line x1="${x}" y1="0" x2="${x}" y2="${BY}" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>`;
+  }
+  // Outer edges
+  s += `<line x1="${BX}" y1="0" x2="${BX}" y2="${BY}" stroke="rgba(255,255,255,0.18)" stroke-width="0.6"/>`;
+  s += `<line x1="${BX+BW}" y1="0" x2="${BX+BW}" y2="${BY}" stroke="rgba(255,255,255,0.18)" stroke-width="0.6"/>`;
+
+  // Bell curve — three passes
+  const bellY = px => BY - (BELL_A * Math.exp(-Math.pow(px - BCX, 2) / (2 * BELL_SIG * BELL_SIG)) + BELL_FLOOR);
+  let pts = [];
+  for (let px = BX; px <= BX + BW; px += 2) pts.push(`${px},${bellY(px).toFixed(1)}`);
+  const pd = `M ${pts.join(' L ')}`;
+
+  s += `<path d="${pd}" fill="none" stroke="rgba(120,185,255,0.14)" stroke-width="8"/>`;
+  s += `<path d="${pd}" fill="none" stroke="rgba(155,210,255,0.72)" stroke-width="1.6" stroke-dasharray="8,4"/>`;
+  s += `<path d="${pd}" fill="none" stroke="rgba(205,235,255,0.38)" stroke-width="0.8" stroke-dasharray="8,4"/>`;
+
+  // Baseline
+  s += `<line x1="${BX}" y1="${BY}" x2="${BX+BW}" y2="${BY}" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>`;
+
+  // IR dot on baseline  (+99 = far left, −99 = far right)
+  const dotX = +(BX + (99 - ir) / 198 * BW).toFixed(1);
+  const dotColor = ir > 0 ? '#00cc55' : ir < 0 ? '#e83535' : '#b8cce0';
+  const label = irFmt(ir);
+
+  // Stem up from baseline to dot label
+  s += `<line x1="${dotX}" y1="${BY}" x2="${dotX}" y2="${BY-16}" stroke="${dotColor}" stroke-width="0.8" stroke-opacity="0.5"/>`;
+  s += `<circle cx="${dotX}" cy="${BY}" r="5.5" fill="${dotColor}" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>`;
+  s += `<text x="${dotX}" y="${BY-19}" text-anchor="middle"
+         font-family="'Courier New',monospace" font-size="9.5" font-weight="bold"
+         fill="${dotColor}">${label}</text>`;
+
+  // Price range values at far ends (below baseline) — large, zone-colored
+  s += `<text x="${BX+5}" y="${BY+14}" text-anchor="start"
+         font-family="'Courier New',monospace" font-size="13" font-weight="bold"
+         fill="#00cc55">$${lowPrice}</text>`;
+  s += `<text x="${BX+BW-5}" y="${BY+14}" text-anchor="end"
+         font-family="'Courier New',monospace" font-size="13" font-weight="bold"
+         fill="#e83535">$${highPrice}</text>`;
+
+  // Zone range and bold label below baseline
+  for (let z = 0; z < 6; z++) {
+    const cx = (BX + (z + 0.5) * ZW).toFixed(1);
+    s += `<text x="${cx}" y="${BY+25}" text-anchor="middle"
+           font-family="'Courier New',monospace" font-size="7.5"
+           fill="rgba(255,255,255,0.44)">${Z_RANGES[z]}</text>`;
+    s += `<text x="${cx}" y="${BY+38}" text-anchor="middle"
+           font-family="'Trebuchet MS',sans-serif" font-size="9.5" font-weight="bold"
+           fill="${ZCL[z]}">${Z_LABELS[z]}</text>`;
+  }
+
+  el.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  // NEVER setAttribute('height') — viewBox + width="100%" only
+  el.innerHTML = s;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  ZONE COMBO CHART  (90-day bar + 10-day gold line)
+// ─────────────────────────────────────────────────────────────────────────────
+Chart.defaults.color = '#5a7a9a';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+
+function buildZoneChart(canvasId, z90, z10, dates) {
+  const ctx = document.getElementById(canvasId);
+  if (!ctx) return;
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: dates,
+      datasets: [
+        {
+          type: 'bar',
+          label: '90-Day Zone',
+          data: z90,
+          backgroundColor: z90.map(z => ZCL[z-1] + '99'),
+          borderColor:     z90.map(z => ZCL[z-1]),
+          borderWidth: 1,
+          order: 2
+        },
+        {
+          type: 'line',
+          label: '10-Day Zone',
+          data: z10,
+          borderColor:          '#c9a227',
+          pointBackgroundColor: '#c9a227',
+          pointRadius: 2.5, pointHoverRadius: 4,
+          borderWidth: 1.8,
+          fill: false, tension: 0.3,
+          order: 1
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { left:2, right:4, top:4, bottom:2 } },
+      plugins: {
+        legend: {
+          display: true, position: 'top',
+          labels: { color:'#5a7a9a', font:{ family:"'Courier New',monospace", size:9 }, boxWidth:12, padding:8 }
+        }
+      },
+      scales: {
+        y: {
+          min: 0.3, max: 6.5,
+          title: { display:true, text:'Zone', color:'#5a7a9a',
+                   font:{ family:"'Courier New',monospace", size:9 }, padding:{ bottom:4 } },
+          ticks: {
+            stepSize: 1,
+            callback: v => (v >= 1 && v <= 6) ? String(Math.round(v)) : '',
+            color: c => { const v = Math.round(c.tick.value); return (v>=1&&v<=6) ? ZCL[v-1] : '#5a7a9a'; },
+            font: { family:"'Courier New',monospace", size:9 }, padding:3
+          },
+          grid: {
+            color: c => (c.tick.value===3||c.tick.value===4) ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)',
+            lineWidth: c => (c.tick.value===3||c.tick.value===4) ? 1.2 : 0.6
+          },
+          border: { color:'#243c58' }
+        },
+        x: {
+          ticks: { maxRotation:45, autoSkip:true, maxTicksLimit:10,
+                   color:'#5a7a9a', font:{ family:"'Courier New',monospace", size:8 } },
+          grid:   { color:'rgba(255,255,255,0.03)' },
+          border: { color:'#243c58' }
+        }
+      }
+    }
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  PRICE / MEAN CHART  (two-line: close = sage green solid, mean = dim dotted)
+// ─────────────────────────────────────────────────────────────────────────────
+function buildPriceMeanChart(canvasId, prices, means) {
+  const ctx = document.getElementById(canvasId);
+  if (!ctx) return;
+
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: DATES30,
+      datasets: [
+        {
+          label: 'Close',
+          data: prices,
+          borderColor: '#88cc44',        // sage green
+          backgroundColor: 'transparent',
+          borderWidth: 1.8,
+          pointRadius: 1.5, pointHoverRadius: 3,
+          tension: 0.3, fill: false
+        },
+        {
+          label: '90-Day Mean',
+          data: means,
+          borderColor: '#5a7a9a',        // dim steel — dotted
+          backgroundColor: 'transparent',
+          borderWidth: 1.5,
+          borderDash: [5, 3],
+          pointRadius: 0,
+          tension: 0.3, fill: false
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { left:2, right:4, top:4, bottom:2 } },
+      plugins: {
+        legend: {
+          display: true, position: 'top',
+          labels: { color:'#5a7a9a', font:{ family:"'Courier New',monospace", size:9 }, boxWidth:12, padding:8 }
+        }
+      },
+      scales: {
+        y: {
+          title: { display:true, text:'Value', color:'#5a7a9a',
+                   font:{ family:"'Courier New',monospace", size:9 }, padding:{ bottom:4 } },
+          ticks: { color:'#5a7a9a', font:{ family:"'Courier New',monospace", size:9 }, padding:3 },
+          grid:   { color:'rgba(255,255,255,0.05)' },
+          border: { color:'#243c58' }
+        },
+        x: {
+          ticks: { maxRotation:45, autoSkip:true, maxTicksLimit:10,
+                   color:'#5a7a9a', font:{ family:"'Courier New',monospace", size:8 } },
+          grid:   { color:'rgba(255,255,255,0.03)' },
+          border: { color:'#243c58' }
+        }
+      }
+    }
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  BUILD PAGE
+// ─────────────────────────────────────────────────────────────────────────────
+function buildPage(d, cc) {
+
+  // ── Trading Alert ──────────────────────────────────────────────────────────
+  const alertFired = Math.abs(d.ir_90) >= 67;
+  document.getElementById('nav-alert').className = alertFired
+    ? 'nav-alert-box active' : 'nav-alert-box dormant';
+
+  if (alertFired) {
+    const ab = document.getElementById('alert-banner');
+    ab.className = 'alert-banner active';
+    const direction = d.ir_90 > 0 ? 'extreme oversold' : 'extreme overbought';
+    document.getElementById('alert-text').textContent =
+      `${d.sym} 90-day IR reading of ${irFmt(d.ir_90)} has entered ${direction} territory`;
+  }
+
+  // ── Index name, description, exchange ─────────────────────────────────────
+  document.getElementById('index-title').textContent = d.name;
+  document.getElementById('index-desc').textContent  = d.desc;
+  document.getElementById('exchange-name').textContent = d.exchange;
+
+  // ── Companion securities ───────────────────────────────────────────────────
+  document.getElementById('companions-div').innerHTML = d.companions.map(c => `
+    <div class="comp-item">
+      <a class="comp-sym" href="#" onclick="navTo('${c.url}','symbolWindow');return false">${c.sym}</a>
+      <div class="comp-name">${c.name}</div>
+    </div>`).join('');
+
+  // ── Trading range subtitles above histograms ──────────────────────────────
+  document.getElementById('range-90').innerHTML =
+    `<span class="r-low">$${d.rangeLow90}</span><span class="r-sep">to</span><span class="r-high">$${d.rangeHigh90}</span>`;
+  document.getElementById('range-10').innerHTML =
+    `<span class="r-low">$${d.rangeLow10}</span><span class="r-sep">to</span><span class="r-high">$${d.rangeHigh10}</span>`;
+
+  // ── Empty histograms ───────────────────────────────────────────────────────
+  buildEmptyHistogram('histo-90', d.ir_90, d.rangeLow90, d.rangeHigh90);
+  buildEmptyHistogram('histo-10', d.ir_10, d.rangeLow10, d.rangeHigh10);
+
+  // ── Daily status (15px italic per spec) ───────────────────────────────────
+  const zone = irToZone(d.ir_90);
+  document.getElementById('status-text').textContent =
+    `The ${d.name} is in Zone ${zone} with a 90-day Implied Risk (IR) reading of ` +
+    `${irFmt(d.ir_90)} and a 10-day Implied Risk (IR) reading of ${irFmt(d.ir_10)}.`;
+
+  // ── Close / IV ────────────────────────────────────────────────────────────
+  document.getElementById('close-iv').innerHTML =
+    `<span>Close: <strong>${d.close}</strong></span>` +
+    `<span class="sep">|</span>` +
+    `<span>Implied Volatility: <strong>${d.iv}</strong></span>`;
+
+  // ── Primary chart headers (current value in head per Issue Template pattern)
+  const lastPrice = d.prices[d.prices.length - 1];
+  document.getElementById('ir-head').textContent = `${d.sym} Implied Risk`;
+  document.getElementById('pm-head').textContent = `${d.sym} Close/Mean — ${lastPrice.toFixed(2)}`;
+
+  // ── CC subtitle ───────────────────────────────────────────────────────────
+  // ── CC subtitle (hyperlinked) ─────────────────────────────────────────────
+  const ccLink = document.getElementById('cc-subtitle');
+  ccLink.textContent = cc.name;
+  ccLink.onclick = e => { e.preventDefault(); navTo(cc.url || `${cc.sym.toLowerCase()}.html`, 'symbolWindow'); };
+  const ccLastPrice = cc.prices[cc.prices.length - 1];
+  document.getElementById('cc-ir-head').textContent = `${cc.sym} Implied Risk`;
+  document.getElementById('cc-pm-head').textContent = `${cc.sym} Close/Mean — ${ccLastPrice.toFixed(2)}`;
+
+  // ── Charts ────────────────────────────────────────────────────────────────
+  buildZoneChart('chart-ir',    d.z90,  d.z10,  DATES30);
+  buildPriceMeanChart('chart-pm',    d.prices,  d.means);
+  buildZoneChart('chart-cc-ir', cc.z90, cc.z10, DATES30);
+  buildPriceMeanChart('chart-cc-pm', cc.prices, cc.means);
+}
+
+buildPage(VIX, VVIX);
+</script>
+</body>
+</html>

@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Options — Top Down Trading</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* ── Reset & Variables ─────────────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+
+:root{
+  --bg:       #08111e;
+  --panel:    #0d1829;
+  --panel-alt:#0a1420;
+  --border:   #1a2d44;
+  --border-lt:#243c58;
+  --text:     #ddeeff;
+  --dim:      #5a7a9a;
+  --accent:   #3090d8;
+  --gold:     #f0a500;
+  --z1:#00cc55; --z2:#88cc44; --z3:#7a9aaa;
+  --z4:#aa9a7a; --z5:#ddcc00; --z6:#e83535;
+}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Rajdhani',sans-serif;
+  overflow:hidden;
+  height:100vh;
+}
+
+/* ── Navigation ────────────────────────────────────────────────────────────── */
+.top-nav{
+  height:44px;
+  background:var(--panel-alt);
+  border-bottom:1px solid var(--border);
+  display:flex;
+  align-items:stretch;
+  position:relative;
+  z-index:100;
+}
+
+.nav-btn{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  background:transparent;
+  border:none;
+  border-right:1px solid var(--border);
+  color:var(--dim);
+  font-family:'Rajdhani',sans-serif;
+  font-size:13px;
+  font-weight:600;
+  letter-spacing:.05em;
+  text-transform:uppercase;
+  cursor:pointer;
+  transition:all .15s;
+  line-height:1.2;
+  padding:0 6px;
+}
+.nav-btn:hover{background:rgba(48,144,216,0.08);color:var(--text);}
+.nav-btn .sub{font-size:11px;font-weight:400;letter-spacing:.03em;color:inherit;opacity:.72;}
+
+/* SEARCH (4th nav box) */
+.nav-search{
+  flex:1;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:0 10px;
+}
+.nav-search input{
+  flex:1;
+  background:rgba(255,255,255,0.05);
+  border:1px solid var(--border-lt);
+  color:var(--text);
+  font-family:'Share Tech Mono',monospace;
+  font-size:12px;
+  padding:4px 10px;
+  border-radius:2px;
+  outline:none;
+  height:28px;
+}
+.nav-search input::placeholder{color:var(--dim);}
+.nav-search input:focus{border-color:var(--accent);}
+.menu-icon{
+  background:none;
+  border:1px solid var(--border-lt);
+  color:var(--dim);
+  cursor:pointer;
+  padding:3px 8px;
+  font-size:15px;
+  border-radius:2px;
+  line-height:1.4;
+  transition:all .15s;
+  font-family:sans-serif;
+}
+.menu-icon:hover{border-color:var(--accent);color:var(--text);}
+
+/* ── Slide-Out Menu ─────────────────────────────────────────────────────────── */
+.menu-overlay{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,0.5);
+  z-index:200;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .25s;
+}
+.menu-overlay.open{opacity:1;pointer-events:all;}
+
+.menu-drawer{
+  position:fixed;top:0;right:0;
+  width:278px;height:100vh;
+  background:var(--panel-alt);
+  border-left:2px solid var(--border-lt);
+  z-index:201;
+  transform:translateX(100%);
+  transition:transform .28s ease;
+  display:flex;flex-direction:column;
+  overflow-y:auto;
+}
+.menu-drawer.open{transform:translateX(0);}
+.menu-drawer::-webkit-scrollbar{width:4px;}
+.menu-drawer::-webkit-scrollbar-track{background:var(--bg);}
+.menu-drawer::-webkit-scrollbar-thumb{background:var(--border-lt);border-radius:2px;}
+
+.menu-hdr{
+  background:var(--bg);
+  border-bottom:1px solid var(--border);
+  padding:11px 14px;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-shrink:0;
+}
+.menu-hdr span{font-weight:700;font-size:12px;color:var(--text);letter-spacing:.08em;text-transform:uppercase;}
+.menu-close{background:none;border:none;color:var(--dim);font-size:18px;cursor:pointer;padding:0 2px;line-height:1;}
+.menu-close:hover{color:var(--text);}
+
+.menu-sec{padding:8px 12px 4px;}
+.menu-sec-title{
+  font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--dim);margin-bottom:5px;
+  border-bottom:1px solid var(--border);padding-bottom:3px;
+}
+.menu-item{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:6px 4px;border-bottom:1px solid rgba(26,45,68,0.55);
+  font-size:12px;color:var(--text);cursor:pointer;
+  transition:background .12s;
+}
+.menu-item:hover{background:rgba(48,144,216,0.08);}
+.menu-badge{
+  font-size:8px;padding:1px 5px;border-radius:2px;
+  background:rgba(240,165,0,0.15);color:var(--gold);
+  letter-spacing:.05em;text-transform:uppercase;
+}
+
+/* ── Main Body ──────────────────────────────────────────────────────────────── */
+.main-body{
+  height:calc(100vh - 44px);
+  overflow-y:auto;
+  padding:10px 14px 18px;
+}
+.main-body::-webkit-scrollbar{width:4px;}
+.main-body::-webkit-scrollbar-track{background:var(--bg);}
+.main-body::-webkit-scrollbar-thumb{background:var(--border-lt);border-radius:2px;}
+
+/* ── Section Titles (11.4, 11.9) ────────────────────────────────────────────── */
+.page-section-title{
+  text-align:center;
+  font-family:'Rajdhani',sans-serif;
+  font-size:17px;font-weight:700;
+  color:var(--text);
+  letter-spacing:.07em;text-transform:uppercase;
+  margin:10px 0 10px;
+  border-bottom:1px solid var(--border);
+  padding-bottom:7px;
+}
+
+/* ── Spectrum (11.5) ────────────────────────────────────────────────────────── */
+.histo-wrap{margin-bottom:10px;}
+.section-label{
+  font-weight:bold;font-size:13px;color:var(--text);
+  text-align:center;margin-bottom:6px;letter-spacing:.03em;
+}
+.histo-svg-box{background:var(--panel);border:1px solid var(--border);overflow:hidden;}
+svg{display:block;width:100%;}
+
+/* ── Commentary Box (11.6) ──────────────────────────────────────────────────── */
+.commentary-box{
+  background:var(--panel);border:1px solid var(--border);
+  padding:10px 16px;margin-bottom:12px;
+  font-family:'Courier New',monospace;font-size:11px;
+  color:#b8cce0;line-height:1.68;
+}
+.commentary-box .last-line{
+  text-align:center;margin-top:5px;
+  color:var(--text);font-weight:bold;
+}
+
+/* ── Two-Column Grid ────────────────────────────────────────────────────────── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+
+/* ── Toggle Regular (11.7, 11.8, 11.11) ─────────────────────────────────────── */
+.toggle-wrap{background:var(--panel);border:1px solid var(--border);overflow:hidden;}
+.toggle-header{
+  background:var(--panel-alt);border-bottom:1px solid var(--border);
+  padding:6px 10px;display:flex;align-items:center;justify-content:space-between;
+}
+.toggle-title{font-weight:bold;font-size:12px;color:var(--text);line-height:1.25;}
+.toggle-title .sub-line{
+  display:block;font-size:11px;font-weight:400;color:var(--dim);margin-top:1px;
+}
+.toggle-btns{display:flex;}
+.toggle-btn{
+  background:var(--border);border:1px solid var(--border);color:var(--dim);
+  font-size:11px;padding:3px 10px;cursor:pointer;transition:all .15s;
+  font-family:'Rajdhani',sans-serif;font-weight:600;
+}
+.toggle-btn.active{background:#2a7abf;border-color:#3090d8;color:#fff;}
+.toggle-btn:hover:not(.active){border-color:#3090d8;color:var(--text);}
+
+.scroll-table{max-height:340px;overflow-y:auto;}
+.scroll-table::-webkit-scrollbar{width:4px;}
+.scroll-table::-webkit-scrollbar-track{background:var(--bg);}
+.scroll-table::-webkit-scrollbar-thumb{background:var(--border-lt);border-radius:2px;}
+
+.ir-table{width:100%;border-collapse:collapse;font-family:'Courier New',monospace;font-size:11px;}
+.ir-table th{
+  background:var(--panel);color:var(--dim);padding:4px 6px;text-align:left;
+  border-bottom:1px solid var(--border);position:sticky;top:0;
+  font-size:10px;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;
+}
+.ir-table th.sortable{cursor:pointer;user-select:none;}
+.ir-table th.sortable:hover{color:var(--text);}
+.ir-table th.sort-active{color:var(--accent);}
+.sort-arrow{font-size:10px;margin-left:3px;opacity:.5;}
+.sort-arrow.active{opacity:1;color:var(--accent);}
+.ir-table td{padding:3px 6px;border-bottom:1px solid #0e1a28;white-space:nowrap;}
+.ir-table tr:hover td{background:#111e30;}
+.col-symbol{color:var(--text);font-weight:bold;}
+.col-ir{text-align:center;}
+.col-zone{text-align:center;}
+.col-3mo{text-align:center;font-size:10px;}
+.zone-badge{display:inline-block;padding:1px 5px;font-size:10px;font-weight:bold;border-radius:2px;color:#000;}
+.pos{color:#88cc44;} .neg{color:#e83535;} .zer{color:#b8cce0;}
+
+/* ── VIX Comment (11.10 — middle 50%) ──────────────────────────────────────── */
+.vix-comment-outer{display:flex;justify-content:center;margin-bottom:12px;}
+.vix-comment-box{
+  width:50%;
+  background:var(--panel);border:1px solid var(--border-lt);
+  padding:10px 18px;
+  font-family:'Courier New',monospace;font-size:11px;
+  color:#b8cce0;line-height:1.68;text-align:center;
+}
+
+/* ── VIX Graph (11.12) ──────────────────────────────────────────────────────── */
+.graph-wrap{background:var(--panel);border:1px solid var(--border);overflow:hidden;}
+.graph-header{
+  background:var(--panel-alt);border-bottom:1px solid var(--border);
+  padding:6px 10px;display:flex;align-items:center;justify-content:space-between;
+}
+.graph-title{font-weight:bold;font-size:12px;color:var(--text);}
+.graph-key{display:flex;gap:14px;font-size:10px;color:var(--dim);font-family:'Courier New',monospace;}
+.graph-key span{display:flex;align-items:center;gap:5px;}
+.key-bar{width:12px;height:10px;display:inline-block;background:var(--z3);opacity:.7;border-radius:1px;}
+.key-line{width:18px;height:2px;display:inline-block;background:var(--gold);}
+.graph-body{padding:8px 10px 4px;}
+</style>
+</head>
+<body>
+
+<!-- ══ NAVIGATION ════════════════════════════════════════════════════════════ -->
+<nav class="top-nav">
+  <button class="nav-btn" onclick="goPage('buywrites')">Buy/Writes</button>
+  <button class="nav-btn" onclick="goPage('optstrat')">
+    Option Strategy
+    <span class="sub">Indexes</span>
+  </button>
+  <button class="nav-btn" onclick="goPage('ivindexes')">IV Indexes</button>
+  <div class="nav-search">
+    <input type="text" placeholder="Search ticker…">
+    <button class="menu-icon" onclick="openMenu()">☰</button>
+  </div>
+</nav>
+
+<!-- ══ SLIDE-OUT MENU ════════════════════════════════════════════════════════ -->
+<div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
+<div class="menu-drawer" id="menuDrawer">
+  <div class="menu-hdr">
+    <span>Site Menu</span>
+    <button class="menu-close" onclick="closeMenu()">✕</button>
+  </div>
+
+  <div class="menu-sec">
+    <div class="menu-sec-title">Market Intelligence</div>
+    <div class="menu-item" onclick="goPage('market')"><span>Market Overview</span><span>→</span></div>
+    <div class="menu-item" onclick="goPage('sector')"><span>Equity Sectors</span><span>→</span></div>
+    <div class="menu-item" onclick="goPage('front')"><span>Dashboard</span><span>→</span></div>
+  </div>
+
+  <div class="menu-sec">
+    <div class="menu-sec-title">Stock Analytics</div>
+    <div class="menu-item" onclick="goPage('stock')"><span>Stock Zone Rankings</span><span>→</span></div>
+    <div class="menu-item" onclick="goPage('stockzone')"><span>Stocks By Zone</span><span>→</span></div>
+  </div>
+
+  <div class="menu-sec">
+    <div class="menu-sec-title">Options — Subscriber Access</div>
+    <div class="menu-item"><span>Options Dashboard</span><span class="menu-badge">Options</span></div>
+    <div class="menu-item" onclick="goPage('buywrites')"><span>Buy/Writes</span><span class="menu-badge">Options</span></div>
+    <div class="menu-item" onclick="goPage('optstrat')"><span>Strategy Indexes</span><span class="menu-badge">Options</span></div>
+    <div class="menu-item" onclick="goPage('ivindexes')"><span>IV Indexes</span><span class="menu-badge">Options</span></div>
+  </div>
+</div>
+
+<!-- ══ MAIN CONTENT ══════════════════════════════════════════════════════════ -->
+<div class="main-body">
+
+  <!-- ─── SECTION 1: OPTIONS STRATEGIES AND TIPS ─────────────────────────── -->
+  <div class="page-section-title">Options Strategies and Tips</div><!-- 11.4 -->
+
+  <!-- 11.5 — Option Strategy Spectrum -->
+  <div class="histo-wrap">
+    <div class="section-label">Option Strategy Histogram</div>
+    <div class="histo-svg-box">
+      <svg id="spectrum" width="100%" preserveAspectRatio="xMidYMid meet"></svg>
+    </div>
+  </div>
+
+  <!-- 11.6 — Daily Commentary (uploaded each day) -->
+  <div class="commentary-box" id="optCommentary">
+    With the Zone Phase Chart in Zone 4, option premiums have expanded due to moderate implied volatility.
+    Neutral-to-slightly-bearish strategies are recommended here, with Bear Spreads gaining favor as the
+    market tests resistance. Bull Spreads remain viable for issues holding in Zones 2–3. Buy/Writes and
+    Underwriting continue to offer consistent income across the spectrum regardless of directional bias.
+    <div class="last-line">Find Bear Spread candidates in Zones 5–6. Buy extra time — premium is reasonable at current IV levels.</div>
+  </div>
+
+  <!-- 11.7 & 11.8 — Trading Alert Toggles -->
+  <div class="two-col">
+
+    <div class="toggle-wrap"><!-- 11.7 Buy Call -->
+      <div class="toggle-header">
+        <div class="toggle-title">
+          Trading Alert List
+          <span class="sub-line">Buy Call</span>
+        </div>
+        <div class="toggle-btns">
+          <button class="toggle-btn active" data-group="bc" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+          <button class="toggle-btn"        data-group="bc" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+        </div>
+      </div>
+      <div class="scroll-table">
+        <table class="ir-table">
+          <thead><tr>
+            <th style="text-align:left">Ticker</th>
+            <th style="text-align:left">Name</th>
+            <th class="sortable sort-active" id="bc-th-ir"  onclick="handleSortClick('bc','ir')"  style="text-align:center">IR <span class="sort-arrow active" id="bc-arr-ir">↓</span></th>
+            <th style="text-align:center">Zn</th>
+            <th class="sortable"            id="bc-th-3mo" onclick="handleSortClick('bc','3mo')" style="text-align:center;padding-left:14px">3Mo Ago <span class="sort-arrow" id="bc-arr-3mo">↕</span></th>
+          </tr></thead>
+          <tbody id="bc-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="toggle-wrap"><!-- 11.8 Buy Put -->
+      <div class="toggle-header">
+        <div class="toggle-title">
+          Trading Alert List
+          <span class="sub-line">Buy Put</span>
+        </div>
+        <div class="toggle-btns">
+          <button class="toggle-btn active" data-group="bp" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+          <button class="toggle-btn"        data-group="bp" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+        </div>
+      </div>
+      <div class="scroll-table">
+        <table class="ir-table">
+          <thead><tr>
+            <th style="text-align:left">Ticker</th>
+            <th style="text-align:left">Name</th>
+            <th class="sortable sort-active" id="bp-th-ir"  onclick="handleSortClick('bp','ir')"  style="text-align:center">IR <span class="sort-arrow active" id="bp-arr-ir">↓</span></th>
+            <th style="text-align:center">Zn</th>
+            <th class="sortable"            id="bp-th-3mo" onclick="handleSortClick('bp','3mo')" style="text-align:center;padding-left:14px">3Mo Ago <span class="sort-arrow" id="bp-arr-3mo">↕</span></th>
+          </tr></thead>
+          <tbody id="bp-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /two-col -->
+
+  <!-- ─── SECTION 2: IMPLIED VOLATILITY ──────────────────────────────────── -->
+  <div class="page-section-title">Implied Volatility</div><!-- 11.9 -->
+
+  <!-- 11.10 — VIX Daily Comment (middle 50%) -->
+  <div class="vix-comment-outer">
+    <div class="vix-comment-box" id="vixComment">
+      VIX is in Zone 4 at +18. At +24 over 10 days, short-term volatility is contracting.
+    </div>
+  </div>
+
+  <!-- 11.11 & 11.12 — IV Toggle & VIX Graph -->
+  <div class="two-col">
+
+    <div class="toggle-wrap"><!-- 11.11 IV Indexes -->
+      <div class="toggle-header">
+        <div class="toggle-title">Implied Volatility Indexes</div>
+        <div class="toggle-btns">
+          <button class="toggle-btn active" data-group="iv" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+          <button class="toggle-btn"        data-group="iv" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+        </div>
+      </div>
+      <div class="scroll-table">
+        <table class="ir-table">
+          <thead><tr>
+            <th style="text-align:left">Ticker</th>
+            <th style="text-align:left">Name</th>
+            <th class="sortable sort-active" id="iv-th-ir"  onclick="handleSortClick('iv','ir')"  style="text-align:center">IR <span class="sort-arrow active" id="iv-arr-ir">↓</span></th>
+            <th style="text-align:center">Zn</th>
+            <th class="sortable"            id="iv-th-3mo" onclick="handleSortClick('iv','3mo')" style="text-align:center;padding-left:14px">3Mo Ago <span class="sort-arrow" id="iv-arr-3mo">↕</span></th>
+          </tr></thead>
+          <tbody id="iv-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="graph-wrap"><!-- 11.12 VIX 90/10 Graph -->
+      <div class="graph-header">
+        <span class="graph-title">CBOE Volatility Index (VIX)</span>
+        <div class="graph-key">
+          <span><span class="key-bar"></span>90-day Zone</span>
+          <span><span class="key-line"></span>10-day Zone</span>
+        </div>
+      </div>
+      <div class="graph-body">
+        <canvas id="vixChart" height="306"></canvas>
+      </div>
+    </div>
+
+  </div><!-- /two-col -->
+
+</div><!-- /main-body -->
+
+<script>
+/* ════════════════════════════════════════════════════════════════════════════
+   ELEMENT 11.5 — OPTION STRATEGY SPECTRUM
+   Injected daily value: pcValue (Phase Chart reading, −60 to +60)
+   +60 = extreme bullish / oversold (left), −60 = extreme bearish / overbought (right)
+   ════════════════════════════════════════════════════════════════════════════ */
+function buildSpectrum(pcValue) {
+  const W=920,BX=28,BW=864,BCX=460;
+  const BELL_A=228,BELL_FLOOR=10,BELL_SIG=200;
+  const TM=52,BY=324,H=362;
+  const COL_W=BW/3,xColL=BX+COL_W,xColR=BX+2*COL_W;
+
+  function bY(x){const dx=x-BCX;return BY-(BELL_A*Math.exp(-dx*dx/(2*BELL_SIG*BELL_SIG))+BELL_FLOOR);}
+  function bXatY(ty,side){
+    let lo=side<0?BX:BCX,hi=side<0?BCX:BX+BW;
+    for(let i=0;i<64;i++){const m=(lo+hi)*.5;bY(m)<ty?(side<0?(hi=m):(lo=m)):(side<0?(lo=m):(hi=m));}
+    return(lo+hi)*.5;
+  }
+
+  const peakY=bY(BCX);
+  const YD=[172,228,260,288]; // row horizontal divider y-values
+  const XB=YD.map(y=>[Math.max(BX,bXatY(y,-1)),Math.min(BX+BW,bXatY(y,1))]);
+  function rowMid(r){return r===0?(peakY+YD[0])/2:(YD[r-1]+YD[r])/2;}
+
+  function fillPath(){
+    let d=`M ${BX} ${BY}`;
+    for(let x=BX;x<=BX+BW;x+=2)d+=` L ${x} ${bY(x).toFixed(1)}`;
+    return d+` L ${BX+BW} ${BY} Z`;
+  }
+  function curvePts(){
+    const a=[];
+    for(let x=BX;x<=BX+BW;x+=2)a.push(`${x},${bY(x).toFixed(1)}`);
+    return a.join(' ');
+  }
+
+  // Phase dot x-position: +60→BX (bullish left), −60→BX+BW (bearish right)
+  const phX=BX+(60-pcValue)/120*BW;
+  const BULL='#00cc55',NEUT='#7a9aaa',BEAR='#e83535',GOLD='#f0a500',SOFT='#ddeeff';
+
+  function lbl(x,y,lines,fill,size,fam="'Courier New',monospace"){
+    const lh=size*1.35,half=(lines.length-1)*lh/2;
+    return lines.map((ln,i)=>
+      `<text x="${x.toFixed(1)}" y="${(y-half+i*lh).toFixed(1)}"
+        text-anchor="middle" font-family="${fam}"
+        font-size="${size}" font-weight="bold" fill="${fill}">${ln}</text>`
+    ).join('');
+  }
+
+  let s='';
+  s+=`<defs>
+    <filter id="gw"><feGaussianBlur stdDeviation="2.8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="sg"><feGaussianBlur stdDeviation="1.5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>`;
+
+  s+=`<rect width="${W}" height="${H}" fill="#08111e"/>`;
+
+  // Column tints
+  s+=`<rect x="${BX}"    y="0" width="${COL_W}" height="${H}" fill="rgba(0,204,85,0.055)"/>`;
+  s+=`<rect x="${xColL}" y="0" width="${COL_W}" height="${H}" fill="rgba(122,154,170,0.04)"/>`;
+  s+=`<rect x="${xColR}" y="0" width="${COL_W}" height="${H}" fill="rgba(232,53,53,0.055)"/>`;
+
+  // Column header labels
+  s+=lbl(BX+COL_W/2,34,['BULLISH'],BULL,15,'Trebuchet MS,sans-serif');
+  s+=lbl(BCX,        34,['NEUTRAL'],NEUT,15,'Trebuchet MS,sans-serif');
+  s+=lbl(xColR+COL_W/2,34,['BEARISH'],BEAR,15,'Trebuchet MS,sans-serif');
+
+  // Outer frame
+  s+=`<rect x="${BX}" y="${TM}" width="${BW}" height="${BY-TM}"
+    fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>`;
+
+  // Filled bell area
+  s+=`<path d="${fillPath()}" fill="rgba(40,95,180,0.13)"/>`;
+
+  // Horizontal row dividers (clipped to bell curve x-bounds)
+  YD.forEach((y,i)=>{
+    const[xl,xr]=XB[i];
+    s+=`<line x1="${xl.toFixed(1)}" y1="${y}" x2="${xr.toFixed(1)}" y2="${y}"
+      stroke="rgba(255,255,255,0.25)" stroke-width="1"/>`;
+  });
+
+  // Column dividers (full outer-box height)
+  [xColL,xColR].forEach(cx=>{
+    s+=`<line x1="${cx}" y1="${TM}" x2="${cx}" y2="${BY}"
+      stroke="rgba(255,255,255,0.18)" stroke-width="1"/>`;
+  });
+
+  // Neutral center split (BULL/BEAR SPREADS row only)
+  s+=`<line x1="${BCX}" y1="${YD[0]}" x2="${BCX}" y2="${YD[1]}"
+    stroke="rgba(255,255,255,0.18)" stroke-width="1"/>`;
+
+  // Bell curve — 3 passes (halo → main dashed → highlight)
+  const cp=curvePts();
+  s+=`<polyline points="${cp}" fill="none" stroke="rgba(120,185,255,0.14)" stroke-width="8"/>`;
+  s+=`<polyline points="${cp}" fill="none" stroke="rgba(155,210,255,0.72)"
+    stroke-width="1.6" stroke-dasharray="8,4" filter="url(#gw)"/>`;
+  s+=`<polyline points="${cp}" fill="none" stroke="rgba(205,235,255,0.38)"
+    stroke-width="0.8" stroke-dasharray="8,4"/>`;
+
+  // Baseline
+  s+=`<line x1="${BX}" y1="${BY}" x2="${BX+BW}" y2="${BY}"
+    stroke="rgba(255,255,255,0.35)" stroke-width="1"/>`;
+
+  // ── Strategy labels ─────────────────────────────────────────────────────
+  // Row 0: WRITE STRADDLES OR COMBINATIONS (peak → YD[0])
+  s+=lbl(BCX,rowMid(0),['WRITE','STRADDLES','OR','COMBINATIONS'],NEUT,11);
+
+  // Row 1: BULL SPREADS | BEAR SPREADS
+  // Bull = Zone 2 sage green (#88cc44), Bear = Zone 5 amber yellow (#ddcc00)
+  const[xl1,xr1]=XB[0];
+  s+=lbl((xl1+BCX)/2, rowMid(1),['BULL','SPREADS'],'#88cc44',11);
+  s+=lbl((BCX+xr1)/2, rowMid(1),['BEAR','SPREADS'],'#ddcc00',11);
+
+  // Row 2: BUY STOCK, SELL CALL (BUY-WRITE) | OVERWRITE
+  // White — income strategy, applicable throughout the spectrum.
+  // Buy-Write and Underwrite share identical P&L profiles (put-call parity);
+  // both income rows use the same white color to signal their paired nature.
+  // Split at xColR (NEUTRAL/BEARISH column boundary).
+  const[xl2,xr2]=XB[1];
+  s+=lbl((xl2+xColR)/2, rowMid(2),['BUY STOCK, SELL CALL','(BUY-WRITE)'],SOFT,9);
+  s+=lbl((xColR+xr2)/2, rowMid(2),['OVERWRITE'],BEAR,10);
+
+  // Row 3: BUY T-BILLS, SELL PUTS (UNDERWRITE) | BUY PROTECTIVE PUTS
+  // White — synthetic twin of Buy-Write (same P&L, different construction)
+  const[xl3,xr3]=XB[2];
+  s+=lbl((xl3+xColR)/2, rowMid(3),['BUY T-BILLS, SELL PUTS (UNDERWRITE)'],SOFT,8.5);
+  s+=lbl((xColR+xr3)/2, rowMid(3),['BUY PROTECTIVE PUTS'],BEAR,9);
+
+  // Row 4: BUY CALLS | BUY PUTS corner boxes
+  const boxH=BY-YD[3],boxW=154;
+  s+=`<rect x="${BX}" y="${YD[3]}" width="${boxW}" height="${boxH}"
+    fill="rgba(0,204,85,0.16)" stroke="${BULL}" stroke-width="0.8"/>`;
+  s+=lbl(BX+boxW/2,(YD[3]+BY)/2,['BUY CALLS'],BULL,11);
+  s+=`<rect x="${BX+BW-boxW}" y="${YD[3]}" width="${boxW}" height="${boxH}"
+    fill="rgba(232,53,53,0.16)" stroke="${BEAR}" stroke-width="0.8"/>`;
+  s+=lbl(BX+BW-boxW/2,(YD[3]+BY)/2,['BUY PUTS'],BEAR,11);
+
+  // ── Phase dot ────────────────────────────────────────────────────────────
+  const px=phX.toFixed(1),sign=pcValue>0?'+':'';
+  s+=`<circle cx="${px}" cy="${BY}" r="12" fill="${GOLD}" opacity="0.18" filter="url(#gw)"/>`;
+  s+=`<circle cx="${px}" cy="${BY}" r="8"  fill="${GOLD}" filter="url(#sg)"/>`;
+  s+=`<circle cx="${px}" cy="${BY}" r="3.5" fill="#fff"/>`;
+  s+=`<line x1="${px}" y1="${BY}" x2="${px}" y2="${BY+6}"
+    stroke="${GOLD}" stroke-width="1.5" opacity="0.6"/>`;
+  s+=`<text x="${px}" y="${BY+20}" text-anchor="middle"
+    font-family="'Courier New',monospace" font-size="9" font-weight="bold"
+    fill="${GOLD}">Phase ${sign}${pcValue}</text>`;
+
+  // Direction legend
+  s+=`<text x="${BX+5}" y="${H-5}" font-family="Trebuchet MS,sans-serif" font-size="7.5"
+    fill="rgba(0,212,160,0.38)">← Bullish / Oversold</text>`;
+  s+=`<text x="${BX+BW-5}" y="${H-5}" text-anchor="end"
+    font-family="Trebuchet MS,sans-serif" font-size="7.5"
+    fill="rgba(232,53,53,0.38)">Overbought / Bearish →</text>`;
+
+  const svg=document.getElementById('spectrum');
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  svg.innerHTML=s;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   TOGGLE REGULAR — SHARED LOGIC
+   (canonical implementation per Toggle_Regular_Spec_v2)
+   ════════════════════════════════════════════════════════════════════════════ */
+const sortState={}, periodState={};
+
+const ZONE_COLORS={1:'#00cc55',2:'#88cc44',3:'#7a9aaa',4:'#aa9a7a',5:'#ddcc00',6:'#e83535'};
+function irToZone(ir){if(ir>=67)return 1;if(ir>=34)return 2;if(ir>=1)return 3;if(ir>=-33)return 4;if(ir>=-66)return 5;return 6;}
+function zoneBadge(z){return `<span class="zone-badge" style="background:${ZONE_COLORS[z]}">${z}</span>`;}
+function irFmt(v){return(v>0?'+':'')+v;}
+function irCls(v){return v>0?'pos':v<0?'neg':'zer';}
+
+function handleSortClick(gid,field){
+  if(!sortState[gid])sortState[gid]={field:'ir',dir:1};
+  const s=sortState[gid];
+  sortState[gid]=s.field===field?{field,dir:s.dir*-1}:{field,dir:1};
+  renderToggle(gid);
+}
+function updateSortArrows(gid){
+  const{field,dir}=sortState[gid];
+  ['ir','3mo'].forEach(f=>{
+    const th=document.getElementById(`${gid}-th-${f}`);
+    const arr=document.getElementById(`${gid}-arr-${f}`);
+    if(!th||!arr)return;
+    const on=f===field;
+    if(on){th.classList.add('sort-active');arr.classList.add('active');arr.textContent=dir===1?'↓':'↑';}
+    else{th.classList.remove('sort-active');arr.classList.remove('active');arr.textContent='↕';}
+  });
+}
+function handlePeriodToggle(btn){
+  btn.closest('.toggle-btns').querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  periodState[btn.dataset.group]=btn.dataset.period;
+  renderToggle(btn.dataset.group);
+}
+function renderToggle(gid){
+  if(!sortState[gid])  sortState[gid]  ={field:'ir',dir:1};
+  if(!periodState[gid])periodState[gid]='90';
+  const p=periodState[gid];
+  const iF=p==='90'?'ir_90':'ir_10';
+  const mF=p==='90'?'ir_90_3mo':'ir_10_3mo';
+  const{field,dir}=sortState[gid];
+  const sF=field==='ir'?iF:mF;
+  const rows=[...DATA[gid]].sort((a,b)=>(b[sF]-a[sF])*dir);
+  document.getElementById(gid+'-tbody').innerHTML=rows.map(r=>{
+    const ir=r[iF],mo=r[mF],z=irToZone(ir);
+    const nm=r.name.length>22?r.name.slice(0,22)+'…':r.name;
+    return `<tr>
+      <td class="col-symbol">${r.symbol}</td>
+      <td style="color:#5a7a9a;font-size:10px">${nm}</td>
+      <td class="col-ir"><span class="${irCls(ir)}">${irFmt(ir)}</span></td>
+      <td class="col-zone">${zoneBadge(z)}</td>
+      <td class="col-3mo" style="padding-left:14px"><span class="${irCls(mo)}">${irFmt(mo)}</span></td>
+    </tr>`;
+  }).join('');
+  updateSortArrows(gid);
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   MOCK DATA
+   In production: fetched from /static/data/ JSON files pushed by daily script.
+   ════════════════════════════════════════════════════════════════════════════ */
+const DATA = {
+
+  /* 11.7 — Buy Call: Zone 1 extremes (90-day IR ≥ +83, most oversold)
+     Source: Zone 1 column of DYR. 3Mo Ago reflects opposite direction —
+     these stocks were deep in Zone 6 (overbought) three months prior.       */
+  bc:[
+    {symbol:'AAPL',name:'Apple Inc',             ir_90:99,ir_10:88,ir_90_3mo:-62,ir_10_3mo:-51},
+    {symbol:'NVDA',name:'NVIDIA Corp',            ir_90:97,ir_10:91,ir_90_3mo:-71,ir_10_3mo:-58},
+    {symbol:'MSFT',name:'Microsoft Corp',         ir_90:95,ir_10:84,ir_90_3mo:-55,ir_10_3mo:-44},
+    {symbol:'META',name:'Meta Platforms',         ir_90:93,ir_10:79,ir_90_3mo:-68,ir_10_3mo:-60},
+    {symbol:'AMZN',name:'Amazon.com Inc',         ir_90:91,ir_10:86,ir_90_3mo:-49,ir_10_3mo:-38},
+    {symbol:'TSLA',name:'Tesla Inc',              ir_90:90,ir_10:75,ir_90_3mo:-77,ir_10_3mo:-65},
+    {symbol:'NFLX',name:'Netflix Inc',            ir_90:88,ir_10:82,ir_90_3mo:-42,ir_10_3mo:-35},
+    {symbol:'AMD', name:'Advanced Micro Dev',     ir_90:87,ir_10:80,ir_90_3mo:-66,ir_10_3mo:-54},
+    {symbol:'CRM', name:'Salesforce Inc',         ir_90:86,ir_10:74,ir_90_3mo:-38,ir_10_3mo:-29},
+    {symbol:'ADBE',name:'Adobe Inc',              ir_90:86,ir_10:71,ir_90_3mo:-44,ir_10_3mo:-36},
+    {symbol:'QCOM',name:'Qualcomm Inc',           ir_90:85,ir_10:78,ir_90_3mo:-57,ir_10_3mo:-48},
+    {symbol:'INTC',name:'Intel Corp',             ir_90:85,ir_10:69,ir_90_3mo:-35,ir_10_3mo:-28},
+    {symbol:'PYPL',name:'PayPal Holdings',        ir_90:84,ir_10:76,ir_90_3mo:-62,ir_10_3mo:-55},
+    {symbol:'SQ',  name:'Block Inc',              ir_90:84,ir_10:72,ir_90_3mo:-48,ir_10_3mo:-39},
+    {symbol:'SNAP',name:'Snap Inc',               ir_90:83,ir_10:68,ir_90_3mo:-73,ir_10_3mo:-61},
+  ],
+
+  /* 11.8 — Buy Put: Zone 6 extremes (90-day IR ≤ −83, most overbought)
+     Source: Zone 6 column of DYR. 3Mo Ago is green — these stocks were
+     deep in Zone 1 (oversold) three months prior.                           */
+  bp:[
+    {symbol:'KO',  name:'Coca-Cola Co',           ir_90:-99,ir_10:-88,ir_90_3mo:61,ir_10_3mo:52},
+    {symbol:'PG',  name:'Procter & Gamble',       ir_90:-97,ir_10:-82,ir_90_3mo:74,ir_10_3mo:63},
+    {symbol:'JNJ', name:'Johnson & Johnson',      ir_90:-95,ir_10:-79,ir_90_3mo:58,ir_10_3mo:47},
+    {symbol:'XOM', name:'Exxon Mobil Corp',       ir_90:-93,ir_10:-85,ir_90_3mo:66,ir_10_3mo:55},
+    {symbol:'CVX', name:'Chevron Corp',           ir_90:-91,ir_10:-77,ir_90_3mo:53,ir_10_3mo:44},
+    {symbol:'WMT', name:'Walmart Inc',            ir_90:-90,ir_10:-83,ir_90_3mo:71,ir_10_3mo:60},
+    {symbol:'MCD', name:"McDonald's Corp",        ir_90:-88,ir_10:-74,ir_90_3mo:49,ir_10_3mo:38},
+    {symbol:'MRK', name:'Merck & Co',             ir_90:-87,ir_10:-80,ir_90_3mo:64,ir_10_3mo:55},
+    {symbol:'PFE', name:'Pfizer Inc',             ir_90:-86,ir_10:-71,ir_90_3mo:42,ir_10_3mo:33},
+    {symbol:'ABT', name:'Abbott Laboratories',    ir_90:-86,ir_10:-68,ir_90_3mo:55,ir_10_3mo:46},
+    {symbol:'UNH', name:'UnitedHealth Group',     ir_90:-85,ir_10:-76,ir_90_3mo:68,ir_10_3mo:57},
+    {symbol:'HD',  name:'Home Depot Inc',         ir_90:-85,ir_10:-72,ir_90_3mo:44,ir_10_3mo:35},
+    {symbol:'VZ',  name:'Verizon Comm',           ir_90:-84,ir_10:-69,ir_90_3mo:38,ir_10_3mo:29},
+    {symbol:'T',   name:'AT&T Inc',               ir_90:-84,ir_10:-75,ir_90_3mo:57,ir_10_3mo:48},
+    {symbol:'SO',  name:'Southern Company',       ir_90:-83,ir_10:-66,ir_90_3mo:45,ir_10_3mo:36},
+  ],
+
+  /* 11.11 — Implied Volatility Indexes (all 20, default sorted by 90 IR)   */
+  iv:[
+    {symbol:'VIX', name:'CBOE Volatility Index',  ir_90:18, ir_10:24, ir_90_3mo:-32,ir_10_3mo:-28},
+    {symbol:'VXV', name:'CBOE 3-Month VIX',       ir_90:22, ir_10:27, ir_90_3mo:-28,ir_10_3mo:-22},
+    {symbol:'VXMT',name:'CBOE 6-Month VIX',       ir_90:14, ir_10:19, ir_90_3mo:-35,ir_10_3mo:-30},
+    {symbol:'VIXY',name:'CBOE 1-Year VIX',        ir_90:9,  ir_10:14, ir_90_3mo:-41,ir_10_3mo:-35},
+    {symbol:'VXMO',name:'CBOE Standard Monthly',  ir_90:31, ir_10:38, ir_90_3mo:-18,ir_10_3mo:-14},
+    {symbol:'VIN', name:'CBOE Near Term',         ir_90:45, ir_10:52, ir_90_3mo:-22,ir_10_3mo:-17},
+    {symbol:'VIF', name:'CBOE Far Term',          ir_90:28, ir_10:33, ir_90_3mo:-25,ir_10_3mo:-20},
+    {symbol:'VVIX',name:'CBOE VIX of VIX',        ir_90:-14,ir_10:-8, ir_90_3mo:38, ir_10_3mo:30},
+    {symbol:'VTLT',name:'20-Yr T-Bond VIX',       ir_90:55, ir_10:62, ir_90_3mo:-15,ir_10_3mo:-11},
+    {symbol:'VXHY',name:'High Yield Bond VIX',    ir_90:38, ir_10:44, ir_90_3mo:-28,ir_10_3mo:-22},
+    {symbol:'GVZ', name:'Gold VIX',               ir_90:-22,ir_10:-16,ir_90_3mo:45, ir_10_3mo:38},
+    {symbol:'VXSL',name:'Silver VIX',             ir_90:-35,ir_10:-28,ir_90_3mo:58, ir_10_3mo:49},
+    {symbol:'OVX', name:'Crude Oil VIX',          ir_90:62, ir_10:69, ir_90_3mo:-12,ir_10_3mo:-8},
+    {symbol:'VXNG',name:'US Natural Gas VIX',     ir_90:71, ir_10:78, ir_90_3mo:-44,ir_10_3mo:-38},
+    {symbol:'VXGO',name:'Google VIX',             ir_90:8,  ir_10:12, ir_90_3mo:-55,ir_10_3mo:-48},
+    {symbol:'VXGS',name:'Goldman-Sachs VIX',      ir_90:-8, ir_10:-3, ir_90_3mo:22, ir_10_3mo:18},
+    {symbol:'VXAP',name:'Apple VIX',              ir_90:25, ir_10:31, ir_90_3mo:-38,ir_10_3mo:-32},
+    {symbol:'VXAZ',name:'Amazon VIX',             ir_90:18, ir_10:22, ir_90_3mo:-44,ir_10_3mo:-37},
+    {symbol:'VXIB',name:'IBM VIX',                ir_90:-18,ir_10:-12,ir_90_3mo:35, ir_10_3mo:28},
+    {symbol:'VXN', name:'NASDAQ 100 Volatility',  ir_90:32, ir_10:39, ir_90_3mo:-25,ir_10_3mo:-19},
+  ],
+};
+
+/* ════════════════════════════════════════════════════════════════════════════
+   ELEMENT 11.12 — VIX 90/10 ZONE COMBINATION CHART
+   Bars = zone derived from VIX 90-day IR, colored by zone
+   Line = zone derived from VIX 10-day IR, gold
+   Y-axis: Zone 1 (bottom) through Zone 6 (top), 198-point scale
+   ════════════════════════════════════════════════════════════════════════════ */
+function buildVixChart(){
+  // 30 days of demo data (zone = irToZone(VIX IR reading that day)
+  const vixData=[
+    {d:'Apr 14',z90:3,z10:3},{d:'Apr 15',z90:3,z10:4},{d:'Apr 16',z90:4,z10:4},
+    {d:'Apr 17',z90:4,z10:4},{d:'Apr 18',z90:4,z10:5},{d:'Apr 21',z90:4,z10:5},
+    {d:'Apr 22',z90:4,z10:4},{d:'Apr 23',z90:3,z10:4},{d:'Apr 24',z90:3,z10:3},
+    {d:'Apr 25',z90:3,z10:3},{d:'Apr 28',z90:3,z10:3},{d:'Apr 29',z90:3,z10:3},
+    {d:'Apr 30',z90:3,z10:2},{d:'May 1', z90:3,z10:2},{d:'May 2', z90:3,z10:3},
+    {d:'May 5', z90:4,z10:3},{d:'May 6', z90:4,z10:4},{d:'May 7', z90:4,z10:4},
+    {d:'May 8', z90:4,z10:5},{d:'May 9', z90:4,z10:5},{d:'May 12',z90:4,z10:4},
+    {d:'May 13',z90:3,z10:4},{d:'May 14',z90:3,z10:3},{d:'May 15',z90:3,z10:4},
+    {d:'May 16',z90:4,z10:4},{d:'May 19',z90:4,z10:4},{d:'May 20',z90:4,z10:5},
+    {d:'May 21',z90:4,z10:4},{d:'May 22',z90:4,z10:4},{d:'May 23',z90:3,z10:4},
+  ];
+
+  // Bar color by zone (uses platform zone palette)
+  const ZC={
+    1:'rgba(0,204,85,0.62)',   2:'rgba(136,204,68,0.62)',
+    3:'rgba(122,154,170,0.62)',4:'rgba(170,154,122,0.62)',
+    5:'rgba(221,204,0,0.62)', 6:'rgba(232,53,53,0.62)',
+  };
+
+  // Background zone band plugin
+  const zoneBandsPlugin={
+    id:'zoneBands',
+    beforeDraw(chart){
+      const{ctx,chartArea:{left,right},scales:{y}}=chart;
+      [{min:.5,max:1.5,c:'rgba(0,204,85,0.07)'},{min:1.5,max:2.5,c:'rgba(136,204,68,0.07)'},
+       {min:2.5,max:3.5,c:'rgba(122,154,170,0.07)'},{min:3.5,max:4.5,c:'rgba(170,154,122,0.07)'},
+       {min:4.5,max:5.5,c:'rgba(221,204,0,0.07)'},{min:5.5,max:6.5,c:'rgba(232,53,53,0.07)'}
+      ].forEach(b=>{
+        ctx.fillStyle=b.c;
+        ctx.fillRect(left,y.getPixelForValue(b.max),right-left,y.getPixelForValue(b.min)-y.getPixelForValue(b.max));
+      });
+    }
+  };
+
+  const ctx=document.getElementById('vixChart').getContext('2d');
+  new Chart(ctx,{
+    type:'bar',
+    plugins:[zoneBandsPlugin],
+    data:{
+      labels:vixData.map(d=>d.d),
+      datasets:[
+        {
+          type:'bar',
+          label:'90-day Zone',
+          data:vixData.map(d=>d.z90),
+          backgroundColor:vixData.map(d=>ZC[d.z90]),
+          borderColor:'transparent',
+          barPercentage:.82,
+          categoryPercentage:.88,
+        },
+        {
+          type:'line',
+          label:'10-day Zone',
+          data:vixData.map(d=>d.z10),
+          borderColor:'#f0a500',
+          backgroundColor:'transparent',
+          borderWidth:2,
+          pointRadius:2.5,
+          pointBackgroundColor:'#f0a500',
+          tension:.3,
+        }
+      ]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:false},
+        tooltip:{
+          backgroundColor:'#0d1829',
+          borderColor:'#3090d8',
+          borderWidth:1,
+          titleColor:'#ddeeff',
+          bodyColor:'#b8cce0',
+          titleFont:{family:"'Courier New',monospace",size:11},
+          bodyFont: {family:"'Courier New',monospace",size:10},
+          callbacks:{label:c=>` ${c.dataset.label}: Zone ${c.raw}`}
+        }
+      },
+      scales:{
+        x:{
+          grid:{color:'rgba(255,255,255,0.04)'},
+          ticks:{color:'#5a7a9a',font:{family:"'Courier New',monospace",size:9},maxTicksLimit:10}
+        },
+        y:{
+          min:.5,max:6.5,
+          grid:{color:'rgba(255,255,255,0.06)'},
+          ticks:{
+            stepSize:1,color:'#5a7a9a',
+            font:{family:"'Courier New',monospace",size:9},
+            callback:v=>Number.isInteger(v)?`Zone ${v}`:''
+          }
+        }
+      }
+    }
+  });
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   MENU
+   ════════════════════════════════════════════════════════════════════════════ */
+function openMenu(){
+  document.getElementById('menuOverlay').classList.add('open');
+  document.getElementById('menuDrawer').classList.add('open');
+}
+function closeMenu(){
+  document.getElementById('menuOverlay').classList.remove('open');
+  document.getElementById('menuDrawer').classList.remove('open');
+}
+function goPage(p){console.log('Navigate to:',p);}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   INIT
+   ════════════════════════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded',()=>{
+  // Phase Chart reading — updated daily by backend script
+  // +22 = slightly bullish / neutral (demo value)
+  buildSpectrum(22);
+
+  // Toggle Regulars — default: 90 IR, sorted descending (weakest first)
+  ['bc','bp','iv'].forEach(gid=>{
+    sortState[gid]  ={field:'ir',dir:1};
+    periodState[gid]='90';
+    renderToggle(gid);
+  });
+
+  // VIX Zone Combination Chart
+  buildVixChart();
+});
+</script>
+</body>
+</html>

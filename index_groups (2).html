@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ETF and Index Groups — Top Down Trading</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#08111e;--panel:#0d1829;--panel-alt:#0a1420;
+  --border:#1a2d44;--border-lite:#243c58;
+  --text:#ddeeff;--dim:#5a7a9a;--accent:#3090d8;--gold:#c9a227;
+  --z1:#00cc55;--z2:#88cc44;--z3:#7a9aaa;--z4:#aa9a7a;--z5:#ddcc00;--z6:#e83535;
+}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;overflow:hidden;}
+
+/* ── HEADER BLOCK (both lines sticky together) ── */
+.header-block{position:sticky;top:0;z-index:100;flex-shrink:0;}
+
+/* Line 1 — Nav controls: BACK · · · SEARCH */
+.top-nav{
+  height:44px;background:var(--panel-alt);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 12px;gap:10px;
+}
+.nav-back{
+  background:var(--panel);border:1px solid var(--border-lite);color:var(--dim);
+  font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;
+  letter-spacing:.06em;text-transform:uppercase;padding:5px 14px;
+  cursor:pointer;transition:all .15s;white-space:nowrap;
+}
+.nav-back:hover{border-color:var(--accent);color:var(--text);}
+.nav-spacer{flex:1;}
+.search-box{
+  background:var(--panel);border:1px solid var(--border-lite);color:var(--text);
+  font-family:'Rajdhani',sans-serif;font-size:12px;padding:5px 10px;
+  outline:none;width:160px;transition:border-color .15s;
+}
+.search-box::placeholder{color:var(--dim);}
+.search-box:focus{border-color:var(--accent);}
+
+/* Line 2 — Page title */
+.page-title-bar{
+  height:32px;background:var(--panel);border-bottom:2px solid var(--border-lite);
+  display:flex;align-items:center;justify-content:center;
+}
+.page-title-text{
+  font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;
+  color:var(--text);letter-spacing:.06em;text-transform:uppercase;
+}
+
+/* ── SHELL — height accounts for both header lines (44 + 32 = 76px) ── */
+.shell{display:flex;height:calc(100vh - 76px);overflow:hidden;}
+
+/* ── LEFT SIDEBAR ── */
+.sidebar{
+  width:285px;min-width:285px;border-right:2px solid var(--border-lite);
+  display:flex;flex-direction:column;background:var(--panel-alt);
+  flex-shrink:0;overflow:hidden;
+}
+.sb-head{padding:8px 10px 6px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.sb-title{text-align:center;font-weight:700;font-size:12px;color:var(--text);margin-bottom:5px;}
+.period-btns{display:flex;justify-content:center;gap:4px;}
+.p-btn{
+  background:#1a2d44;border:1px solid #1a2d44;color:var(--dim);
+  font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600;
+  padding:3px 10px;cursor:pointer;transition:all .15s;
+}
+.p-btn.active{background:#2a7abf;border-color:#3090d8;color:#fff;}
+.p-btn:hover:not(.active){border-color:#3090d8;color:var(--text);}
+.sb-scroll{overflow-y:auto;flex:1;}
+.sb-scroll::-webkit-scrollbar{width:4px;}
+.sb-scroll::-webkit-scrollbar-track{background:#08111e;}
+.sb-scroll::-webkit-scrollbar-thumb{background:#243c58;border-radius:2px;}
+.lh-table{width:100%;border-collapse:collapse;font-family:'Courier New',monospace;font-size:11px;}
+.lh-table th{
+  background:var(--panel-alt);color:var(--dim);padding:4px 6px;
+  border-bottom:1px solid var(--border);position:sticky;top:0;
+  font-size:10px;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;
+}
+.lh-table th.lh-sort-active{color:var(--accent);}
+.lh-table td{padding:3px 6px;border-bottom:1px solid #0e1a28;white-space:nowrap;}
+.lh-table tr:hover td{background:#111e30;}
+
+/* ── RIGHT CONTENT ── */
+.right-content{flex:1;overflow-y:auto;padding:10px 14px;}
+.right-content::-webkit-scrollbar{width:6px;}
+.right-content::-webkit-scrollbar-track{background:#08111e;}
+.right-content::-webkit-scrollbar-thumb{background:#243c58;border-radius:3px;}
+
+/* ── HISTOGRAM ── */
+.histo-wrap{margin-bottom:14px;}
+.hist-title{
+  font-weight:700;font-size:13px;color:var(--text);
+  text-align:center;margin-bottom:6px;letter-spacing:.03em;
+}
+.histo-svg-box{background:var(--panel);border:1px solid var(--border);overflow:hidden;}
+#histo-tip{
+  position:fixed;background:#0d1829;border:1px solid #3090d8;color:#ddeeff;
+  font-family:'Courier New',monospace;font-size:11px;padding:5px 9px;
+  border-radius:2px;box-shadow:0 2px 12px rgba(0,0,0,.6);
+  white-space:nowrap;z-index:999;pointer-events:none;display:none;
+}
+
+/* ── SECTION HEADING ── */
+.section-heading{
+  font-size:14px;font-weight:700;color:var(--gold);text-align:center;
+  letter-spacing:.05em;text-transform:uppercase;
+  margin:18px 0 12px;border-top:1px solid var(--border-lite);padding-top:14px;
+}
+
+/* ── REGULAR TOGGLES ── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.toggle-wrap{background:var(--panel);border:1px solid var(--border);overflow:hidden;}
+.toggle-header{
+  background:var(--panel-alt);border-bottom:1px solid var(--border);
+  padding:6px 10px;display:flex;align-items:flex-start;justify-content:space-between;
+}
+.toggle-title-block{display:flex;flex-direction:column;padding-right:8px;min-width:0;}
+.toggle-title{font-weight:700;font-size:12px;color:var(--text);}
+.toggle-subtitle{font-style:italic;font-size:10px;color:var(--dim);margin-top:2px;}
+.toggle-btns{display:flex;gap:2px;flex-shrink:0;align-self:center;}
+.t-btn{
+  background:#1a2d44;border:1px solid #1a2d44;color:var(--dim);
+  font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600;
+  padding:3px 10px;cursor:pointer;transition:all .15s;
+}
+.t-btn.active{background:#2a7abf;border-color:#3090d8;color:#fff;}
+.t-btn:hover:not(.active){border-color:#3090d8;color:var(--text);}
+.scroll-table{max-height:340px;overflow-y:auto;}
+.scroll-table::-webkit-scrollbar{width:4px;}
+.scroll-table::-webkit-scrollbar-track{background:#08111e;}
+.scroll-table::-webkit-scrollbar-thumb{background:#243c58;border-radius:2px;}
+.ir-table{width:100%;border-collapse:collapse;font-family:'Courier New',monospace;font-size:11px;}
+.ir-table th{
+  background:var(--panel);color:var(--dim);padding:4px 6px;text-align:left;
+  border-bottom:1px solid var(--border);position:sticky;top:0;
+  font-size:10px;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;
+}
+.ir-table th.sortable{cursor:pointer;user-select:none;}
+.ir-table th.sortable:hover{color:var(--text);}
+.ir-table th.sort-active{color:var(--accent);}
+.sort-arrow{font-size:10px;margin-left:3px;opacity:.5;}
+.sort-arrow.active{opacity:1;color:var(--accent);}
+.ir-table td{padding:3px 6px;border-bottom:1px solid #0e1a28;white-space:nowrap;}
+.ir-table tr:hover td{background:#111e30;}
+.col-sym{color:var(--text);font-weight:bold;}
+.col-ir,.col-zone,.col-3mo{text-align:center;}
+.col-3mo{font-size:10px;}
+.zone-badge{display:inline-block;padding:1px 5px;font-size:10px;font-weight:bold;border-radius:2px;color:#000;}
+.pos{color:#88cc44;}.neg{color:#e83535;}.zer{color:#b8cce0;}
+</style>
+</head>
+<body>
+
+<div class="header-block">
+  <nav class="top-nav">
+    <button class="nav-back" onclick="navTo('sector.html','sectorPage')">&#8592; Back</button>
+    <div class="nav-spacer"></div>
+    <input class="search-box" type="text" placeholder="Search ticker or name&#8230;" id="searchInput" oninput="doSearch(this.value)">
+  </nav>
+  <div class="page-title-bar">
+    <span class="page-title-text">ETF and Index Groups</span>
+  </div>
+</div>
+
+<div id="histo-tip"></div>
+
+<div class="shell">
+  <!-- ── LEFT SIDEBAR ── -->
+  <div class="sidebar">
+    <div class="sb-head">
+      <div class="sb-title">ETF &amp; Index Groups</div>
+      <div class="period-btns">
+        <button class="p-btn active" onclick="setSBPeriod('90',this)">90 IR</button>
+        <button class="p-btn"        onclick="setSBPeriod('10',this)">10 IR</button>
+      </div>
+    </div>
+    <div class="sb-scroll">
+      <table class="lh-table">
+        <thead><tr>
+          <th style="text-align:left">Tick</th>
+          <th style="text-align:left">Name</th>
+          <th class="lh-sort-active" id="sb-th-ir" onclick="sortLH()"
+              style="text-align:center;cursor:pointer;user-select:none">
+            IR <span class="sort-arrow active" id="sb-arr-ir">&#8595;</span>
+          </th>
+          <th style="text-align:center">Zn</th>
+        </tr></thead>
+        <tbody id="sb-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── RIGHT CONTENT ── -->
+  <div class="right-content">
+    <div class="histo-wrap">
+      <div class="hist-title">ETF and Index Groups — 90-Day Implied Risk Histogram</div>
+      <div class="histo-svg-box">
+        <svg id="mainHisto" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block"></svg>
+      </div>
+    </div>
+
+    <div class="section-heading">Sector Analysis Using ETF and Index Groups</div>
+
+    <div id="toggles-container"></div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   NAVIGATION — named windows on desktop, same-tab on mobile
+═══════════════════════════════════════════════════════════════ */
+function navTo(url, winName) {
+  window.innerWidth < 768 ? location.href = url : window.open(url, winName);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DATA — 150 ETFs and Indexes
+═══════════════════════════════════════════════════════════════ */
+const ALL_DATA = [
+  // S&P BROAD (13)
+  {symbol:'SPX', name:'S&P 500',                   ir_90:-12,ir_10:-18,ir_90_3mo:18, ir_10_3mo:12},
+  {symbol:'XOE', name:'S&P 500 Equal Weight',      ir_90: 18,ir_10:  8,ir_90_3mo:-12,ir_10_3mo:-18},
+  {symbol:'OEX', name:'S&P 100',                   ir_90: -8,ir_10:-15,ir_90_3mo:12, ir_10_3mo: 8},
+  {symbol:'MID', name:'S&P MidCap 400',            ir_90: 28,ir_10: 18,ir_90_3mo:-22,ir_10_3mo:-28},
+  {symbol:'SML', name:'S&P SmallCap 600',          ir_90: 42,ir_10: 32,ir_90_3mo:-35,ir_10_3mo:-42},
+  {symbol:'XOEF',name:'S&P 500 ex-S&P 100',        ir_90: 22,ir_10: 12,ir_90_3mo:-18,ir_10_3mo:-22},
+  {symbol:'IVW', name:'S&P 500 Growth',            ir_90:-68,ir_10:-75,ir_90_3mo:55, ir_10_3mo:48},
+  {symbol:'IVE', name:'S&P 500 Value',             ir_90: 15,ir_10:  5,ir_90_3mo:-10,ir_10_3mo:-15},
+  {symbol:'IJK', name:'S&P Mid-Cap 400 Growth',    ir_90:-42,ir_10:-52,ir_90_3mo:38, ir_10_3mo:32},
+  {symbol:'IJJ', name:'S&P Mid-Cap 400 Value',     ir_90: 38,ir_10: 28,ir_90_3mo:-32,ir_10_3mo:-38},
+  {symbol:'IJT', name:'S&P Small-Cap 600 Growth',  ir_90: 12,ir_10:  2,ir_90_3mo: -8,ir_10_3mo:-12},
+  {symbol:'IJS', name:'S&P Small-Cap 600 Value',   ir_90: 55,ir_10: 42,ir_90_3mo:-48,ir_10_3mo:-55},
+  {symbol:'SPYD',name:'S&P 500 High Dividend ETF', ir_90: 25,ir_10: 15,ir_90_3mo:-20,ir_10_3mo:-25},
+  // RUSSELL (11)
+  {symbol:'IWB', name:'Russell 1000 ETF',          ir_90: -5,ir_10:-12,ir_90_3mo:  8,ir_10_3mo: 5},
+  {symbol:'IWF', name:'Russell 1000 Growth ETF',   ir_90:-52,ir_10:-62,ir_90_3mo:45, ir_10_3mo:38},
+  {symbol:'IWD', name:'Russell 1000 Value ETF',    ir_90: 22,ir_10: 12,ir_90_3mo:-18,ir_10_3mo:-22},
+  {symbol:'IWM', name:'Russell 2000 ETF',          ir_90: 35,ir_10: 25,ir_90_3mo:-28,ir_10_3mo:-35},
+  {symbol:'IWO', name:'Russell 2000 Growth ETF',   ir_90: 18,ir_10:  8,ir_90_3mo:-12,ir_10_3mo:-18},
+  {symbol:'IWN', name:'Russell 2000 Value ETF',    ir_90: 58,ir_10: 45,ir_90_3mo:-52,ir_10_3mo:-58},
+  {symbol:'SMMD',name:'Russell 2500 ETF',          ir_90: 32,ir_10: 22,ir_90_3mo:-25,ir_10_3mo:-32},
+  {symbol:'IWV', name:'Russell 3000 ETF',          ir_90: -2,ir_10: -8,ir_90_3mo:  5,ir_10_3mo: 2},
+  {symbol:'IWR', name:'Russell Midcap ETF',        ir_90: 28,ir_10: 18,ir_90_3mo:-22,ir_10_3mo:-28},
+  {symbol:'IWS', name:'Russell Mid-Cap Value ETF', ir_90: 45,ir_10: 35,ir_90_3mo:-38,ir_10_3mo:-45},
+  {symbol:'IWX', name:'Russell Top 200 Value ETF', ir_90:  8,ir_10: -2,ir_90_3mo: -5,ir_10_3mo: -8},
+  // S&P SELECT SECTOR (11)
+  {symbol:'XLC', name:'Communication Services ETF',ir_90:-28,ir_10:-38,ir_90_3mo:22, ir_10_3mo:15},
+  {symbol:'XLY', name:'Consumer Discretionary ETF',ir_90:-48,ir_10:-58,ir_90_3mo:42, ir_10_3mo:35},
+  {symbol:'XLP', name:'Consumer Staples ETF',      ir_90: 32,ir_10: 22,ir_90_3mo:-25,ir_10_3mo:-32},
+  {symbol:'XLE', name:'Energy ETF',               ir_90: 62,ir_10: 50,ir_90_3mo:-55,ir_10_3mo:-62},
+  {symbol:'XLF', name:'Finance ETF',              ir_90: -8,ir_10:-15,ir_90_3mo:12, ir_10_3mo: 8},
+  {symbol:'XLV', name:'Health Care ETF',          ir_90: 38,ir_10: 28,ir_90_3mo:-32,ir_10_3mo:-38},
+  {symbol:'XLI', name:'Industrials ETF',          ir_90: 15,ir_10:  5,ir_90_3mo:-10,ir_10_3mo:-15},
+  {symbol:'XLB', name:'Materials ETF',            ir_90: 42,ir_10: 32,ir_90_3mo:-35,ir_10_3mo:-42},
+  {symbol:'XLRE',name:'Real Estate ETF',          ir_90: 52,ir_10: 40,ir_90_3mo:-45,ir_10_3mo:-52},
+  {symbol:'XLK', name:'Tech ETF',                 ir_90:-78,ir_10:-85,ir_90_3mo:68, ir_10_3mo:62},
+  {symbol:'XLU', name:'Utilities ETF',            ir_90: 48,ir_10: 38,ir_90_3mo:-42,ir_10_3mo:-48},
+  // S&P SPDR SECTOR (18)
+  {symbol:'XTN', name:'S&P Transportation ETF',         ir_90: 18,ir_10:  8,ir_90_3mo:-12,ir_10_3mo:-18},
+  {symbol:'XTL', name:'S&P Telecom ETF',                ir_90:-12,ir_10:-22,ir_90_3mo:  8,ir_10_3mo: 5},
+  {symbol:'XSW', name:'S&P Software & Services ETF',    ir_90:-72,ir_10:-80,ir_90_3mo:62, ir_10_3mo:55},
+  {symbol:'XSD', name:'S&P Semiconductor ETF',          ir_90:-82,ir_10:-90,ir_90_3mo:72, ir_10_3mo:65},
+  {symbol:'XRT', name:'S&P Retail ETF',                 ir_90: 25,ir_10: 15,ir_90_3mo:-18,ir_10_3mo:-25},
+  {symbol:'KRE', name:'S&P Regional Banking ETF',       ir_90: 68,ir_10: 55,ir_90_3mo:-62,ir_10_3mo:-68},
+  {symbol:'XPH', name:'S&P Pharmaceuticals ETF',        ir_90: 45,ir_10: 35,ir_90_3mo:-38,ir_10_3mo:-45},
+  {symbol:'XOP', name:'S&P Oil & Gas E&P ETF',          ir_90: 55,ir_10: 42,ir_90_3mo:-48,ir_10_3mo:-55},
+  {symbol:'XES', name:'S&P Oil & Gas Equip ETF',        ir_90: 52,ir_10: 40,ir_90_3mo:-45,ir_10_3mo:-52},
+  {symbol:'XME', name:'S&P Metals & Mining ETF',        ir_90: 72,ir_10: 60,ir_90_3mo:-65,ir_10_3mo:-72},
+  {symbol:'KIE', name:'S&P Insurance ETF',              ir_90:-35,ir_10:-45,ir_90_3mo:28, ir_10_3mo:22},
+  {symbol:'XHB', name:'S&P Homebuilders ETF',           ir_90: 35,ir_10: 25,ir_90_3mo:-28,ir_10_3mo:-35},
+  {symbol:'XHS', name:'S&P Health Care Services ETF',   ir_90: 42,ir_10: 32,ir_90_3mo:-35,ir_10_3mo:-42},
+  {symbol:'XHE', name:'S&P Health Care Equip ETF',      ir_90: 48,ir_10: 38,ir_90_3mo:-42,ir_10_3mo:-48},
+  {symbol:'KCE', name:'S&P Capital Markets ETF',        ir_90:-25,ir_10:-35,ir_90_3mo:18, ir_10_3mo:12},
+  {symbol:'XBI', name:'S&P Biotech ETF',                ir_90: 78,ir_10: 65,ir_90_3mo:-72,ir_10_3mo:-78},
+  {symbol:'KBE', name:'S&P Bank ETF',                   ir_90: -2,ir_10:-10,ir_90_3mo:  5,ir_10_3mo: 2},
+  {symbol:'XAR', name:'S&P Aerospace & Defense ETF',    ir_90: 22,ir_10: 12,ir_90_3mo:-15,ir_10_3mo:-22},
+  // DORSEY WRIGHT (17)
+  {symbol:'PIZ', name:'DW Developed Mkts Momentum',ir_90: 12,ir_10:  2,ir_90_3mo: -8,ir_10_3mo:-12},
+  {symbol:'PIE', name:'DW Emerging Mkts Momentum', ir_90: 35,ir_10: 25,ir_90_3mo:-28,ir_10_3mo:-35},
+  {symbol:'PTH', name:'DW Healthcare Momentum',    ir_90: 28,ir_10: 18,ir_90_3mo:-22,ir_10_3mo:-28},
+  {symbol:'PYZ', name:'DW Basic Materials Momentum',ir_90:48,ir_10: 38,ir_90_3mo:-42,ir_10_3mo:-48},
+  {symbol:'PXI', name:'DW Energy Momentum ETF',    ir_90: 58,ir_10: 45,ir_90_3mo:-52,ir_10_3mo:-58},
+  {symbol:'PUI', name:'DW Utilities Momentum ETF', ir_90: 42,ir_10: 32,ir_90_3mo:-35,ir_10_3mo:-42},
+  {symbol:'PEZ', name:'DW Consumer Cyclicals',     ir_90:-22,ir_10:-32,ir_90_3mo:15, ir_10_3mo:10},
+  {symbol:'PFI', name:'DW Financial Momentum ETF', ir_90: -8,ir_10:-18,ir_90_3mo:  5,ir_10_3mo: 2},
+  {symbol:'PTF', name:'DW Technology Momentum ETF',ir_90:-75,ir_10:-83,ir_90_3mo:65, ir_10_3mo:58},
+  {symbol:'PSL', name:'DW Consumer Staples Momentum',ir_90:22,ir_10:12,ir_90_3mo:-15,ir_10_3mo:-22},
+  {symbol:'GXDW',name:'DW Thematic ETF',           ir_90:  5,ir_10: -5,ir_90_3mo: -2,ir_10_3mo: -5},
+  {symbol:'QQQA',name:'DW Nasdaq-100 Momentum ETF',ir_90:-65,ir_10:-72,ir_90_3mo:58, ir_10_3mo:52},
+  {symbol:'DVLU',name:'DW Momentum & Value ETF',   ir_90: 18,ir_10:  8,ir_90_3mo:-12,ir_10_3mo:-18},
+  {symbol:'DVOL',name:'DW Momentum & Low Vol ETF', ir_90: 28,ir_10: 18,ir_90_3mo:-22,ir_10_3mo:-28},
+  {symbol:'FV',  name:'DW Focus 5 ETF',            ir_90: -5,ir_10:-15,ir_90_3mo:  2,ir_10_3mo: -2},
+  {symbol:'FVC', name:'DW Dynamic Focus 5 ETF',    ir_90:-15,ir_10:-25,ir_90_3mo:10, ir_10_3mo: 5},
+  {symbol:'DALI',name:'DW DALI Equity ETF',        ir_90: 32,ir_10: 22,ir_90_3mo:-25,ir_10_3mo:-32},
+  // AlphaDEX SECTOR (8)
+  {symbol:'FNX', name:'Mid Cap Core AlphaDEX Fund',ir_90: 35,ir_10: 25,ir_90_3mo:-28,ir_10_3mo:-35},
+  {symbol:'FXO', name:'Financials AlphaDEX Fund',  ir_90: -5,ir_10:-15,ir_90_3mo:  2,ir_10_3mo: -2},
+  {symbol:'FXR', name:'Industrials AlphaDEX Fund', ir_90: 15,ir_10:  5,ir_90_3mo:-10,ir_10_3mo:-15},
+  {symbol:'FXH', name:'Health Care AlphaDEX Fund', ir_90: 32,ir_10: 22,ir_90_3mo:-25,ir_10_3mo:-32},
+  {symbol:'FXD', name:'Consumer Discret AlphaDEX', ir_90:-52,ir_10:-62,ir_90_3mo:45, ir_10_3mo:38},
+  {symbol:'FXG', name:'Consumer Staples AlphaDEX', ir_90: 25,ir_10: 15,ir_90_3mo:-18,ir_10_3mo:-25},
+  {symbol:'FXN', name:'Energy AlphaDEX Fund',      ir_90: 55,ir_10: 42,ir_90_3mo:-48,ir_10_3mo:-55},
+  {symbol:'FXZ', name:'Materials AlphaDEX Fund',   ir_90: 42,ir_10: 32,ir_90_3mo:-35,ir_10_3mo:-42},
+  // AlphaDEX FACTOR (10 new — FNX shared above)
+  {symbol:'FEX', name:'Large Cap Core AlphaDEX',   ir_90:  8,ir_10: -2,ir_90_3mo: -5,ir_10_3mo: -8},
+  {symbol:'FTC', name:'Large Cap Growth AlphaDEX', ir_90:-68,ir_10:-78,ir_90_3mo:62, ir_10_3mo:55},
+  {symbol:'FTA', name:'Large Cap Value AlphaDEX',  ir_90: 22,ir_10: 12,ir_90_3mo:-15,ir_10_3mo:-22},
+  {symbol:'FNY', name:'Mid Cap Growth AlphaDEX',   ir_90:-38,ir_10:-48,ir_90_3mo:32, ir_10_3mo:25},
+  {symbol:'FNK', name:'Mid Cap Value AlphaDEX',    ir_90: 38,ir_10: 28,ir_90_3mo:-32,ir_10_3mo:-38},
+  {symbol:'FAD', name:'Multi Cap Growth AlphaDEX', ir_90:-45,ir_10:-55,ir_90_3mo:38, ir_10_3mo:32},
+  {symbol:'FAB', name:'Multi Cap Value AlphaDEX',  ir_90: 28,ir_10: 18,ir_90_3mo:-22,ir_10_3mo:-28},
+  {symbol:'FYX', name:'Small Cap Core AlphaDEX',   ir_90: 45,ir_10: 35,ir_90_3mo:-38,ir_10_3mo:-45},
+  {symbol:'FYC', name:'Small Cap Growth AlphaDEX', ir_90:-62,ir_10:-72,ir_90_3mo:55, ir_10_3mo:48},
+  {symbol:'FYT', name:'Small Cap Value AlphaDEX',  ir_90: 58,ir_10: 45,ir_90_3mo:-52,ir_10_3mo:-58},
+  // AlphaDEX INTERNATIONAL (13)
+  {symbol:'FPA', name:'Asia Pac ex-Japan AlphaDEX',ir_90: 25,ir_10: 15,ir_90_3mo:-18,ir_10_3mo:-25},
+  {symbol:'FCA', name:'China AlphaDEX Fund',       ir_90: 48,ir_10: 38,ir_90_3mo:-42,ir_10_3mo:-48},
+  {symbol:'FDT', name:'Dev Markets ex-US AlphaDEX',ir_90:15,ir_10:  5,ir_90_3mo:-10,ir_10_3mo:-15},
+  {symbol:'FDTS',name:'Dev Mkts ex-US Small Cap',  ir_90: 32,ir_10: 22,ir_90_3mo:-25,ir_10_3mo:-32},
+  {symbol:'FEM', name:'Emerging Markets AlphaDEX', ir_90: 38,ir_10: 28,ir_90_3mo:-32,ir_10_3mo:-38},
+  {symbol:'FEMS',name:'Emerging Mkts Small Cap',   ir_90: 55,ir_10: 42,ir_90_3mo:-48,ir_10_3mo:-55},
+  {symbol:'FEP', name:'Europe AlphaDEX Fund',      ir_90: 18,ir_10:  8,ir_90_3mo:-12,ir_10_3mo:-18},
+  {symbol:'FEUZ',name:'Eurozone AlphaDEX ETF',     ir_90:  8,ir_10: -2,ir_90_3mo: -5,ir_10_3mo: -8},
+  {symbol:'FGM', name:'Germany AlphaDEX Fund',     ir_90: 12,ir_10:  2,ir_90_3mo: -8,ir_10_3mo:-12},
+  {symbol:'FJP', name:'Japan AlphaDEX Fund',       ir_90:-58,ir_10:-68,ir_90_3mo:52, ir_10_3mo:45},
+  {symbol:'FLN', name:'Latin America AlphaDEX',    ir_90: 35,ir_10: 25,ir_90_3mo:-28,ir_10_3mo:-35},
+  {symbol:'FSZ', name:'Switzerland AlphaDEX Fund', ir_90:  5,ir_10: -5,ir_90_3mo: -2,ir_10_3mo: -5},
+  {symbol:'FKU', name:'United Kingdom AlphaDEX',   ir_90: 22,ir_10: 12,ir_90_3mo:-15,ir_10_3mo:-22},
+  // PHILLY (6)
+  {symbol:'UTY', name:'Utility Index',             ir_90: 52,ir_10: 40,ir_90_3mo:-45,ir_10_3mo:-52},
+  {symbol:'XAU', name:'Gold & Silver Index',       ir_90: 75,ir_10: 62,ir_90_3mo:-68,ir_10_3mo:-75},
+  {symbol:'OSX', name:'Oil Service Index',         ir_90: 58,ir_10: 45,ir_90_3mo:-52,ir_10_3mo:-58},
+  {symbol:'BKX', name:'NASDAQ Bank Index',         ir_90:-18,ir_10:-28,ir_90_3mo:12, ir_10_3mo: 8},
+  {symbol:'HGX', name:'Housing Index',             ir_90: 32,ir_10: 22,ir_90_3mo:-25,ir_10_3mo:-32},
+  {symbol:'SOX', name:'Semiconductor Index',       ir_90:-88,ir_10:-95,ir_90_3mo:78, ir_10_3mo:72},
+  // MSCI (43)
+  {symbol:'MXUSA',name:'MSCI USA',                 ir_90: -8,ir_10:-15,ir_90_3mo:  5,ir_10_3mo: 2},
+  {symbol:'ARGT',name:'MSCI Argentina ETF',        ir_90: 68,ir_10: 55,ir_90_3mo:-62,ir_10_3mo:-68},
+  {symbol:'GREK',name:'MSCI Greece ETF',           ir_90: 42,ir_10: 32,ir_90_3mo:-35,ir_10_3mo:-42},
+  {symbol:'COLO',name:'MSCI Colombia ETF',         ir_90: 52,ir_10: 40,ir_90_3mo:-45,ir_10_3mo:-52},
+  {symbol:'NORW',name:'MSCI Norway ETF',           ir_90: 35,ir_10: 25,ir_90_3mo:-28,ir_10_3mo:-35},
+  {symbol:'EWY', name:'MSCI South Korea ETF',      ir_90: 22,ir_10: 12,ir_90_3mo:-15,ir_10_3mo:-22},
+  {symbol:'EWJ', name:'MSCI Japan ETF',            ir_90:-18,ir_10:-28,ir_90_3mo:12, ir_10_3mo: 8},
+  {symbol:'INDA',name:'MSCI India ETF',            ir_90:-38,ir_10:-48,ir_90_3mo:32, ir_10_3mo:25},
+  {symbol:'EWZ', name:'MSCI Brazil ETF',           ir_90: 45,ir_10: 35,ir_90_3mo:-38,ir_10_3mo:-45},
+  {symbol:'EWT', name:'MSCI Taiwan ETF',           ir_90:-55,ir_10:-65,ir_90_3mo:48, ir_10_3mo:42},
+  {symbol:'MCHI',name:'MSCI China ETF',            ir_90: 58,ir_10: 45,ir_90_3mo:-52,ir_10_3mo:-58},
+  {symbol:'EWC', name:'MSCI Canada ETF',           ir_90: 18,ir_10:  8,ir_90_3mo:-12,ir_10_3mo:-18},
+  {symbol:'EWU', name:'MSCI United Kingdom ETF',   ir_90:  8,ir_10: -2,ir_90_3mo: -5,ir_10_3mo: -8},
+  {symbol:'EWW', name:'MSCI Mexico ETF',           ir_90: 48,ir_10: 38,ir_90_3mo:-42,ir_10_3mo:-48},
+  {symbol:'EWA', name:'MSCI Australia ETF',        ir_90: 25,ir_10: 15,ir_90_3mo:-18,ir_10_3mo:-25},
+  {symbol:'EWP', name:'MSCI Spain ETF',            ir_90: 32,ir_10: 22,ir_90_3mo:-25,ir_10_3mo:-32},
+  {symbol:'EWG', name:'MSCI Germany ETF',          ir_90: 15,ir_10:  5,ir_90_3mo:-10,ir_10_3mo:-15},
+  {symbol:'EWH', name:'MSCI Hong Kong ETF',        ir_90: 38,ir_10: 28,ir_90_3mo:-32,ir_10_3mo:-38},
+  {symbol:'EIS', name:'MSCI Israel ETF',           ir_90:-12,ir_10:-22,ir_90_3mo:  8,ir_10_3mo: 5},
+  {symbol:'EZA', name:'MSCI South Africa ETF',     ir_90: 55,ir_10: 42,ir_90_3mo:-48,ir_10_3mo:-55},
+  {symbol:'ECH', name:'MSCI Chile ETF',            ir_90: 42,ir_10: 32,ir_90_3mo:-35,ir_10_3mo:-42},
+  {symbol:'EWS', name:'MSCI Singapore ETF',        ir_90: 18,ir_10:  8,ir_90_3mo:-12,ir_10_3mo:-18},
+  {symbol:'KSA', name:'MSCI Saudi Arabia ETF',     ir_90: 28,ir_10: 18,ir_90_3mo:-22,ir_10_3mo:-28},
+  {symbol:'EPOL',name:'MSCI Poland ETF',           ir_90: 35,ir_10: 25,ir_90_3mo:-28,ir_10_3mo:-35},
+  {symbol:'EWI', name:'MSCI Italy ETF',            ir_90: 22,ir_10: 12,ir_90_3mo:-15,ir_10_3mo:-22},
+  {symbol:'THD', name:'MSCI Thailand ETF',         ir_90: 45,ir_10: 35,ir_90_3mo:-38,ir_10_3mo:-45},
+  {symbol:'EIDO',name:'MSCI Indonesia ETF',        ir_90: 32,ir_10: 22,ir_90_3mo:-25,ir_10_3mo:-32},
+  {symbol:'EWN', name:'MSCI Netherlands ETF',      ir_90: -5,ir_10:-15,ir_90_3mo:  2,ir_10_3mo: -2},
+  {symbol:'EWD', name:'MSCI Sweden ETF',           ir_90: 12,ir_10:  2,ir_90_3mo: -8,ir_10_3mo:-12},
+  {symbol:'TUR', name:'MSCI Turkey ETF',           ir_90: 62,ir_10: 50,ir_90_3mo:-55,ir_10_3mo:-62},
+  {symbol:'EWM', name:'MSCI Malaysia ETF',         ir_90: 28,ir_10: 18,ir_90_3mo:-22,ir_10_3mo:-28},
+  {symbol:'EWQ', name:'MSCI France ETF',           ir_90:-25,ir_10:-35,ir_90_3mo:18, ir_10_3mo:12},
+  {symbol:'EPHE',name:'MSCI Philippines ETF',      ir_90: 48,ir_10: 38,ir_90_3mo:-42,ir_10_3mo:-48},
+  {symbol:'EDEN',name:'MSCI Denmark ETF',          ir_90: -8,ir_10:-18,ir_90_3mo:  5,ir_10_3mo: 2},
+  {symbol:'EWO', name:'MSCI Austria ETF',          ir_90: 38,ir_10: 28,ir_90_3mo:-32,ir_10_3mo:-38},
+  {symbol:'EIRL',name:'MSCI Ireland ETF',          ir_90: 15,ir_10:  5,ir_90_3mo:-10,ir_10_3mo:-15},
+  {symbol:'KWT', name:'MSCI Kuwait ETF',           ir_90: 22,ir_10: 12,ir_90_3mo:-15,ir_10_3mo:-22},
+  {symbol:'QAT', name:'MSCI Qatar ETF',            ir_90: 32,ir_10: 22,ir_90_3mo:-25,ir_10_3mo:-32},
+  {symbol:'ENZL',name:'MSCI New Zealand ETF',      ir_90: 18,ir_10:  8,ir_90_3mo:-12,ir_10_3mo:-18},
+  {symbol:'EFNL',name:'MSCI Finland ETF',          ir_90:  5,ir_10: -5,ir_90_3mo: -2,ir_10_3mo: -5},
+  {symbol:'ENOR',name:'MSCI Norway ETF',           ir_90: 28,ir_10: 18,ir_90_3mo:-22,ir_10_3mo:-28},
+  {symbol:'EWK', name:'MSCI Belgium ETF',          ir_90: 15,ir_10:  5,ir_90_3mo:-10,ir_10_3mo:-15},
+  {symbol:'UAE', name:'MSCI UAE ETF',              ir_90: 42,ir_10: 32,ir_90_3mo:-35,ir_10_3mo:-42},
+];
+
+// Symbol → data map
+const DATA_MAP = {};
+ALL_DATA.forEach(d => DATA_MAP[d.symbol] = d);
+
+/* ═══════════════════════════════════════════════════════════════
+   TOGGLE GROUP DEFINITIONS — 10 groups, 5 rows of 2
+   Row 4: AlphaDEX International + MSCI (international theme)
+   Row 5: AlphaDEX Factor + Philly
+═══════════════════════════════════════════════════════════════ */
+const TOGGLE_GROUPS = [
+  {id:'spbroad',   title:'S&amp;P Broad Indexes and ETFs',      subtitle:'Thirteen broadbased indexes licensed by Standard &amp; Poor\'s',
+   symbols:['SPX','XOE','OEX','MID','SML','XOEF','IVW','IVE','IJK','IJJ','IJT','IJS','SPYD']},
+  {id:'russell',   title:'Russell ETFs',                         subtitle:'Eleven indexes licensed by the Russell Company',
+   symbols:['IWB','IWF','IWD','IWM','IWO','IWN','SMMD','IWV','IWR','IWS','IWX']},
+  {id:'spselect',  title:'S&amp;P Select Sector ETFs',           subtitle:'Eleven sector indexes licensed by Standard &amp; Poor\'s',
+   symbols:['XLC','XLY','XLP','XLE','XLF','XLV','XLI','XLB','XLRE','XLK','XLU']},
+  {id:'spspdr',    title:'S&amp;P SPDR Sector ETFs',             subtitle:'Eighteen sector indexes licensed by Standard &amp; Poor\'s',
+   symbols:['XTN','XTL','XSW','XSD','XRT','KRE','XPH','XOP','XES','XME','KIE','XHB','XHS','XHE','KCE','XBI','KBE','XAR']},
+  {id:'dorseywright',title:'Dorsey Wright Momentum ETFs',        subtitle:'Seventeen ETFs licensed by Dorsey Wright',
+   symbols:['PIZ','PIE','PTH','PYZ','PXI','PUI','PEZ','PFI','PTF','PSL','GXDW','QQQA','DVLU','DVOL','FV','FVC','DALI']},
+  {id:'adexsector',title:'AlphaDEX Sector ETFs',                 subtitle:'Eight actively managed sector ETFs licensed by AlphaDEX',
+   symbols:['FNX','FXO','FXR','FXH','FXD','FXG','FXN','FXZ']},
+  {id:'adexintl',  title:'AlphaDEX International ETFs',          subtitle:'Thirteen actively managed international ETFs licensed by AlphaDEX',
+   symbols:['FPA','FCA','FDT','FDTS','FEM','FEMS','FEP','FEUZ','FGM','FJP','FLN','FSZ','FKU']},
+  {id:'msci',      title:'MSCI Country ETFs',                    subtitle:'More than 40 country indexes licensed by MSCI',
+   symbols:['MXUSA','ARGT','GREK','COLO','NORW','EWY','EWJ','INDA','EWZ','EWT','MCHI','EWC','EWU','EWW','EWA','EWP','EWG','EWH','EIS','EZA','ECH','EWS','KSA','EPOL','EWI','THD','EIDO','EWN','EWD','TUR','EWM','EWQ','EPHE','EDEN','EWO','EIRL','KWT','QAT','ENZL','EFNL','ENOR','EWK','UAE']},
+  {id:'adexfactor',title:'AlphaDEX Factor ETFs',                 subtitle:'Eleven actively managed factor ETFs licensed by AlphaDEX',
+   symbols:['FEX','FTC','FTA','FNX','FNY','FNK','FAD','FAB','FYX','FYC','FYT']},
+  {id:'philly',    title:'Philly Sector Indexes',                subtitle:'Six long-running sector indexes offered by NASDAQ PHLX',
+   symbols:['UTY','XAU','OSX','BKX','HGX','SOX']},
+];
+
+/* ═══════════════════════════════════════════════════════════════
+   UTILITIES
+═══════════════════════════════════════════════════════════════ */
+const ZCL = ['#00cc55','#88cc44','#7a9aaa','#aa9a7a','#ddcc00','#e83535'];
+function irToZone(ir){return ir>=67?1:ir>=34?2:ir>=1?3:ir>=-33?4:ir>=-66?5:6;}
+function zoneBadge(z){return `<span class="zone-badge" style="background:${ZCL[z-1]}">${z}</span>`;}
+function irFmt(v){return (v>0?'+':'')+v;}
+function irCls(v){return v>0?'pos':v<0?'neg':'zer';}
+function trunc(s,n){return s.length>n?s.slice(0,n)+'…':s;}
+
+/* ═══════════════════════════════════════════════════════════════
+   LEFT HAND TOGGLE
+═══════════════════════════════════════════════════════════════ */
+let sbPeriod='90', sbDir=1;
+
+function setSBPeriod(p,btn){
+  sbPeriod=p;
+  btn.closest('.period-btns').querySelectorAll('.p-btn')
+     .forEach(b=>b.classList.toggle('active',b===btn));
+  renderLH();
+}
+function sortLH(){
+  sbDir*=-1;
+  document.getElementById('sb-arr-ir').textContent=sbDir===1?'↓':'↑';
+  renderLH();
+}
+function renderLH(filter){
+  const iF=sbPeriod==='90'?'ir_90':'ir_10';
+  let rows=[...ALL_DATA];
+  if(filter){const q=filter.toLowerCase();rows=rows.filter(r=>r.symbol.toLowerCase().includes(q)||r.name.toLowerCase().includes(q));}
+  rows.sort((a,b)=>(b[iF]-a[iF])*sbDir);
+  document.getElementById('sb-tbody').innerHTML=rows.map(r=>{
+    const ir=r[iF],z=irToZone(ir);
+    return `<tr><td style="color:var(--text);font-weight:bold">${r.symbol}</td>
+      <td style="color:var(--dim);font-size:10px">${trunc(r.name,22)}</td>
+      <td style="text-align:center"><span class="${irCls(ir)}">${irFmt(ir)}</span></td>
+      <td style="text-align:center">${zoneBadge(z)}</td></tr>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SEARCH
+═══════════════════════════════════════════════════════════════ */
+function doSearch(v){renderLH(v);}
+
+/* ═══════════════════════════════════════════════════════════════
+   REGULAR TOGGLE LOGIC
+═══════════════════════════════════════════════════════════════ */
+const sortState={},periodState={};
+
+function handlePeriodToggle(btn){
+  const g=btn.dataset.group;
+  btn.closest('.toggle-btns').querySelectorAll('.t-btn')
+     .forEach(b=>b.classList.toggle('active',b===btn));
+  periodState[g]=btn.dataset.period;
+  renderToggle(g);
+}
+function handleSortClick(g,field){
+  if(!sortState[g])sortState[g]={field:'ir',dir:1};
+  const s=sortState[g];
+  sortState[g]=s.field===field?{field,dir:s.dir*-1}:{field,dir:1};
+  renderToggle(g);
+}
+function updateArrows(g){
+  const{field,dir}=sortState[g];
+  ['ir','3mo'].forEach(f=>{
+    const th=document.getElementById(`${g}-th-${f}`);
+    const ar=document.getElementById(`${g}-arr-${f}`);
+    if(!th||!ar)return;
+    const on=f===field;
+    if(on){th.classList.add('sort-active');ar.classList.add('active');ar.textContent=dir===1?'↓':'↑';}
+    else  {th.classList.remove('sort-active');ar.classList.remove('active');ar.textContent='↕';}
+  });
+}
+function renderToggle(g){
+  if(!sortState[g])sortState[g]={field:'ir',dir:1};
+  if(!periodState[g])periodState[g]='90';
+  const p=periodState[g];
+  const iF=p==='90'?'ir_90':'ir_10';
+  const mF=p==='90'?'ir_90_3mo':'ir_10_3mo';
+  const{field,dir}=sortState[g];
+  const sF=field==='ir'?iF:mF;
+  const grp=TOGGLE_GROUPS.find(t=>t.id===g);
+  const rows=[...grp.symbols.map(s=>DATA_MAP[s]).filter(Boolean)]
+    .sort((a,b)=>(b[sF]-a[sF])*dir);
+  document.getElementById(g+'-tbody').innerHTML=rows.map(r=>{
+    const ir=r[iF],mo=r[mF],z=irToZone(ir),nm=trunc(r.name,22);
+    return `<tr>
+      <td class="col-sym">${r.symbol}</td>
+      <td style="color:var(--dim);font-size:10px">${nm}</td>
+      <td class="col-ir"><span class="${irCls(ir)}">${irFmt(ir)}</span></td>
+      <td class="col-zone">${zoneBadge(z)}</td>
+      <td class="col-3mo" style="padding-left:14px"><span class="${irCls(mo)}">${irFmt(mo)}</span></td>
+    </tr>`;
+  }).join('');
+  updateArrows(g);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BUILD TOGGLE HTML (factory)
+═══════════════════════════════════════════════════════════════ */
+function mkToggle(grp){
+  return `<div class="toggle-wrap">
+    <div class="toggle-header">
+      <div class="toggle-title-block">
+        <span class="toggle-title">${grp.title}</span>
+        <span class="toggle-subtitle">${grp.subtitle}</span>
+      </div>
+      <div class="toggle-btns">
+        <button class="t-btn active" data-group="${grp.id}" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+        <button class="t-btn"        data-group="${grp.id}" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+      </div>
+    </div>
+    <div class="scroll-table">
+      <table class="ir-table">
+        <thead><tr>
+          <th style="text-align:left">Ticker</th>
+          <th style="text-align:left">Name</th>
+          <th class="sortable sort-active" id="${grp.id}-th-ir" onclick="handleSortClick('${grp.id}','ir')" style="text-align:center">
+            IR <span class="sort-arrow active" id="${grp.id}-arr-ir">&#8595;</span>
+          </th>
+          <th style="text-align:center">Zn</th>
+          <th class="sortable" id="${grp.id}-th-3mo" onclick="handleSortClick('${grp.id}','3mo')" style="text-align:center;padding-left:14px">
+            3Mo Ago <span class="sort-arrow" id="${grp.id}-arr-3mo">&#8597;</span>
+          </th>
+        </tr></thead>
+        <tbody id="${grp.id}-tbody"></tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+function buildAllToggles(){
+  let html='';
+  for(let i=0;i<TOGGLE_GROUPS.length;i+=2){
+    html+=`<div class="two-col">${mkToggle(TOGGLE_GROUPS[i])}${i+1<TOGGLE_GROUPS.length?mkToggle(TOGGLE_GROUPS[i+1]):''}</div>`;
+  }
+  document.getElementById('toggles-container').innerHTML=html;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   HISTOGRAM
+═══════════════════════════════════════════════════════════════ */
+function getSlotInfo(ir){
+  if(ir>=91)return{z:0,s:0};if(ir>=83)return{z:0,s:1};
+  if(ir>=75)return{z:0,s:2};if(ir>=67)return{z:0,s:3};
+  if(ir>=59)return{z:1,s:0};if(ir>=52)return{z:1,s:1};
+  if(ir>=43)return{z:1,s:2};if(ir>=34)return{z:1,s:3};
+  if(ir>=26)return{z:2,s:0};if(ir>=18)return{z:2,s:1};
+  if(ir>= 9)return{z:2,s:2};if(ir>= 1)return{z:2,s:3};
+  if(ir>=-8) return{z:3,s:0};if(ir>=-17)return{z:3,s:1};
+  if(ir>=-25)return{z:3,s:2};if(ir>=-33)return{z:3,s:3};
+  if(ir>=-42)return{z:4,s:0};if(ir>=-51)return{z:4,s:1};
+  if(ir>=-58)return{z:4,s:2};if(ir>=-66)return{z:4,s:3};
+  if(ir>=-74)return{z:5,s:0};if(ir>=-82)return{z:5,s:1};
+  if(ir>=-90)return{z:5,s:2};return{z:5,s:3};
+}
+
+function buildHistogram(){
+  const svg=document.getElementById('mainHisto');
+  const W=920,OW=28,BX=OW,BW=864;
+  const ZW=144,SLOT_PITCH=BW/24;
+  const SH=13,SFS=9;
+  const BELL_A=168,BELL_FLOOR=16,BELL_SIG=ZW,BCX=BX+BW/2;
+
+  // Build slots
+  const slots=Array.from({length:24},()=>[]);
+  const oobWeak=[],oobStr=[];
+  ALL_DATA.forEach(d=>{
+    const ir=d.ir_90;
+    if(ir>=99){oobWeak.push(d.symbol);}
+    else if(ir<=-99){oobStr.push(d.symbol);}
+    else{const{z,s}=getSlotInfo(ir);slots[z*4+s].push(d);}
+  });
+  slots.forEach(sl=>sl.sort((a,b)=>a.symbol.localeCompare(b.symbol)));
+
+  // Dynamic height
+  let BY=205;
+  const maxStk=Math.max(1,...slots.map(sl=>sl.length));
+  if(maxStk*SH+20>BY)BY=maxStk*SH+20;
+  const H=BY+63;
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+
+  const LY_RANGE=BY+18,LY_ZONE=BY+31;
+  const ZN=['Zone 1','Zone 2','Zone 3','Zone 4','Zone 5','Zone 6'];
+  const ZR=['+99 to +67','+66 to +34','+33 to +1','-1 to -33','-34 to -66','-67 to -99'];
+
+  let s='';
+  // defs
+  s+=`<defs>
+    <filter id="glow"><feGaussianBlur stdDeviation="2.8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="softglow"><feGaussianBlur stdDeviation="1.5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>`;
+
+  // OOB backgrounds
+  s+=`<rect x="0" y="0" width="${OW}" height="${BY}" fill="${ZCL[0]}" fill-opacity="0.12"/>`;
+  s+=`<rect x="${BX+BW}" y="0" width="${OW}" height="${BY}" fill="${ZCL[5]}" fill-opacity="0.12"/>`;
+
+  // Zone backgrounds
+  for(let zi=0;zi<6;zi++){
+    const zx=BX+zi*ZW;
+    s+=`<rect x="${zx}" y="0" width="${ZW}" height="${BY}" fill="${ZCL[zi]}" fill-opacity="0.07"/>`;
+  }
+
+  // Zone dividers
+  for(let zi=1;zi<6;zi++){
+    const dx=BX+zi*ZW;
+    s+=`<line x1="${dx}" y1="0" x2="${dx}" y2="${BY}" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>`;
+  }
+  s+=`<line x1="${BX}" y1="0" x2="${BX}" y2="${BY}" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>`;
+  s+=`<line x1="${BX+BW}" y1="0" x2="${BX+BW}" y2="${BY}" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>`;
+
+  // Slot dividers (23 dashed lines)
+  for(let i=1;i<24;i++){
+    const dx=BX+i*SLOT_PITCH;
+    s+=`<line x1="${dx}" y1="8" x2="${dx}" y2="${BY}" stroke="rgba(255,255,255,0.055)" stroke-width="0.5" stroke-dasharray="3,6"/>`;
+  }
+
+  // Baseline
+  s+=`<line x1="0" y1="${BY}" x2="${W}" y2="${BY}" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>`;
+
+  // Bell curve — 3 passes
+  function bellPts(){
+    const pts=[];
+    for(let px=BX;px<=BX+BW;px+=2){
+      const dx=px-BCX;
+      const yp=BY-(BELL_A*Math.exp(-dx*dx/(2*BELL_SIG*BELL_SIG))+BELL_FLOOR);
+      pts.push(`${px},${yp.toFixed(1)}`);
+    }
+    return pts.join(' ');
+  }
+  const bPts=bellPts();
+  s+=`<polyline points="${bPts}" fill="none" stroke="rgba(120,185,255,0.14)" stroke-width="8"/>`;
+  s+=`<polyline points="${bPts}" fill="none" stroke="rgba(155,210,255,0.72)" stroke-width="1.6" stroke-dasharray="8,4" filter="url(#glow)"/>`;
+  s+=`<polyline points="${bPts}" fill="none" stroke="rgba(205,235,255,0.38)" stroke-width="0.8" stroke-dasharray="8,4"/>`;
+
+  // Symbols
+  for(let gi=0;gi<24;gi++){
+    const zi=Math.floor(gi/4);
+    const scx=BX+(gi+0.5)*SLOT_PITCH;
+    const col=ZCL[zi];
+    slots[gi].forEach((d,idx)=>{
+      const label=d.symbol.slice(0,3);
+      const sy=BY-(idx+0.5)*SH-2;
+      const tip=`${d.symbol} — ${d.name}  |  90-IR: ${irFmt(d.ir_90)}  |  Zone ${irToZone(d.ir_90)}`;
+      s+=`<text x="${scx}" y="${sy}" text-anchor="middle" font-family="'Courier New',monospace"
+          font-size="${SFS}" font-weight="bold" fill="${col}" filter="url(#softglow)"
+          cursor="pointer" data-tip="${tip.replace(/"/g,"&quot;")}">${label}</text>`;
+    });
+  }
+
+  // OOB symbols
+  oobWeak.forEach((sym,i)=>{
+    s+=`<text x="${OW/2}" y="${BY-(i+0.5)*SH-2}" text-anchor="middle"
+        font-family="'Courier New',monospace" font-size="8" fill="${ZCL[0]}" opacity="0.9">${sym.slice(0,3)}</text>`;
+  });
+  oobStr.forEach((sym,i)=>{
+    s+=`<text x="${BX+BW+OW/2}" y="${BY-(i+0.5)*SH-2}" text-anchor="middle"
+        font-family="'Courier New',monospace" font-size="8" fill="${ZCL[5]}" opacity="0.9">${sym.slice(0,3)}</text>`;
+  });
+
+  // OOB labels
+  s+=`<text x="${OW/2}" y="10" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[0]}" opacity="0.8">OOB</text>`;
+  s+=`<text x="${OW/2}" y="20" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[0]}" opacity="0.8">Weak</text>`;
+  s+=`<text x="${OW/2}" y="30" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[0]}" opacity="0.7">[${oobWeak.length}]</text>`;
+  s+=`<text x="${OW/2}" y="40" text-anchor="middle" font-family="'Courier New',monospace" font-size="6.5" fill="${ZCL[0]}" opacity="0.6">≥+99</text>`;
+  s+=`<text x="${BX+BW+OW/2}" y="10" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[5]}" opacity="0.8">OOB</text>`;
+  s+=`<text x="${BX+BW+OW/2}" y="20" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[5]}" opacity="0.8">Str</text>`;
+  s+=`<text x="${BX+BW+OW/2}" y="30" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[5]}" opacity="0.7">[${oobStr.length}]</text>`;
+  s+=`<text x="${BX+BW+OW/2}" y="40" text-anchor="middle" font-family="'Courier New',monospace" font-size="6.5" fill="${ZCL[5]}" opacity="0.6">≤-99</text>`;
+
+  // Zone labels + IR ranges
+  for(let zi=0;zi<6;zi++){
+    const cx=BX+zi*ZW+ZW/2;
+    s+=`<text x="${cx}" y="${LY_RANGE}" text-anchor="middle" font-family="'Courier New',monospace"
+        font-size="8.5" fill="rgba(255,255,255,0.48)">${ZR[zi]}</text>`;
+    s+=`<text x="${cx}" y="${LY_ZONE}" text-anchor="middle" font-family="'Trebuchet MS',sans-serif"
+        font-size="10.5" font-weight="bold" fill="${ZCL[zi]}">${ZN[zi]}</text>`;
+  }
+
+  // Direction legend
+  s+=`<text x="${BX+10}" y="${H-5}" font-family="'Trebuchet MS',sans-serif" font-size="7.5" fill="rgba(0,212,160,0.40)">← Weak / Oversold</text>`;
+  s+=`<text x="${BX+BW-10}" y="${H-5}" text-anchor="end" font-family="'Trebuchet MS',sans-serif" font-size="7.5" fill="rgba(232,53,53,0.40)">Overbought / Strong →</text>`;
+
+  svg.innerHTML=s;
+
+  // Tooltip
+  const tip=document.getElementById('histo-tip');
+  svg.addEventListener('mousemove',e=>{
+    const el=e.target;
+    if(el.dataset.tip){
+      tip.style.display='block';
+      tip.style.left=(e.clientX+14)+'px';
+      tip.style.top=(e.clientY-10)+'px';
+      tip.textContent=el.dataset.tip;
+    }else{tip.style.display='none';}
+  });
+  svg.addEventListener('mouseleave',()=>{tip.style.display='none';});
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════════════ */
+buildAllToggles();
+buildHistogram();
+renderLH();
+TOGGLE_GROUPS.forEach(grp=>{
+  sortState[grp.id]={field:'ir',dir:1};
+  periodState[grp.id]='90';
+  renderToggle(grp.id);
+});
+</script>
+</body>
+</html>

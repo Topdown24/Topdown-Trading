@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Six Zone Sector Analysis — Top Down Trading</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:          #08111e;
+  --panel:       #0d1829;
+  --panel-alt:   #0a1420;
+  --border:      #1a2d44;
+  --border-lite: #243c58;
+  --text:  #ddeeff;  --dim: #5a7a9a;
+  --accent: #3090d8;  --gold: #c9a227;
+  --z1:#00cc55; --z2:#88cc44; --z3:#7a9aaa;
+  --z4:#aa9a7a; --z5:#ddcc00; --z6:#e83535;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body { background:var(--bg); color:var(--text); font-family:'Rajdhani',sans-serif; overflow:hidden; }
+
+/* ── Header ── */
+.header-block { position:sticky; top:0; z-index:100; flex-shrink:0; }
+.top-nav { height:44px; background:var(--panel-alt); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 12px; gap:10px; }
+.page-title-bar { height:32px; background:var(--panel); border-bottom:2px solid var(--border-lite); display:flex; align-items:center; justify-content:center; }
+.page-title-text { font-family:'Rajdhani',sans-serif; font-size:15px; font-weight:700; color:var(--text); letter-spacing:.06em; text-transform:uppercase; }
+.nav-back { background:var(--panel); border:1px solid var(--border-lite); color:var(--dim); font-family:'Rajdhani',sans-serif; font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; padding:5px 14px; cursor:pointer; transition:all .15s; white-space:nowrap; }
+.nav-back:hover { border-color:var(--accent); color:var(--text); }
+.nav-spacer { flex:1; }
+.search-box { background:var(--panel); border:1px solid var(--border-lite); color:var(--text); font-family:'Rajdhani',sans-serif; font-size:12px; padding:5px 10px; outline:none; width:160px; transition:border-color .15s; }
+.search-box::placeholder { color:var(--dim); }
+.search-box:focus { border-color:var(--accent); }
+
+/* ── Shell ── */
+.shell { display:flex; height:calc(100vh - 76px); overflow:hidden; }
+.right-content { flex:1; overflow-y:auto; padding:10px 14px; }
+.right-content::-webkit-scrollbar { width:6px; }
+.right-content::-webkit-scrollbar-track { background:#08111e; }
+.right-content::-webkit-scrollbar-thumb { background:#243c58; border-radius:3px; }
+
+/* ── Top pair ── */
+.top-pair { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; align-items:stretch; }
+
+/* ── Panel cards ── */
+.panel-card { background:var(--panel); border:1px solid var(--border); overflow:hidden; display:flex; flex-direction:column; }
+.panel-head { background:var(--panel-alt); border-bottom:1px solid var(--border); padding:8px 12px 7px; text-align:center; flex-shrink:0; }
+.panel-title { font-weight:700; font-size:13px; color:var(--text); letter-spacing:.04em; text-transform:uppercase; }
+.panel-subtitle { font-size:10px; color:var(--dim); font-style:italic; margin-top:2px; }
+.scale-note { font-size:10px; color:var(--gold); opacity:.78; margin-top:3px; letter-spacing:.02em; }
+
+/* ── Thermometer ── */
+.baro-body { flex:1; display:flex; flex-direction:column; }
+.baro-svg-wrap { flex:1; display:flex; align-items:center; justify-content:center; padding:14px 10px 0; }
+.baro-comment { font-size:15px; color:var(--dim); text-align:center; font-style:italic; padding:12px 14px 14px; border-top:1px solid var(--border); margin-top:10px; line-height:1.55; }
+
+/* ── Zone distribution ── */
+.zone-dist { display:grid; grid-template-columns:repeat(6,1fr); gap:5px; padding:10px 10px 8px; border-bottom:1px solid var(--border); flex-shrink:0; }
+.zone-dist-cell { text-align:center; padding:6px 2px; border-radius:2px; }
+.zdist-label { font-size:9px; font-weight:700; color:#000; letter-spacing:.02em; }
+.zdist-count { font-size:18px; font-weight:700; color:#000; line-height:1.2; }
+.zdist-pct   { font-size:9px; color:rgba(0,0,0,.65); }
+
+/* ── T1W ── */
+.t1w-wrap { background:var(--panel); border:1px solid var(--border); overflow:hidden; }
+.t1w-hdr { background:var(--panel-alt); border-bottom:1px solid var(--border); padding:6px 10px; display:flex; align-items:center; justify-content:center; }
+.ws-btn { background:#0d1829; border:1px solid #243c58; color:var(--dim); font-family:'Rajdhani',sans-serif; font-size:12px; font-weight:600; padding:3px 16px; cursor:pointer; transition:all .15s; }
+.ws-btn:first-child { border-radius:2px 0 0 2px; border-right:none; }
+.ws-btn:last-child  { border-radius:0 2px 2px 0; }
+.ws-btn.active { background:#2a7abf; border-color:#3090d8; color:#fff; }
+.ws-btn:hover:not(.active) { border-color:#3090d8; color:var(--text); }
+.t1w-scroll { max-height:310px; overflow-y:auto; }
+.t1w-scroll::-webkit-scrollbar { width:4px; }
+.t1w-scroll::-webkit-scrollbar-track { background:#08111e; }
+.t1w-scroll::-webkit-scrollbar-thumb { background:#243c58; border-radius:2px; }
+
+/* ── IR Table ── */
+.ir-table { width:100%; border-collapse:collapse; font-family:'Courier New',monospace; font-size:11px; }
+.ir-table th { background:var(--panel); color:var(--dim); padding:4px 6px; text-align:left; border-bottom:1px solid var(--border); position:sticky; top:0; font-size:10px; letter-spacing:.04em; text-transform:uppercase; white-space:nowrap; }
+.ir-table th.sortable { cursor:pointer; user-select:none; }
+.ir-table th.sortable:hover { color:var(--text); }
+.ir-table th.sort-active { color:var(--accent); }
+.sort-arrow { font-size:10px; margin-left:3px; opacity:.5; }
+.sort-arrow.active { opacity:1; color:var(--accent); }
+.ir-table td { padding:3px 6px; border-bottom:1px solid #0e1a28; white-space:nowrap; }
+.ir-table tr:hover td { background:#111e30; }
+.col-sym { color:var(--text); font-weight:bold; cursor:pointer; }
+.col-sym:hover { color:var(--accent); text-decoration:underline; }
+.col-ir, .col-zone { text-align:center; }
+.col-3mo { text-align:center; font-size:10px; padding-left:14px !important; }
+.zone-badge { display:inline-block; padding:1px 5px; font-size:10px; font-weight:bold; border-radius:2px; color:#000; }
+.pos { color:#88cc44; }  .neg { color:#e83535; }  .zer { color:#b8cce0; }
+
+/* ── Section heading ── */
+.section-heading { font-size:14px; font-weight:700; color:var(--gold); text-align:center; letter-spacing:.05em; text-transform:uppercase; margin:18px 0 8px; border-top:1px solid var(--border-lite); padding-top:14px; }
+
+/* ── Section direction row ── */
+.section-dir-row { display:flex; align-items:center; justify-content:center; margin-bottom:12px; gap:16px; }
+.section-scale-note { font-size:15px; color:var(--gold); opacity:1; letter-spacing:.02em; }
+.dir-btns { display:flex; flex-shrink:0; }
+.dir-btn { background:#0d1829; border:1px solid #243c58; color:var(--text); font-family:'Rajdhani',sans-serif; font-size:15px; font-weight:600; padding:3px 14px; cursor:pointer; transition:all .15s; white-space:nowrap; }
+.dir-btn:first-child { border-radius:2px 0 0 2px; border-right:none; }
+.dir-btn:last-child  { border-radius:0 2px 2px 0; }
+.dir-btn.active { background:#2a7abf; border-color:#3090d8; color:#fff; }
+.dir-btn:hover:not(.active) { border-color:#3090d8; color:var(--text); }
+
+/* ── Sector rotation comment ── */
+.sect-comment { font-size:15px; color:var(--dim); font-style:italic; line-height:1.55; padding:8px 12px; border-top:1px solid var(--border); }
+
+/* ── Sector pairs — 3 columns: rank | content | content ── */
+.sector-pair { display:grid; grid-template-columns:46px 1fr 1fr; gap:0 12px; margin-bottom:20px; align-items:start; }
+.sector-block { display:flex; flex-direction:column; }
+.sector-title { text-align:center; font-size:12px; font-weight:700; color:var(--text); letter-spacing:.04em; text-transform:uppercase; margin-bottom:5px; }
+
+/* ── Rank strip ── */
+.rank-strip { display:flex; flex-direction:column; align-items:center; padding-top:22px; gap:2px; }
+.rank-num   { font-family:'Courier New',monospace; font-size:21px; font-weight:bold; line-height:1; }
+.rank-ir    { font-family:'Courier New',monospace; font-size:11px; font-weight:bold; }
+.rank-label { font-family:'Rajdhani',sans-serif; font-size:8px; font-weight:600; color:var(--dim); text-transform:uppercase; letter-spacing:.05em; margin-top:2px; }
+
+/* ── Charts ── */
+.chart-wrap { background:var(--panel); border:1px solid var(--border); padding:8px 10px; }
+.chart-cv { position:relative; height:220px; }
+</style>
+</head>
+<body>
+
+<div class="header-block">
+  <nav class="top-nav">
+    <button class="nav-back" onclick="navTo('sector.html','sectorPage')">← Back</button>
+    <div class="nav-spacer"></div>
+    <input class="search-box" type="text" placeholder="Search ticker or name…">
+  </nav>
+  <div class="page-title-bar">
+    <span class="page-title-text">Six Zone Sector Analysis</span>
+  </div>
+</div>
+
+<div class="shell">
+  <div class="right-content">
+
+    <div class="top-pair">
+
+      <!-- Thermometer -->
+      <div class="panel-card">
+        <div class="panel-head">
+          <div class="panel-title">Zone Phase Chart</div>
+          <div class="panel-subtitle">90-Day Basis · S&P 500 Market Phase Position</div>
+          <div class="scale-note">120-Point Scale · ±60 Range · 20 Points Per Zone</div>
+        </div>
+        <div class="baro-body">
+          <div class="baro-svg-wrap"><div id="baro-svg"></div></div>
+          <div class="baro-comment" id="baro-comment"></div>
+        </div>
+      </div>
+
+      <!-- Sector Rotation -->
+      <div class="panel-card">
+        <div class="panel-head">
+          <div class="panel-title">Zone Sector Rotation</div>
+          <div class="panel-subtitle">Twenty Sectors · Ranked by 90-Day IR</div>
+          <div class="scale-note">120-Point Scale · ±60 Range · 20 Points Per Zone</div>
+        </div>
+        <div class="zone-dist" id="zone-dist"></div>
+        <div class="t1w-wrap" style="border:none">
+          <div class="t1w-hdr">
+            <button class="ws-btn active" data-mode="weakest"   onclick="handleSRBtn(this)">Weakest</button>
+            <button class="ws-btn"        data-mode="strongest" onclick="handleSRBtn(this)">Strongest</button>
+          </div>
+          <div class="t1w-scroll">
+            <table class="ir-table">
+              <thead><tr>
+                <th style="text-align:left">Sector</th>
+                <th class="sortable sort-active" id="sr-th-ir" onclick="handleSRSort()" style="text-align:center">IR <span class="sort-arrow active" id="sr-arr">↓</span></th>
+                <th style="text-align:center">Zn</th>
+                <th style="text-align:center;padding-left:14px">3Mo Ago</th>
+              </tr></thead>
+              <tbody id="sr-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="sect-comment" id="sr-comment"></div>
+      </div>
+
+    </div>
+
+    <div class="section-heading">Twenty Zone Sectors</div>
+    <div class="section-dir-row">
+      <span class="section-scale-note">120-Point Scale · ±60 Range · 20 Points Per Zone · 90-Day Basis Only</span>
+      <div class="dir-btns">
+        <button class="dir-btn active" onclick="setSectorDir('weakest')">Weakest First ↓</button>
+        <button class="dir-btn"        onclick="setSectorDir('strongest')">Strongest First ↑</button>
+      </div>
+    </div>
+
+    <div id="sectors-container"></div>
+
+  </div>
+</div>
+
+<script>
+// ── Colors & helpers ──
+const ZCL = ['#00cc55','#88cc44','#7a9aaa','#aa9a7a','#ddcc00','#e83535'];
+
+function irToZone120(ir) {
+  if (ir >= 40) return 1; if (ir >= 20) return 2; if (ir >= 1) return 3;
+  if (ir >= -19) return 4; if (ir >= -39) return 5; return 6;
+}
+function irFmt(v)      { return (v > 0 ? '+' : '') + v; }
+function irCls(v)      { return v > 0 ? 'pos' : v < 0 ? 'neg' : 'zer'; }
+function zoneBadge(z)  { return `<span class="zone-badge" style="background:${ZCL[z-1]}">${z}</span>`; }
+function trunc(s, n)   { return s.length > n ? s.slice(0,n)+'…' : s; }
+function navTo(url, w) { if (window.innerWidth < 768) location.href = url; else window.open(url, w); }
+
+// ── Dates ──
+function genDates30() {
+  const d = []; let c = new Date(); let n = 0;
+  while (n < 30) { if (c.getDay()!==0&&c.getDay()!==6){d.unshift(c.toLocaleDateString('en-US',{month:'numeric',day:'numeric'}));n++;} c.setDate(c.getDate()-1); }
+  return d;
+}
+const DATES30 = genDates30();
+
+// ── Phase Chart ──
+const PHASE_IR = 14;
+const PHASE_COMMENT = 'The Phase Chart is in Zone 3 with a reading of +14. The market remains slightly oversold on the 120-point scale, consistent with measured bullish positioning. Monitor for a move toward Zone 4 as the mean is approached.';
+
+// ── Sector data ──
+const SECTOR_DATA = [
+  {id:'aerospace', name:'Aerospace/Defense',        ir: 32, mo3:-18},
+  {id:'autos',     name:'Autos/EVs',                ir: 51, mo3:-38},
+  {id:'biotech',   name:'Biotechnology',             ir: 44, mo3:-11},
+  {id:'building',  name:'Building/Construction',    ir: 28, mo3: 39},
+  {id:'chemicals', name:'Chemicals/Materials',      ir: 38, mo3:-22},
+  {id:'cloud',     name:'Cloud/Internet',           ir:-22, mo3: 31},
+  {id:'consumer',  name:'Consumer Staples',         ir: -8, mo3: 17},
+  {id:'renew',     name:'Energy (Renewable)',       ir: 55, mo3:-42},
+  {id:'trad',      name:'Energy (Traditional)',     ir: 47, mo3:-31},
+  {id:'finance',   name:'Financials',               ir:-34, mo3: 28},
+  {id:'industrial',name:'Industrials/Machinery',    ir:  8, mo3: -4},
+  {id:'leisure',   name:'Leisure/Entertainment',    ir:-15, mo3: 22},
+  {id:'metals',    name:'Metals/Mining',            ir: 42, mo3:-35},
+  {id:'misc',      name:'Miscellaneous',            ir:-11, mo3:  8},
+  {id:'pharma',    name:'Pharmaceuticals',          ir:-28, mo3: 24},
+  {id:'retail',    name:'Retail/E-commerce',        ir:-18, mo3: 14},
+  {id:'semis',     name:'Semiconductors/Hardware',  ir:-38, mo3: 46},
+  {id:'software',  name:'Software/Services',        ir:-24, mo3: 35},
+  {id:'transport', name:'Transportation/Logistics', ir: 23, mo3: -8},
+  {id:'utilities', name:'Utilities',                ir: 14, mo3: 31}
+];
+
+const SR_COMMENT = 'This week\'s rotation shows a pronounced energy-versus-technology divergence. Energy sectors (Renewable +55, Traditional +47) lead the oversold rankings while Semiconductors (−38) and Financials (−34) anchor the overbought end. The 3Mo Ago column documents the reversal in progress — every current oversold leader was overbought last quarter. Rotation of this magnitude typically resolves across 6–10 weeks on the 120-point scale.';
+
+// ── Ticker pools ──
+const TPOOL = {
+  aerospace:['LMT','RTX','NOC','GD','BA','HII','TDG','L3H','KTOS','AJRD','SPCE','AXON','CACI','BWXT','VVX'],
+  autos:    ['TSLA','GM','F','RIVN','LCID','NIO','XPEV','LI','HMC','TM','STLA','RACE','PCAR','BLNK','EVGO'],
+  biotech:  ['MRNA','BNTX','REGN','VRTX','BIIB','GILD','ILMN','BEAM','CRSP','EDIT','NTLA','SANA','ALNY','ARGX','INCY'],
+  building: ['DHI','LEN','PHM','TOL','NVR','MDC','TMHC','KBH','BZH','MHO','SKY','LGIH','CVCO','LEGH','GRBK'],
+  chemicals:['LYB','DOW','DD','EMN','ALB','CF','MOS','IFF','RPM','PPG','SHW','OLN','TROX','FUL','HUN'],
+  cloud:    ['AMZN','MSFT','GOOGL','CRM','NOW','SNOW','DDOG','NET','CFLT','GTLB','BILL','ZS','OKTA','MDB','HUBS'],
+  consumer: ['PG','KO','PEP','COST','WMT','MCD','YUM','HSY','GIS','K','CPB','SJM','CHD','CLX','CL'],
+  renew:    ['FSLR','ENPH','SEDG','ARRY','SPWR','RUN','MAXN','CSIQ','NOVA','STEM','BLDP','PLUG','BE','HASI','CWEN'],
+  trad:     ['XOM','CVX','COP','EOG','PXD','DVN','MPC','PSX','VLO','HES','APA','FANG','OXY','HAL','SLB'],
+  finance:  ['JPM','GS','MS','BAC','WFC','C','BLK','SCHW','ICE','CME','COIN','HOOD','LPLA','RJF','AMP'],
+  industrial:['CAT','DE','HON','GE','EMR','ETN','PH','ROK','DOV','XYL','GNRC','RRX','CARR','OTIS','AME'],
+  leisure:  ['DIS','NFLX','LYV','BKNG','EXPE','ABNB','MAR','HLT','MGM','LVS','CZR','WYNN','PENN','DKNG','PLNT'],
+  metals:   ['NEM','FCX','AA','STLD','NUE','X','CLF','MP','RGLD','WPM','PAAS','HL','CDE','EGO','AG'],
+  misc:     ['BRK','CVS','UNH','ABBV','ABT','MDT','BSX','EW','BAX','STE','ISRG','HOLX','PKI','MASI','ALGN'],
+  pharma:   ['JNJ','PFE','MRK','LLY','AZN','BMY','AMGN','ABBV','SNY','GSK','NVS','RHHBY','TAK','VTRS','PRGO'],
+  retail:   ['TGT','COST','HD','LOW','TJX','ROST','DLTR','DG','NKE','UAA','LULU','COLM','CROX','SKX','BOOT'],
+  semis:    ['NVDA','AMD','INTC','QCOM','AVGO','TXN','MU','LRCX','AMAT','KLAC','MRVL','ON','SWKS','QRVO','WOLF'],
+  software: ['MSFT','ORCL','SAP','ADBE','INTU','ANSS','CDNS','SNPS','CTSH','EPAM','GLOB','PRFT','MTSI','CDAY','PCTY'],
+  transport:['UPS','FDX','CSX','NSC','UNP','DAL','UAL','AAL','LUV','JBLU','JBHT','CHRW','XPO','SAIA','ODFL'],
+  utilities:['NEE','DUK','SO','AEP','EXC','SRE','XEL','PPL','ED','EIX','AEE','CNP','NI','LNT','PNW']
+};
+
+function genSectorZones(cur, mo3) {
+  const endZ = irToZone120(cur), startIR = mo3 + (cur-mo3)*0.67, zones=[];
+  for (let i=0;i<30;i++){const t=i/29,iIR=startIR+(cur-startIR)*t;let z=irToZone120(iIR);if(Math.random()<.28)z=Math.max(1,Math.min(6,z+(Math.random()<.5?1:-1)));zones.push(Math.max(1,Math.min(6,z)));}
+  zones[29]=endZ; return zones;
+}
+
+function genStocks(id, ir) {
+  const t=TPOOL[id]||[], wB=Math.min(58,Math.max(22,ir+8)), sB=Math.max(-58,Math.min(-12,-Math.abs(ir)+5));
+  const w=[],s=[];
+  for(let i=0;i<15;i++){
+    const wIR=Math.round(wB+(Math.random()*18-9)),wM=Math.round(-wB+(Math.random()*16-8));
+    w.push({sym:t[i]||`W${i+1}`,name:'Issue Name '+(i+1),ir:Math.min(60,Math.max(1,wIR)),mo3:Math.max(-60,Math.min(-1,wM))});
+    const sIR=Math.round(sB-(Math.random()*12)),sM=Math.round(-sB+(Math.random()*12));
+    s.push({sym:t[i]?'S'+t[i].slice(0,3):`S${i+1}`,name:'Issue Name '+(i+16),ir:Math.max(-60,Math.min(-1,sIR)),mo3:Math.min(60,Math.max(1,sM))});
+  }
+  w.sort((a,b)=>b.ir-a.ir); s.sort((a,b)=>a.ir-b.ir);
+  return {weakest:w,strongest:s};
+}
+
+SECTOR_DATA.forEach(s=>{s.zones30=genSectorZones(s.ir,s.mo3);s.stocks=genStocks(s.id,s.ir);});
+
+// ── THERMOMETER ──
+// Zone 6 (red/overbought) at TOP · Zone 1 (green/oversold) at BOTTOM
+// Mercury fills from the green bulb reservoir upward toward red
+// irToY: ir=+60→y=tb(bottom/green), ir=−60→y=ty(top/red)
+function buildThermometer(cid, ir) {
+  const W=270, tx=90, tw=82, ty=14, th=248, tb=ty+th;
+  const BR=44, BCX=tx+tw/2, BCY=tb+36, H=BCY+BR+64;
+  const irToY = v => ty + (60+v)/120*th;
+  const mY = Math.max(ty,Math.min(tb,irToY(ir)));
+  const z  = irToZone120(ir);
+
+  // Zone bands: Z6 at top (row 0), Z1 at bottom (row 5)
+  const bands = [5,4,3,2,1,0].map((zi,row)=>({z:zi+1,y1:ty+row*th/6,y2:ty+(row+1)*th/6}));
+
+  let s=`<svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block">`;
+
+  // Zone band backgrounds (faint)
+  bands.forEach(b=>{ s+=`<rect x="${tx}" y="${b.y1.toFixed(1)}" width="${tw}" height="${(b.y2-b.y1).toFixed(1)}" fill="${ZCL[b.z-1]}" opacity="0.13"/>`; });
+
+  // Mercury fill: from bottom UP to marker (multi-colored by zone)
+  bands.forEach(b=>{
+    const fs=Math.max(b.y1,mY), fe=b.y2;
+    if(fe>fs) s+=`<rect x="${tx+9}" y="${fs.toFixed(1)}" width="${tw-18}" height="${(fe-fs).toFixed(1)}" fill="${ZCL[b.z-1]}" opacity="0.84" rx="1"/>`;
+  });
+
+  // Zone dividers
+  bands.slice(0,-1).forEach(b=>{ s+=`<line x1="${tx}" y1="${b.y2.toFixed(1)}" x2="${tx+tw}" y2="${b.y2.toFixed(1)}" stroke="rgba(255,255,255,0.18)" stroke-width="0.7"/>`; });
+
+  // Metallic highlight strip on left wall
+  s+=`<rect x="${tx}" y="${ty}" width="6" height="${th}" fill="rgba(255,255,255,0.06)"/>`;
+
+  // Tube outline — 3 sides only, open bottom (flows into bulb)
+  const path3=`M ${tx},${tb} L ${tx},${ty} L ${tx+tw},${ty} L ${tx+tw},${tb}`;
+  s+=`<path d="${path3}" fill="none" stroke="${ZCL[z-1]}" stroke-width="2.5" opacity="0.22"/>`;
+  s+=`<path d="${path3}" fill="none" stroke="#243c58" stroke-width="1.5"/>`;
+
+  // Mercury bridge connecting tube bottom to bulb top
+  const bx=tx+9, bw=tw-18;
+  s+=`<rect x="${bx}" y="${tb}" width="${bw}" height="${BCY-BR-tb+10}" fill="${ZCL[0]}" opacity="0.84"/>`;
+  // Outer bridge walls to match tube sides
+  s+=`<line x1="${tx}" y1="${tb}" x2="${tx}" y2="${BCY-BR+8}" stroke="#243c58" stroke-width="1.5"/>`;
+  s+=`<line x1="${tx+tw}" y1="${tb}" x2="${tx+tw}" y2="${BCY-BR+8}" stroke="#243c58" stroke-width="1.5"/>`;
+
+  // Bulb — Zone 1 green reservoir, always full
+  s+=`<circle cx="${BCX}" cy="${BCY}" r="${BR}" fill="${ZCL[0]}" opacity="0.13"/>`;
+  s+=`<circle cx="${BCX}" cy="${BCY}" r="${BR-4}" fill="${ZCL[0]}" opacity="0.84"/>`;
+  s+=`<circle cx="${BCX}" cy="${BCY}" r="${BR}" fill="none" stroke="${ZCL[0]}" stroke-width="2.5" opacity="0.26"/>`;
+  s+=`<circle cx="${BCX}" cy="${BCY}" r="${BR}" fill="none" stroke="#243c58" stroke-width="1.5"/>`;
+  // Glint on bulb
+  s+=`<circle cx="${BCX-13}" cy="${BCY-15}" r="7" fill="rgba(255,255,255,0.12)"/>`;
+
+  // Scale labels (left) — −60 at top, +60 at bottom
+  [{ir:-60,l:'−60'},{ir:-40,l:'−40'},{ir:-20,l:'−20'},{ir:0,l:'  0'},{ir:20,l:'+20'},{ir:40,l:'+40'},{ir:60,l:'+60'}].forEach(m=>{
+    const sy=irToY(m.ir);
+    s+=`<line x1="${tx-6}" y1="${sy.toFixed(1)}" x2="${tx}" y2="${sy.toFixed(1)}" stroke="#243c58" stroke-width="0.8"/>`;
+    s+=`<text x="${tx-9}" y="${(sy+4).toFixed(1)}" text-anchor="end" font-family="'Courier New',monospace" font-size="10" fill="#5a7a9a">${m.l}</text>`;
+  });
+
+  // Zone labels (right)
+  bands.forEach(b=>{
+    const zy=((b.y1+b.y2)/2+4).toFixed(1);
+    s+=`<text x="${tx+tw+10}" y="${zy}" font-family="'Courier New',monospace" font-size="10" font-weight="bold" fill="${ZCL[b.z-1]}">Z${b.z}</text>`;
+  });
+
+  // Marker line + arrow
+  s+=`<line x1="${tx-5}" y1="${mY.toFixed(1)}" x2="${tx+tw+5}" y2="${mY.toFixed(1)}" stroke="#ffffff" stroke-width="2.2" opacity="0.90"/>`;
+  const ar=6;
+  s+=`<polygon points="${tx-5},${mY.toFixed(1)} ${tx-5-ar*2},${(mY-ar).toFixed(1)} ${tx-5-ar*2},${(mY+ar).toFixed(1)}" fill="#ffffff" opacity="0.90"/>`;
+
+  // Reading — large, prominent, below bulb
+  const irStr=ir>0?`+${ir}`:`${ir}`, ry=BCY+BR+22;
+  s+=`<text x="${W/2}" y="${ry}" text-anchor="middle" font-family="'Courier New',monospace" font-size="24" font-weight="bold" fill="${ZCL[z-1]}">${irStr}</text>`;
+  s+=`<text x="${W/2}" y="${ry+17}" text-anchor="middle" font-family="'Courier New',monospace" font-size="11" fill="${ZCL[z-1]}" opacity="0.75">Zone ${z}</text>`;
+
+  s+='</svg>';
+  document.getElementById(cid).innerHTML=s;
+}
+
+// ── Zone distribution ──
+function buildZoneDist() {
+  const c=[0,0,0,0,0,0]; SECTOR_DATA.forEach(s=>c[irToZone120(s.ir)-1]++);
+  const T=SECTOR_DATA.length;
+  document.getElementById('zone-dist').innerHTML=c.map((n,i)=>
+    `<div class="zone-dist-cell" style="background:${ZCL[i]}">
+      <div class="zdist-label">Zone ${i+1}</div>
+      <div class="zdist-count">${n}</div>
+      <div class="zdist-pct">${Math.round(n/T*100)}%</div>
+    </div>`).join('');
+}
+
+// ── Sector Rotation toggle ──
+let srMode='weakest', srDir=1;
+function handleSRBtn(btn) {
+  srMode=btn.dataset.mode; srDir=1;
+  btn.closest('.t1w-hdr').querySelectorAll('.ws-btn').forEach(b=>b.classList.toggle('active',b===btn));
+  renderSR();
+}
+function handleSRSort() {
+  srDir*=-1; const a=document.getElementById('sr-arr'); if(a)a.textContent=srDir===1?'↓':'↑'; renderSR();
+}
+function renderSR() {
+  const sorted=[...SECTOR_DATA].sort((a,b)=>srMode==='weakest'?b.ir-a.ir:a.ir-b.ir);
+  let rows=sorted.slice(0,10); if(srDir===-1)rows=[...rows].reverse();
+  document.getElementById('sr-tbody').innerHTML=rows.map(s=>{
+    const z=irToZone120(s.ir);
+    return `<tr>
+      <td style="color:var(--text);font-weight:bold;font-size:10px">${trunc(s.name,24)}</td>
+      <td class="col-ir"><span class="${irCls(s.ir)}">${irFmt(s.ir)}</span></td>
+      <td class="col-zone">${zoneBadge(z)}</td>
+      <td class="col-3mo" style="padding-left:14px"><span class="${irCls(s.mo3)}">${irFmt(s.mo3)}</span></td>
+    </tr>`;
+  }).join('');
+  const a=document.getElementById('sr-arr'); if(a){a.classList.add('active');a.textContent=srDir===1?'↓':'↑';}
+}
+
+// ── Section direction toggle ──
+let sectorDir='weakest';
+function setSectorDir(dir) {
+  sectorDir=dir;
+  document.querySelectorAll('.dir-btn').forEach((b,i)=>b.classList.toggle('active',(i===0&&dir==='weakest')||(i===1&&dir==='strongest')));
+  buildSectorPairs();
+  SECTOR_DATA.forEach(s=>{renderT1W(s.id);buildSectorChart('chart-'+s.id,s.zones30,DATES30);});
+}
+
+// ── Sector pair builder ──
+// Rank 20 = weakest, Rank 1 = strongest
+// Even index → toggle left / chart right   Odd index → chart left / toggle right
+function buildSectorPairs() {
+  const cont=document.getElementById('sectors-container'); if(!cont)return;
+  const ordered=[...SECTOR_DATA].sort((a,b)=>sectorDir==='weakest'?b.ir-a.ir:a.ir-b.ir);
+  cont.innerHTML=ordered.map((s,idx)=>{
+    const swap=idx%2===1;
+    const rank=sectorDir==='weakest'?20-idx:idx+1;
+    const z=irToZone120(s.ir), col=ZCL[z-1];
+
+    const rankStrip=`<div class="rank-strip">
+      <div class="rank-num" style="color:${col}">${rank}</div>
+      <div class="rank-ir"  style="color:${col}">${irFmt(s.ir)}</div>
+      <div class="rank-label">Rank&nbsp;·&nbsp;IR</div>
+    </div>`;
+
+    const toggle=`<div class="sector-block">
+      <div class="sector-title">${s.name}</div>
+      <div class="t1w-wrap">
+        <div class="t1w-hdr">
+          <button class="ws-btn active" data-id="${s.id}" data-mode="weakest"   onclick="handleWkStr(this)">Weakest</button>
+          <button class="ws-btn"        data-id="${s.id}" data-mode="strongest" onclick="handleWkStr(this)">Strongest</button>
+        </div>
+        <div class="t1w-scroll">
+          <table class="ir-table">
+            <thead><tr>
+              <th>Ticker</th><th>Name</th>
+              <th class="sortable sort-active" id="${s.id}-th-ir" onclick="handleT1WSort('${s.id}')" style="text-align:center">
+                IR <span class="sort-arrow active" id="${s.id}-arr">↓</span></th>
+              <th style="text-align:center">Zn</th>
+              <th style="text-align:center;padding-left:14px">3Mo Ago</th>
+            </tr></thead>
+            <tbody id="${s.id}-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+
+    const chart=`<div class="sector-block">
+      <div class="sector-title">${s.name}</div>
+      <div class="chart-wrap"><div class="chart-cv"><canvas id="chart-${s.id}"></canvas></div></div>
+    </div>`;
+
+    const [L,R]=swap?[chart,toggle]:[toggle,chart];
+    return `<div class="sector-pair">${rankStrip}${L}${R}</div>`;
+  }).join('');
+}
+
+// ── T1W logic ──
+const wsState={}, sortT1W={};
+function handleWkStr(btn) {
+  const id=btn.dataset.id, mode=btn.dataset.mode;
+  wsState[id]=mode; sortT1W[id]=1;
+  btn.closest('.t1w-hdr').querySelectorAll('.ws-btn').forEach(b=>b.classList.toggle('active',b===btn));
+  renderT1W(id);
+}
+function handleT1WSort(id) { sortT1W[id]=(sortT1W[id]||1)*-1; renderT1W(id); }
+function renderT1W(id) {
+  const sec=SECTOR_DATA.find(s=>s.id===id); if(!sec)return;
+  const mode=wsState[id]||'weakest', dir=sortT1W[id]||1;
+  const rows=[...sec.stocks[mode]].sort((a,b)=>(b.ir-a.ir)*dir);
+  const tb=document.getElementById(id+'-tbody'); if(!tb)return;
+  tb.innerHTML=rows.map(r=>{const z=irToZone120(r.ir);return `<tr>
+    <td class="col-sym" onclick="navTo('symbol/${r.sym}.html','symbolWindow')">${r.sym}</td>
+    <td style="color:var(--dim);font-size:10px">${trunc(r.name,18)}</td>
+    <td class="col-ir"><span class="${irCls(r.ir)}">${irFmt(r.ir)}</span></td>
+    <td class="col-zone">${zoneBadge(z)}</td>
+    <td class="col-3mo" style="padding-left:14px"><span class="${irCls(r.mo3)}">${irFmt(r.mo3)}</span></td>
+  </tr>`;}).join('');
+  const a=document.getElementById(id+'-arr'); if(a)a.textContent=dir===1?'↓':'↑';
+}
+
+// ── Sector bar charts ──
+function buildSectorChart(cid, zones, dates) {
+  const ctx=document.getElementById(cid); if(!ctx)return;
+  new Chart(ctx,{type:'bar',data:{labels:dates,datasets:[{data:zones,
+    backgroundColor:zones.map(z=>ZCL[z-1]+'99'),borderColor:zones.map(z=>ZCL[z-1]),borderWidth:1}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      layout:{padding:{left:2,right:4,top:4,bottom:2}},
+      plugins:{legend:{display:false}},
+      scales:{
+        y:{min:0.3,max:6.5,
+          title:{display:true,text:'Zone',color:'#5a7a9a',font:{family:"'Courier New',monospace",size:9},padding:{bottom:4}},
+          ticks:{stepSize:1,callback:v=>(v>=1&&v<=6)?String(Math.round(v)):'',
+            color:c=>{const v=Math.round(c.tick.value);return (v>=1&&v<=6)?ZCL[v-1]:'#5a7a9a';},
+            font:{family:"'Courier New',monospace",size:9},padding:3},
+          grid:{color:c=>(c.tick.value===3||c.tick.value===4)?'rgba(255,255,255,0.12)':'rgba(255,255,255,0.05)',
+            lineWidth:c=>(c.tick.value===3||c.tick.value===4)?1.2:0.6},
+          border:{color:'#243c58'}},
+        x:{ticks:{maxRotation:45,autoSkip:true,maxTicksLimit:8,color:'#5a7a9a',font:{family:"'Courier New',monospace",size:8}},
+          grid:{color:'rgba(255,255,255,0.03)'},border:{color:'#243c58'}}
+      }}});
+}
+
+// ── Init ──
+document.addEventListener('DOMContentLoaded',function(){
+  Chart.defaults.color='#5a7a9a';
+  Chart.defaults.borderColor='rgba(255,255,255,0.06)';
+
+  buildThermometer('baro-svg', PHASE_IR);
+  document.getElementById('baro-comment').textContent=PHASE_COMMENT;
+
+  buildZoneDist();
+  renderSR();
+  document.getElementById('sr-comment').textContent=SR_COMMENT;
+
+  buildSectorPairs();
+  SECTOR_DATA.forEach(s=>{
+    wsState[s.id]='weakest'; sortT1W[s.id]=1;
+    renderT1W(s.id);
+    buildSectorChart('chart-'+s.id, s.zones30, DATES30);
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>S&P MidCap 400 (MID) — Top Down Trading</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#08111e;color:#b8cce0;font-family:'Rajdhani',sans-serif;font-size:14px}
+
+/* ── NAV ─────────────────────────────────────────────────── */
+.top-nav{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:#0a1420;border-bottom:1px solid #1a2d44;height:44px;position:sticky;top:0;z-index:80}
+.nav-left{display:flex;align-items:center;gap:6px}
+.nav-btn{background:#0d1829;border:1px solid #243c58;color:#8ab0cc;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;padding:4px 14px;cursor:pointer;border-radius:2px;letter-spacing:.04em;transition:all .15s}
+.nav-btn:hover{border-color:#3090d8;color:#ddeeff}
+.nav-btn.back{border-color:#3090d8;color:#3090d8}
+.nav-btn.back:hover{background:#162a3e;color:#ddeeff}
+.search-box{background:#0d1829;border:1px solid #243c58;color:#ddeeff;font-family:'Rajdhani',sans-serif;font-size:12px;padding:4px 14px;border-radius:2px;outline:none;width:190px;letter-spacing:.04em}
+.search-box::placeholder{color:#3a5a7a}
+.search-box:focus{border-color:#3090d8}
+
+/* ── PAGE TITLE ──────────────────────────────────────────── */
+.page-title-block{text-align:center;padding:18px 14px 12px;
+  border-bottom:1px solid #1a2d44}
+.page-title-main{font-size:24px;font-weight:700;color:#ddeeff;letter-spacing:.04em}
+.page-title-sub{font-size:16px;font-weight:700;color:#c9a227;letter-spacing:.14em;text-transform:uppercase;margin-top:3px}
+.page-title-desc{font-size:13px;color:#5a7a9a;font-style:italic;margin-top:7px}
+
+/* ── SECTION ─────────────────────────────────────────────── */
+.section-block{border-bottom:2px solid #1a2d44}
+.section-block:last-child{border-bottom:none}
+.section-head-full{text-align:center;padding:16px 14px 0;margin-bottom:10px}
+.section-title-boxed,.section-title-plain{display:inline-block;border:1px solid #3090d8;padding:8px 28px 6px;border-radius:2px;background:rgba(48,144,216,0.04)}
+.section-title-text{font-size:15px;font-weight:700;color:#ddeeff;letter-spacing:.03em}
+.section-title-desc{font-size:12px;color:#5a7a9a;font-style:italic;margin-top:5px}
+.section-flex{display:flex;flex-direction:row;align-items:stretch}
+
+/* ── LEFT HAND TOGGLE SIDEBAR ────────────────────────────── */
+.lh-sidebar{width:285px;min-width:285px;border-right:2px solid #243c58;
+  background:#0a1420;display:flex;flex-direction:column;overflow:hidden}
+.lh-hdr{padding:8px 10px 6px;border-bottom:1px solid #1a2d44;text-align:center;flex-shrink:0}
+.lh-title{font-weight:700;font-size:12px;color:#ddeeff;margin-bottom:5px}
+.lh-btns{display:flex;justify-content:center;gap:0}
+.lh-btn{background:#1a2d44;border:1px solid #1a2d44;color:#5a7a9a;
+  font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600;
+  padding:3px 10px;cursor:pointer;transition:all .15s}
+.lh-btn.active{background:#2a7abf;border-color:#3090d8;color:#fff}
+.lh-btn:hover:not(.active){border-color:#3090d8;color:#ddeeff}
+.lh-scroll{overflow-y:auto;flex:1}
+.lh-scroll::-webkit-scrollbar{width:4px}
+.lh-scroll::-webkit-scrollbar-track{background:#08111e}
+.lh-scroll::-webkit-scrollbar-thumb{background:#243c58;border-radius:2px}
+.lh-table{width:100%;border-collapse:collapse;font-family:'Courier New',monospace;font-size:11px}
+.lh-table th{background:#0a1420;color:#5a7a9a;padding:4px 5px;text-align:left;
+  border-bottom:1px solid #1a2d44;position:sticky;top:0;
+  font-size:9px;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.lh-table th.sortable{cursor:pointer;user-select:none}
+.lh-table th.sortable:hover{color:#ddeeff}
+.lh-table th.sort-active{color:#3090d8}
+.sort-arrow{font-size:9px;margin-left:2px;opacity:.5}
+.sort-arrow.active{opacity:1;color:#3090d8}
+.lh-table td{padding:2px 5px;border-bottom:1px solid #0e1a28;white-space:nowrap}
+.lh-table tr:hover td{background:#111e30}
+.col-tick{color:#ddeeff;font-weight:bold;font-size:11px}
+.col-name{color:#5a7a9a;font-size:10px;max-width:90px;overflow:hidden;text-overflow:ellipsis}
+.col-ir{text-align:center}
+.col-zn{text-align:center}
+.zone-badge{display:inline-block;padding:1px 4px;font-size:9px;font-weight:bold;border-radius:2px;color:#000}
+.pos{color:#88cc44}.neg{color:#e83535}.zer{color:#b8cce0}
+
+/* ── RIGHT CONTENT ───────────────────────────────────────── */
+.section-right{flex:1;padding:10px 14px;overflow:hidden;min-width:0}
+.histo-wrap{margin-bottom:12px}
+.histo-label{font-weight:700;font-size:13px;color:#ddeeff;text-align:center;
+  margin-bottom:6px;letter-spacing:.03em}
+.histo-svg-box{background:#0d1829;border:1px solid #1a2d44;overflow:hidden}
+.histo-svg-box svg{display:block}
+.density-note{font-size:10px;color:#3a5a7a;font-style:italic;text-align:center;
+  margin-top:3px;margin-bottom:10px}
+.chart-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.chart-wrap{background:#0d1829;border:1px solid #1a2d44;padding:8px 10px 10px}
+.chart-head{font-size:11px;font-weight:700;color:#ddeeff;text-align:center;
+  letter-spacing:.02em;margin-bottom:2px}
+.chart-sub{font-size:9px;color:#5a7a9a;text-align:center;margin-bottom:6px;font-style:italic}
+.chart-cv{position:relative;height:210px}
+
+/* ── TOOLTIP ─────────────────────────────────────────────── */
+#histo-tip{position:fixed;background:#0d1829;border:1px solid #3090d8;color:#ddeeff;
+  font-family:'Courier New',monospace;font-size:11px;padding:5px 9px;border-radius:2px;
+  box-shadow:0 2px 12px rgba(0,0,0,.6);white-space:nowrap;z-index:999;
+  pointer-events:none;display:none}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="top-nav">
+  <div class="nav-left">
+    <button class="nav-btn back" onclick="history.back()">← BACK</button>
+    <button class="nav-btn" onclick="window.open('mid.html','_blank')">MID</button>
+    <button class="nav-btn" onclick="window.open('sp500.html','_blank')">S&amp;P 500</button>
+    <button class="nav-btn" onclick="window.open('sp600.html','_blank')">S&amp;P Small Cap 600</button>
+  </div>
+  <input class="search-box" type="text" placeholder="⌕  SEARCH">
+</nav>
+
+<!-- PAGE TITLE -->
+<div class="page-title-block">
+  <div class="page-title-main">S&amp;P MidCap 400 (MID)</div>
+  <div class="page-title-sub">Market · Sector · Stock</div>
+  <div class="page-title-desc">Watch the MID and its components rotate through the six Zones.</div>
+</div>
+
+<div id="histo-tip"></div>
+
+<!-- ════════════════════════════════════════════════════════
+     MARKET SECTION
+═════════════════════════════════════════════════════════ -->
+<div class="section-block">
+  <div class="section-head-full">
+    <div class="section-title-boxed">
+      <div class="section-title-text">S&amp;P MidCap 400 (MID) Market Analysis</div>
+      <div class="section-title-desc">Follow market action by comparing the Implied Risk ratings of the major S&amp;P indexes and their Growth and Value factor indexes</div>
+    </div>
+  </div>
+  <div class="section-flex">
+    <div class="lh-sidebar">
+      <div class="lh-hdr">
+        <div class="lh-title">Market Indexes</div>
+        <div class="lh-btns">
+          <button class="lh-btn active" data-group="mkt" data-period="90" onclick="handleLHPeriod(this)">90 IR</button>
+          <button class="lh-btn" data-group="mkt" data-period="10" onclick="handleLHPeriod(this)">10 IR</button>
+        </div>
+      </div>
+      <div class="lh-scroll">
+        <table class="lh-table">
+          <thead><tr>
+            <th style="text-align:left">Tick</th>
+            <th style="text-align:left">Name</th>
+            <th class="sortable sort-active" id="mkt-th-ir" onclick="handleLHSort('mkt')" style="text-align:center">IR <span class="sort-arrow active" id="mkt-arr">↓</span></th>
+            <th style="text-align:center">Zn</th>
+          </tr></thead>
+          <tbody id="mkt-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="section-right">
+      <div class="histo-wrap">
+        <div class="histo-label">Market Indexes — 90-Day Implied Risk Histogram</div>
+        <div class="histo-svg-box">
+          <svg id="mkt-histo" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block"></svg>
+        </div>
+      </div>
+      <div class="chart-pair">
+        <div class="chart-wrap">
+          <div class="chart-head">S&amp;P MidCap 400 Pure Growth ETF (RFG)</div>
+          <div class="chart-sub">90-Day Zone · 10-Day Zone · 30 Days</div>
+          <div class="chart-cv"><canvas id="chart-rfg"></canvas></div>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-head">S&amp;P MidCap 400 Pure Value ETF (RFV)</div>
+          <div class="chart-sub">90-Day Zone · 10-Day Zone · 30 Days</div>
+          <div class="chart-cv"><canvas id="chart-rfv"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     SECTOR SECTION
+═════════════════════════════════════════════════════════ -->
+<div class="section-block">
+  <div class="section-head-full">
+    <div class="section-title-plain">
+      <div class="section-title-text">S&amp;P MidCap 400 (MID) Sector Analysis</div>
+      <div class="section-title-desc">Follow MID sector action by comparing the Implied Risk rating of the MID to the activity of the MID sector ETFs and indexes.</div>
+    </div>
+  </div>
+  <div class="section-flex">
+    <div class="lh-sidebar">
+      <div class="lh-hdr">
+        <div class="lh-title">MID Sector Indexes</div>
+        <div class="lh-btns">
+          <button class="lh-btn active" data-group="sec" data-period="90" onclick="handleLHPeriod(this)">90 IR</button>
+          <button class="lh-btn" data-group="sec" data-period="10" onclick="handleLHPeriod(this)">10 IR</button>
+        </div>
+      </div>
+      <div class="lh-scroll">
+        <table class="lh-table">
+          <thead><tr>
+            <th style="text-align:left">Tick</th>
+            <th style="text-align:left">Name</th>
+            <th class="sortable sort-active" id="sec-th-ir" onclick="handleLHSort('sec')" style="text-align:center">IR <span class="sort-arrow active" id="sec-arr">↓</span></th>
+            <th style="text-align:center">Zn</th>
+          </tr></thead>
+          <tbody id="sec-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="section-right">
+      <div class="histo-wrap">
+        <div class="histo-label">MID Sector Indexes — 90-Day Implied Risk Histogram</div>
+        <div class="histo-svg-box">
+          <svg id="sec-histo" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block"></svg>
+        </div>
+      </div>
+      <div class="chart-pair">
+        <div class="chart-wrap">
+          <div class="chart-head">S&amp;P Midcap Momentum ETF (XMMO)</div>
+          <div class="chart-sub">90-Day Zone · 10-Day Zone · 30 Days</div>
+          <div class="chart-cv"><canvas id="chart-xmmo"></canvas></div>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-head">S&amp;P Midcap Quality ETF (XMHQ)</div>
+          <div class="chart-sub">90-Day Zone · 10-Day Zone · 30 Days</div>
+          <div class="chart-cv"><canvas id="chart-xmhq"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     STOCK SECTION
+═════════════════════════════════════════════════════════ -->
+<div class="section-block">
+  <div class="section-head-full">
+    <div class="section-title-plain">
+      <div class="section-title-text">S&amp;P MidCap 400 (MID) Stock Analysis</div>
+      <div class="section-title-desc">Follow MID issue movement by comparing the Implied Risk rating of the MID to the action of the 400 issues that compose the index.</div>
+    </div>
+  </div>
+  <div class="section-flex">
+    <div class="lh-sidebar">
+      <div class="lh-hdr">
+        <div class="lh-title">MID Issues — 90 IR</div>
+        <div class="lh-btns">
+          <button class="lh-btn active" data-mode="weakest" onclick="handleStkMode(this)">Weakest</button>
+          <button class="lh-btn" data-mode="strongest" onclick="handleStkMode(this)">Strongest</button>
+        </div>
+      </div>
+      <div class="lh-scroll">
+        <table class="lh-table">
+          <thead><tr>
+            <th style="text-align:left">Tick</th>
+            <th style="text-align:left">Name</th>
+            <th class="sortable sort-active" id="stk-th-ir" onclick="handleSTKSort()" style="text-align:center">IR <span class="sort-arrow active" id="stk-arr">↓</span></th>
+            <th style="text-align:center">Zn</th>
+          </tr></thead>
+          <tbody id="stk-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="section-right">
+      <div class="histo-wrap">
+        <div class="histo-label">S&amp;P MidCap 400 (MID) — Issue Distribution</div>
+        <div class="histo-svg-box">
+          <svg id="stk-histo" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block"></svg>
+        </div>
+        <div class="density-note">400 issues · Slot counts shown · MID marker ◆ at its zone position</div>
+      </div>
+      <div class="chart-pair">
+        <div class="chart-wrap">
+          <div class="chart-head">S&amp;P MidCap 400 ETF (IJH)</div>
+          <div class="chart-sub">90-Day Zone · 10-Day Zone · 30 Days</div>
+          <div class="chart-cv"><canvas id="chart-ijh"></canvas></div>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-head">S&amp;P MidCap 400 Equal Weight ETF (EWMC)</div>
+          <div class="chart-sub">90-Day Zone · 10-Day Zone · 30 Days</div>
+          <div class="chart-cv"><canvas id="chart-ewmc"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── ZONE UTILITIES ────────────────────────────────────────────────────
+const ZCL=['#00cc55','#88cc44','#7a9aaa','#aa9a7a','#ddcc00','#e83535'];
+const ZONE_LABELS=['Zone 1','Zone 2','Zone 3','Zone 4','Zone 5','Zone 6'];
+const ZONE_RANGES=['+99 to +67','+66 to +34','+33 to +1','−1 to −33','−34 to −66','−67 to −99'];
+function irToZoneIdx(ir){if(ir>=67)return 0;if(ir>=34)return 1;if(ir>=1)return 2;if(ir>=-33)return 3;if(ir>=-66)return 4;return 5;}
+function irToZone(ir){return irToZoneIdx(ir)+1;}
+function irFmt(v){return(v>0?'+':'')+v;}
+function irCls(v){return v>0?'pos':v<0?'neg':'zer';}
+function zoneBadge(z){return`<span class="zone-badge" style="background:${ZCL[z-1]}">${z}</span>`;}
+function getSlotInfo(ir){
+  if(ir>=91)return{z:0,s:0};if(ir>=83)return{z:0,s:1};if(ir>=75)return{z:0,s:2};if(ir>=67)return{z:0,s:3};
+  if(ir>=59)return{z:1,s:0};if(ir>=52)return{z:1,s:1};if(ir>=43)return{z:1,s:2};if(ir>=34)return{z:1,s:3};
+  if(ir>=26)return{z:2,s:0};if(ir>=18)return{z:2,s:1};if(ir>=9)return{z:2,s:2};if(ir>=1)return{z:2,s:3};
+  if(ir>=-8)return{z:3,s:0};if(ir>=-17)return{z:3,s:1};if(ir>=-25)return{z:3,s:2};if(ir>=-33)return{z:3,s:3};
+  if(ir>=-42)return{z:4,s:0};if(ir>=-51)return{z:4,s:1};if(ir>=-58)return{z:4,s:2};if(ir>=-66)return{z:4,s:3};
+  if(ir>=-74)return{z:5,s:0};if(ir>=-82)return{z:5,s:1};if(ir>=-90)return{z:5,s:2};return{z:5,s:3};
+}
+
+// ── DATA ──────────────────────────────────────────────────────────────
+const MID_IR_90=-15;
+
+const MKT_DATA=[
+  {symbol:'SPX', name:'S&P 500',                          ir_90:-22,ir_10:-18},
+  {symbol:'XOE', name:'S&P 500 Equal',                    ir_90:-18,ir_10:-24},
+  {symbol:'OEX', name:'S&P 100',                          ir_90:-20,ir_10:-16},
+  {symbol:'MID', name:'S&P Midcap 400',                   ir_90:-15,ir_10:-11,northStar:true},
+  {symbol:'SML', name:'S&P Smallcap 600',                 ir_90:-8, ir_10:-14,smlSpecial:true},
+  {symbol:'RPV', name:'S&P 500 Pure Value ETF',           ir_90:-35,ir_10:-28},
+  {symbol:'RPG', name:'S&P 500 Pure Growth ETF',          ir_90:12, ir_10:8},
+  {symbol:'XOEF',name:'S&P 500 ex S&P 100 ETF',          ir_90:-14,ir_10:-20},
+  {symbol:'RZV', name:'S&P SmallCap 600 Pure Value ETF',  ir_90:-42,ir_10:-38},
+  {symbol:'RZG', name:'S&P SmallCap 600 Pure Growth ETF', ir_90:8,  ir_10:14},
+  {symbol:'RFV', name:'S&P MidCap 400 Pure Value ETF',    ir_90:-38,ir_10:-32},
+  {symbol:'RFG', name:'S&P MidCap 400 Pure Growth ETF',   ir_90:18, ir_10:22},
+  {symbol:'SPMO',name:'S&P 500 Momentum ETF',             ir_90:-28,ir_10:-22},
+  {symbol:'SPHQ',name:'S&P 500 Quality ETF',              ir_90:-19,ir_10:-15},
+  {symbol:'RWL', name:'S&P 500 Revenue ETF',              ir_90:-25,ir_10:-19},
+  {symbol:'SPHD',name:'S&P 500 High Div/Low Vol ETF',     ir_90:5,  ir_10:2},
+  {symbol:'XMMO',name:'S&P Midcap Momentum ETF',          ir_90:-33,ir_10:-26},
+  {symbol:'XMHQ',name:'S&P Midcap Quality ETF',           ir_90:-21,ir_10:-17},
+  {symbol:'RWK', name:'S&P Midcap 400 Revenue ETF',       ir_90:-16,ir_10:-12},
+  {symbol:'XMLV',name:'S&P Midcap Low Volatility ETF',    ir_90:22, ir_10:18},
+  {symbol:'EWMC',name:'S&P Midcap 400 Equal Weight ETF',  ir_90:-12,ir_10:-8},
+  {symbol:'XSHD',name:'S&P Smallcap High Div/Low Vol ETF',ir_90:35, ir_10:28},
+  {symbol:'XSMO',name:'S&P Smallcap Momentum ETF',        ir_90:-30,ir_10:-24},
+  {symbol:'XSHQ',name:'S&P Smallcap Quality ETF',         ir_90:-10,ir_10:-6},
+  {symbol:'RWJ', name:'S&P Smallcap 600 Revenue ETF',     ir_90:-27,ir_10:-22},
+  {symbol:'EQWL',name:'S&P 100 Equal Weight ETF',         ir_90:-17,ir_10:-14},
+  {symbol:'EWSC',name:'S&P Smallcap 600 Equal Weight ETF',ir_90:-5, ir_10:-10},
+];
+
+const SEC_DATA=[
+  {symbol:'MID', name:'S&P Midcap 400',                   ir_90:-15,ir_10:-11,northStar:true},
+  {symbol:'IJH', name:'S&P Mid-Cap ETF',                   ir_90:-22,ir_10:-18},
+  {symbol:'IJK', name:'S&P Mid-Cap 400 Growth ETF',        ir_90:15, ir_10:20},
+  {symbol:'IJJ', name:'S&P Mid-Cap 400 Value ETF',         ir_90:-32,ir_10:-26},
+  {symbol:'SPMD',name:'S&P 400 Mid Cap ETF',               ir_90:-18,ir_10:-14},
+  {symbol:'MDYV',name:'S&P MidCap 400 Value ETF',          ir_90:-29,ir_10:-24},
+  {symbol:'MDYG',name:'MidCap 400 Growth ETF',             ir_90:8,  ir_10:14},
+  {symbol:'IMCV',name:'Mid-Cap Value ETF',                 ir_90:-35,ir_10:-30},
+  {symbol:'IMCG',name:'Mid-Cap Growth ETF',                ir_90:12, ir_10:18},
+  {symbol:'AMMO',name:'S&P Midcap Momentum ETF',           ir_90:-28,ir_10:-22},
+  {symbol:'RWK', name:'Midcap 400 Revenue ETF',            ir_90:-25,ir_10:-20},
+  {symbol:'RFV', name:'S&P MidCap 400 Pure Value ETF',     ir_90:-38,ir_10:-32},
+  {symbol:'RFG', name:'S&P MidCap 400 Pure Growth ETF',    ir_90:18, ir_10:22},
+  {symbol:'XMMO',name:'S&P Midcap Momentum ETF',           ir_90:-33,ir_10:-26},
+  {symbol:'XMHQ',name:'S&P Midcap Quality ETF',            ir_90:-21,ir_10:-17},
+  {symbol:'XMLV',name:'S&P Midcap Low Volatility ETF',     ir_90:22, ir_10:18},
+  {symbol:'EWMC',name:'S&P Midcap 400 Equal Weight ETF',   ir_90:-12,ir_10:-8},
+];
+
+// ── STOCK DATA (400 generated) ────────────────────────────────────────
+(function(){
+  let seed=42;
+  function rand(){seed=(seed*1664525+1013904223)&0xffffffff;return(seed>>>0)/0xffffffff;}
+  function gauss(mean,std){
+    let u=0,v=0;while(u===0)u=rand();while(v===0)v=rand();
+    return Math.round(Math.max(-99,Math.min(99,mean+std*Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v))));
+  }
+  const tickers=[],used=new Set(['MID']);
+  const alpha='ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  outer:for(let a=0;a<26;a++)for(let b=0;b<26;b++)for(let c=0;c<26;c++){
+    const t=alpha[a]+alpha[b]+alpha[c];
+    if(!used.has(t)){used.add(t);tickers.push(t);}
+    if(tickers.length>=400)break outer;
+  }
+  window.STK_DATA=tickers.map(sym=>({
+    symbol:sym,name:sym+' Corp',
+    ir_90:gauss(-10,28),ir_10:gauss(-8,35),ir_90_3mo:gauss(8,18)
+  }));
+  const sorted=[...window.STK_DATA].sort((a,b)=>a.ir_90-b.ir_90);
+  window.STRONGEST_30=sorted.slice(0,30);
+  window.WEAKEST_30=sorted.slice(-30).reverse();
+})();
+
+// ── HISTOGRAM BUILDER ─────────────────────────────────────────────────
+function buildHistogram(svgId,members){
+  const el=document.getElementById(svgId);if(!el)return;
+  const W=920,OW=28,BX=OW,BW=W-2*OW,ZW=BW/6,SP=BW/24;
+  let BY=205;const SH=13;
+  const slots=Array.from({length:24},()=>[]);
+  const oobL=[],oobR=[];
+  members.forEach(m=>{
+    if(m.ir_90>99){oobL.push(m);return;}
+    if(m.ir_90<-99){oobR.push(m);return;}
+    const{z,s}=getSlotInfo(m.ir_90);slots[z*4+s].push(m);
+  });
+  slots.forEach(sl=>sl.sort((a,b)=>a.symbol.localeCompare(b.symbol)));
+  const maxStk=Math.max(1,...slots.map(s=>s.length));
+  if(maxStk*SH+20>BY)BY=maxStk*SH+20;
+  const H=BY+63,LY_R=BY+18,LY_Z=BY+31;
+  el.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  function symCol(m){
+    if(m.northStar)return'#ffffff';
+    if(m.smlSpecial)return MID_IR_90<0?'#88cc44':'#e83535';
+    return ZCL[irToZoneIdx(m.ir_90)];
+  }
+  const fid=svgId.replace(/[^a-z0-9]/gi,'');
+  let s=`<defs>
+    <filter id="gl${fid}"><feGaussianBlur stdDeviation="2.8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="sg${fid}"><feGaussianBlur stdDeviation="1.5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>`;
+  s+=`<rect x="0" y="0" width="${OW}" height="${BY}" fill="rgba(0,204,85,0.06)"/>`;
+  s+=`<rect x="${W-OW}" y="0" width="${OW}" height="${BY}" fill="rgba(232,53,53,0.06)"/>`;
+  for(let zi=0;zi<6;zi++){
+    const x=BX+zi*ZW,c=ZCL[zi].replace('#','');
+    const r=parseInt(c.slice(0,2),16),g=parseInt(c.slice(2,4),16),b=parseInt(c.slice(4,6),16);
+    s+=`<rect x="${x}" y="0" width="${ZW}" height="${BY}" fill="rgba(${r},${g},${b},0.07)"/>`;
+  }
+  for(let zi=1;zi<6;zi++){const x=BX+zi*ZW;s+=`<line x1="${x}" y1="0" x2="${x}" y2="${BY}" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>`;}
+  s+=`<line x1="${BX}" y1="0" x2="${BX}" y2="${BY}" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>`;
+  s+=`<line x1="${BX+BW}" y1="0" x2="${BX+BW}" y2="${BY}" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>`;
+  for(let i=1;i<24;i++){const x=BX+i*SP;s+=`<line x1="${x}" y1="8" x2="${x}" y2="${BY}" stroke="rgba(255,255,255,0.055)" stroke-width="0.5" stroke-dasharray="3,6"/>`;}
+  s+=`<line x1="0" y1="${BY}" x2="${W}" y2="${BY}" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>`;
+  const BCX=460,BA=168,BF=16,BS=ZW;
+  function bY(px){const dx=px-BCX;return BY-(BA*Math.exp(-dx*dx/(2*BS*BS))+BF);}
+  let bp='';for(let px=BX;px<=BX+BW;px+=2)bp+=(px===BX?`M${px},${bY(px)}`:`L${px},${bY(px)}`);
+  s+=`<path d="${bp}" fill="none" stroke="rgba(120,185,255,0.14)" stroke-width="8"/>`;
+  s+=`<path d="${bp}" fill="none" stroke="rgba(155,210,255,0.72)" stroke-width="1.6" stroke-dasharray="8,4" filter="url(#gl${fid})"/>`;
+  s+=`<path d="${bp}" fill="none" stroke="rgba(205,235,255,0.38)" stroke-width="0.8" stroke-dasharray="8,4"/>`;
+  slots.forEach((sl,gi)=>{
+    const scx=BX+(gi+0.5)*SP;
+    sl.forEach((m,idx)=>{
+      const sy=BY-(idx+1)*SH+3,col=symCol(m);
+      const tip=`${m.symbol} — ${m.name}  |  90-IR: ${irFmt(m.ir_90)}  |  Zone ${irToZone(m.ir_90)}`;
+      s+=`<text x="${scx}" y="${sy}" text-anchor="middle" font-family="'Courier New',monospace" font-size="9" font-weight="bold" fill="${col}" filter="url(#sg${fid})" cursor="pointer" data-tip="${tip}">${m.symbol.slice(0,3)}</text>`;
+    });
+  });
+  s+=`<text x="${OW/2}" y="12" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="rgba(0,204,85,0.7)">OOB</text>`;
+  s+=`<text x="${OW/2}" y="22" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="rgba(0,204,85,0.7)">Weak</text>`;
+  s+=`<text x="${OW/2}" y="33" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="rgba(0,204,85,0.5)">[${oobL.length}]</text>`;
+  s+=`<text x="${OW/2}" y="43" text-anchor="middle" font-family="'Courier New',monospace" font-size="6.5" fill="rgba(0,204,85,0.4)">≥+99</text>`;
+  s+=`<text x="${W-OW/2}" y="12" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="rgba(232,53,53,0.7)">OOB</text>`;
+  s+=`<text x="${W-OW/2}" y="22" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="rgba(232,53,53,0.7)">Str</text>`;
+  s+=`<text x="${W-OW/2}" y="33" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="rgba(232,53,53,0.5)">[${oobR.length}]</text>`;
+  s+=`<text x="${W-OW/2}" y="43" text-anchor="middle" font-family="'Courier New',monospace" font-size="6.5" fill="rgba(232,53,53,0.4)">≤−99</text>`;
+  for(let zi=0;zi<6;zi++){
+    const cx=BX+zi*ZW+ZW/2;
+    s+=`<text x="${cx}" y="${LY_R}" text-anchor="middle" font-family="'Courier New',monospace" font-size="8.5" fill="rgba(255,255,255,0.48)">${ZONE_RANGES[zi]}</text>`;
+    s+=`<text x="${cx}" y="${LY_Z}" text-anchor="middle" font-family="'Trebuchet MS',sans-serif" font-size="10.5" font-weight="bold" fill="${ZCL[zi]}">${ZONE_LABELS[zi]}</text>`;
+  }
+  s+=`<text x="${BX+4}" y="${H-5}" font-family="'Trebuchet MS',sans-serif" font-size="7.5" fill="rgba(0,212,160,0.40)">← Weak / Oversold</text>`;
+  s+=`<text x="${BX+BW-4}" y="${H-5}" text-anchor="end" font-family="'Trebuchet MS',sans-serif" font-size="7.5" fill="rgba(232,53,53,0.40)">Overbought / Strong →</text>`;
+  el.innerHTML=s;
+  attachTooltip(el);
+}
+
+// ── DENSITY HISTOGRAM ─────────────────────────────────────────────────
+function buildDensityHistogram(svgId,members,indexIR){
+  const el=document.getElementById(svgId);if(!el)return;
+  const W=920,OW=28,BX=OW,BW=W-2*OW,ZW=BW/6,SP=BW/24;
+  const BY=220,H=BY+63,LY_R=BY+18,LY_Z=BY+31;
+  el.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  const counts=Array(24).fill(0);
+  members.forEach(m=>{if(m.ir_90>99||m.ir_90<-99)return;const{z,s}=getSlotInfo(m.ir_90);counts[z*4+s]++;});
+  const maxC=Math.max(...counts);
+  const fid=svgId.replace(/[^a-z0-9]/gi,'');
+  let svg=`<defs><filter id="gl${fid}"><feGaussianBlur stdDeviation="2.8" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
+  svg+=`<rect x="0" y="0" width="${OW}" height="${BY}" fill="rgba(0,204,85,0.06)"/>`;
+  svg+=`<rect x="${W-OW}" y="0" width="${OW}" height="${BY}" fill="rgba(232,53,53,0.06)"/>`;
+  for(let zi=0;zi<6;zi++){
+    const x=BX+zi*ZW,c=ZCL[zi].replace('#','');
+    const r=parseInt(c.slice(0,2),16),g=parseInt(c.slice(2,4),16),b=parseInt(c.slice(4,6),16);
+    svg+=`<rect x="${x}" y="0" width="${ZW}" height="${BY}" fill="rgba(${r},${g},${b},0.07)"/>`;
+  }
+  const barW=SP-3;
+  counts.forEach((cnt,gi)=>{
+    if(cnt===0)return;
+    const zi=Math.floor(gi/4);
+    const barH=Math.round((cnt/maxC)*(BY-22));
+    const bx=BX+gi*SP+1.5,by_=BY-barH;
+    const col=ZCL[zi],cHex=col.replace('#','');
+    const r=parseInt(cHex.slice(0,2),16),gg=parseInt(cHex.slice(2,4),16),b=parseInt(cHex.slice(4,6),16);
+    svg+=`<rect x="${bx}" y="${by_}" width="${barW}" height="${barH}" fill="rgba(${r},${gg},${b},0.50)" stroke="${col}" stroke-width="0.5"/>`;
+    if(barH>14)svg+=`<text x="${bx+barW/2}" y="${by_-3}" text-anchor="middle" font-family="'Courier New',monospace" font-size="8" fill="${col}" opacity="0.85">${cnt}</text>`;
+  });
+  for(let zi=1;zi<6;zi++){const x=BX+zi*ZW;svg+=`<line x1="${x}" y1="0" x2="${x}" y2="${BY}" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>`;}
+  svg+=`<line x1="${BX}" y1="0" x2="${BX}" y2="${BY}" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>`;
+  svg+=`<line x1="${BX+BW}" y1="0" x2="${BX+BW}" y2="${BY}" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>`;
+  for(let i=1;i<24;i++){const x=BX+i*SP;svg+=`<line x1="${x}" y1="8" x2="${x}" y2="${BY}" stroke="rgba(255,255,255,0.055)" stroke-width="0.5" stroke-dasharray="3,6"/>`;}
+  svg+=`<line x1="0" y1="${BY}" x2="${W}" y2="${BY}" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>`;
+  const BCX=460,BA=168,BF=16,BS=ZW;
+  function bY(px){const dx=px-BCX;return BY-(BA*Math.exp(-dx*dx/(2*BS*BS))+BF);}
+  let bp='';for(let px=BX;px<=BX+BW;px+=2)bp+=(px===BX?`M${px},${bY(px)}`:`L${px},${bY(px)}`);
+  svg+=`<path d="${bp}" fill="none" stroke="rgba(120,185,255,0.14)" stroke-width="8"/>`;
+  svg+=`<path d="${bp}" fill="none" stroke="rgba(155,210,255,0.72)" stroke-width="1.6" stroke-dasharray="8,4" filter="url(#gl${fid})"/>`;
+  svg+=`<path d="${bp}" fill="none" stroke="rgba(205,235,255,0.38)" stroke-width="0.8" stroke-dasharray="8,4"/>`;
+  if(indexIR>=-99&&indexIR<=99){
+    const{z,s}=getSlotInfo(indexIR);
+    const mx=BX+(z*4+s+0.5)*SP,dy=14;
+    svg+=`<polygon points="${mx},${BY-dy-7} ${mx+6},${BY-dy} ${mx},${BY-dy+7} ${mx-6},${BY-dy}" fill="#ffffff" stroke="rgba(255,255,255,0.4)" stroke-width="0.8" opacity="0.92"/>`;
+    svg+=`<text x="${mx}" y="${BY-dy-12}" text-anchor="middle" font-family="'Courier New',monospace" font-size="8.5" font-weight="bold" fill="#ffffff">MID</text>`;
+  }
+  svg+=`<text x="${OW/2}" y="14" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="rgba(0,204,85,0.7)">OOB</text>`;
+  svg+=`<text x="${OW/2}" y="24" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="rgba(0,204,85,0.5)">Weak</text>`;
+  svg+=`<text x="${W-OW/2}" y="14" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="rgba(232,53,53,0.7)">OOB</text>`;
+  svg+=`<text x="${W-OW/2}" y="24" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="rgba(232,53,53,0.5)">Str</text>`;
+  for(let zi=0;zi<6;zi++){
+    const cx=BX+zi*ZW+ZW/2;
+    svg+=`<text x="${cx}" y="${LY_R}" text-anchor="middle" font-family="'Courier New',monospace" font-size="8.5" fill="rgba(255,255,255,0.48)">${ZONE_RANGES[zi]}</text>`;
+    svg+=`<text x="${cx}" y="${LY_Z}" text-anchor="middle" font-family="'Trebuchet MS',sans-serif" font-size="10.5" font-weight="bold" fill="${ZCL[zi]}">${ZONE_LABELS[zi]}</text>`;
+  }
+  svg+=`<text x="${BX+4}" y="${H-5}" font-family="'Trebuchet MS',sans-serif" font-size="7.5" fill="rgba(0,212,160,0.40)">← Weak / Oversold</text>`;
+  svg+=`<text x="${BX+BW-4}" y="${H-5}" text-anchor="end" font-family="'Trebuchet MS',sans-serif" font-size="7.5" fill="rgba(232,53,53,0.40)">Overbought / Strong →</text>`;
+  el.innerHTML=svg;
+}
+
+// ── LH TOGGLE SYSTEM ──────────────────────────────────────────────────
+const lhSort={},lhPeriod={};
+const LH_DATA={mkt:MKT_DATA,sec:SEC_DATA};
+
+function renderLHTable(g){
+  if(!lhSort[g])lhSort[g]={dir:1};
+  if(!lhPeriod[g])lhPeriod[g]='90';
+  const iF=lhPeriod[g]==='90'?'ir_90':'ir_10';
+  const{dir}=lhSort[g];
+  const rows=[...LH_DATA[g]].sort((a,b)=>(b[iF]-a[iF])*dir);
+  document.getElementById(g+'-tbody').innerHTML=rows.map(r=>{
+    const ir=r[iF],z=irToZone(ir);
+    const nm=r.name.length>22?r.name.slice(0,22)+'…':r.name;
+    return`<tr><td class="col-tick">${r.symbol}</td><td class="col-name">${nm}</td><td class="col-ir"><span class="${irCls(ir)}">${irFmt(ir)}</span></td><td class="col-zn">${zoneBadge(z)}</td></tr>`;
+  }).join('');
+  const arr=document.getElementById(g+'-arr');
+  if(arr){arr.textContent=dir===1?'↓':'↑';arr.classList.add('active');}
+}
+function handleLHPeriod(btn){
+  btn.closest('.lh-btns').querySelectorAll('.lh-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  lhPeriod[btn.dataset.group]=btn.dataset.period;
+  renderLHTable(btn.dataset.group);
+}
+function handleLHSort(g){
+  if(!lhSort[g])lhSort[g]={dir:1};
+  lhSort[g].dir*=-1;renderLHTable(g);
+}
+
+// ── STOCK LH TOGGLE ────────────────────────────────────────────────────
+let stkMode='weakest',stkDir=1;
+function renderStkTable(){
+  const base=stkMode==='weakest'?WEAKEST_30:STRONGEST_30;
+  // Weakest: sort descending (highest positive IR first). Strongest: ascending (most negative first).
+  const rows=stkMode==='weakest'
+    ?[...base].sort((a,b)=>(b.ir_90-a.ir_90)*stkDir)
+    :[...base].sort((a,b)=>(a.ir_90-b.ir_90)*stkDir);
+  document.getElementById('stk-tbody').innerHTML=rows.map(r=>{
+    const ir=r.ir_90,z=irToZone(ir);
+    const nm=r.name.length>22?r.name.slice(0,22)+'…':r.name;
+    return`<tr><td class="col-tick">${r.symbol}</td><td class="col-name">${nm}</td><td class="col-ir"><span class="${irCls(ir)}">${irFmt(ir)}</span></td><td class="col-zn">${zoneBadge(z)}</td></tr>`;
+  }).join('');
+  const arr=document.getElementById('stk-arr');
+  if(arr)arr.textContent=stkDir===1?'↓':'↑';
+}
+function handleStkMode(btn){
+  btn.closest('.lh-btns').querySelectorAll('.lh-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');stkMode=btn.dataset.mode;stkDir=1;renderStkTable();
+}
+function handleSTKSort(){stkDir*=-1;renderStkTable();}
+
+// ── TOOLTIP ────────────────────────────────────────────────────────────
+function attachTooltip(svgEl){
+  const tip=document.getElementById('histo-tip');
+  svgEl.addEventListener('mousemove',e=>{
+    const t=e.target.closest('[data-tip]');
+    if(t){tip.style.display='block';tip.style.left=(e.clientX+14)+'px';tip.style.top=(e.clientY-8)+'px';tip.textContent=t.dataset.tip;}
+    else tip.style.display='none';
+  });
+  svgEl.addEventListener('mouseleave',()=>tip.style.display='none');
+}
+
+// ── COMBO CHARTS ────────────────────────────────────────────────────────
+Chart.defaults.color='#5a7a9a';Chart.defaults.borderColor='rgba(255,255,255,0.06)';
+function genDates30(){
+  const d=[];let cur=new Date(),n=0;
+  while(n<30){if(cur.getDay()!==0&&cur.getDay()!==6){d.unshift(cur.toLocaleDateString('en-US',{month:'numeric',day:'numeric'}));n++;}cur.setDate(cur.getDate()-1);}
+  return d;
+}
+const DATES30=genDates30();
+function buildZoneChart(cid,z90,z10){
+  const ctx=document.getElementById(cid);if(!ctx)return;
+  new Chart(ctx,{type:'bar',data:{labels:DATES30,datasets:[
+    {type:'bar',label:'90-Day Zone',data:z90,backgroundColor:z90.map(z=>ZCL[z-1]+'99'),borderColor:z90.map(z=>ZCL[z-1]),borderWidth:1,order:2},
+    {type:'line',label:'10-Day Zone',data:z10,borderColor:'#c9a227',pointBackgroundColor:'#c9a227',pointRadius:2.5,pointHoverRadius:4,borderWidth:1.8,fill:false,tension:0.3,order:1}
+  ]},options:{responsive:true,maintainAspectRatio:false,layout:{padding:{left:2,right:4,top:4,bottom:2}},
+    plugins:{legend:{display:true,position:'top',labels:{color:'#5a7a9a',font:{family:"'Courier New',monospace",size:9},boxWidth:12,padding:8}}},
+    scales:{
+      y:{min:0.3,max:6.5,
+        title:{display:true,text:'Zone',color:'#5a7a9a',font:{family:"'Courier New',monospace",size:9},padding:{bottom:4}},
+        ticks:{stepSize:1,callback:v=>(v>=1&&v<=6)?String(Math.round(v)):'',
+          color:c=>{const v=Math.round(c.tick.value);return(v>=1&&v<=6)?ZCL[v-1]:'#5a7a9a';},
+          font:{family:"'Courier New',monospace",size:9},padding:3},
+        grid:{color:ctx=>(ctx.tick.value===3||ctx.tick.value===4)?'rgba(255,255,255,0.12)':'rgba(255,255,255,0.05)',
+          lineWidth:ctx=>(ctx.tick.value===3||ctx.tick.value===4)?1.2:0.6},
+        border:{color:'#243c58'}},
+      x:{ticks:{maxRotation:45,autoSkip:true,maxTicksLimit:10,color:'#5a7a9a',font:{family:"'Courier New',monospace",size:8}},
+        grid:{color:'rgba(255,255,255,0.03)'},border:{color:'#243c58'}}
+    }}});
+}
+const RFV_Z90=[4,4,5,5,4,4,4,5,5,5,4,4,4,5,5,4,4,4,5,5,4,4,5,5,4,4,4,5,4,4];
+const RFV_Z10=[5,5,4,4,5,5,6,5,5,4,4,5,5,5,4,4,5,6,5,4,4,5,6,5,5,4,4,5,5,4];
+const RFG_Z90=[3,3,4,3,3,3,4,4,3,3,3,4,4,3,3,3,4,4,3,3,4,3,3,4,4,3,3,3,3,4];
+const RFG_Z10=[3,4,4,3,3,4,4,3,3,3,4,4,3,3,4,3,3,4,4,3,3,3,4,4,3,3,4,4,3,3];
+const XMMO_Z90=[3,3,4,4,3,3,4,4,3,3,4,4,3,3,4,4,3,3,3,4,4,3,3,4,4,3,3,3,4,4];
+const XMMO_Z10=[4,4,3,3,4,4,3,3,4,4,3,3,4,4,3,3,4,4,4,3,3,4,4,3,3,4,4,4,3,3];
+const XMHQ_Z90=[3,3,3,4,4,3,3,3,4,4,3,3,3,4,4,3,3,4,4,3,3,3,4,4,3,3,3,3,4,4];
+const XMHQ_Z10=[4,3,3,3,4,4,3,3,3,4,4,3,3,4,3,3,4,4,3,3,3,4,4,3,3,3,4,4,3,3];
+const IJH_Z90 =[4,4,4,3,3,4,4,4,4,3,3,4,4,4,4,3,3,4,4,4,4,3,3,3,4,4,4,3,3,4];
+const IJH_Z10 =[4,5,4,4,3,3,4,5,5,4,4,3,3,4,5,4,4,3,3,4,5,4,4,3,3,4,4,4,3,4];
+const EWMC_Z90=[4,4,4,4,3,3,3,4,4,4,4,3,3,4,4,4,4,3,3,4,4,3,3,3,4,4,4,3,3,4];
+const EWMC_Z10=[5,4,4,4,3,3,3,5,5,4,3,3,3,5,5,4,4,3,3,3,5,4,4,3,3,4,5,4,3,4];
+
+// ── INIT ────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded',()=>{
+  buildHistogram('mkt-histo',MKT_DATA);
+  buildHistogram('sec-histo',SEC_DATA);
+  buildDensityHistogram('stk-histo',STK_DATA,MID_IR_90);
+  ['mkt','sec'].forEach(g=>{lhSort[g]={dir:1};lhPeriod[g]='90';renderLHTable(g);});
+  stkMode='weakest';stkDir=1;renderStkTable();
+  buildZoneChart('chart-rfv',RFV_Z90,RFV_Z10);
+  buildZoneChart('chart-rfg',RFG_Z90,RFG_Z10);
+  buildZoneChart('chart-xmmo',XMMO_Z90,XMMO_Z10);
+  buildZoneChart('chart-xmhq',XMHQ_Z90,XMHQ_Z10);
+  buildZoneChart('chart-ijh',IJH_Z90,IJH_Z10);
+  buildZoneChart('chart-ewmc',EWMC_Z90,EWMC_Z10);
+});
+</script>
+</body>
+</html>

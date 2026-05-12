@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>S&amp;P 100 Index (OEX) — Top Down Trading</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:#08111e; --panel:#0d1829; --panel-alt:#0a1420;
+  --border:#1a2d44; --border-lite:#243c58;
+  --text:#ddeeff; --dim:#5a7a9a; --accent:#3090d8; --gold:#c9a227;
+  --z1:#00cc55; --z2:#88cc44; --z3:#7a9aaa; --z4:#aa9a7a; --z5:#ddcc00; --z6:#e83535;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;overflow:hidden;}
+
+.top-nav{height:44px;background:var(--panel-alt);border-bottom:2px solid var(--border-lite);display:flex;align-items:center;padding:0 12px;gap:10px;position:sticky;top:0;z-index:100;flex-shrink:0;}
+.nav-back{background:var(--panel);border:1px solid var(--border-lite);color:var(--dim);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:5px 14px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.nav-back:hover{border-color:var(--accent);color:var(--text);}
+.nav-spacer{flex:1;}
+.alert-badge{padding:4px 12px;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;border-radius:2px;display:none;}
+.alert-buy{background:rgba(0,204,85,0.12);border:1px solid var(--z1);color:var(--z1);display:inline-block;}
+.alert-sell{background:rgba(232,53,53,0.12);border:1px solid var(--z6);color:var(--z6);display:inline-block;}
+.search-box{background:var(--panel);border:1px solid var(--border-lite);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:12px;padding:5px 10px;outline:none;width:160px;transition:border-color .15s;}
+.search-box::placeholder{color:var(--dim);}
+.search-box:focus{border-color:var(--accent);}
+
+.shell{display:flex;height:calc(100vh - 44px);overflow:hidden;}
+
+/* SIDEBAR */
+.sidebar{width:285px;min-width:285px;border-right:2px solid var(--border-lite);display:flex;flex-direction:column;background:var(--panel-alt);flex-shrink:0;overflow:hidden;}
+.sb-head{padding:8px 10px 0;border-bottom:1px solid var(--border);flex-shrink:0;}
+.sb-title{text-align:center;font-weight:700;font-size:12px;color:var(--text);margin-bottom:5px;}
+.period-btns{display:flex;justify-content:center;gap:4px;margin-bottom:8px;}
+.p-btn{background:#1a2d44;border:1px solid #1a2d44;color:var(--dim);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600;padding:3px 10px;cursor:pointer;transition:all .15s;}
+.p-btn.active{background:#2a7abf;border-color:#3090d8;color:#fff;}
+.p-btn:hover:not(.active){border-color:#3090d8;color:var(--text);}
+
+/* Info row — companion left, exchange right */
+.info-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
+.companion-label,.exchange-label{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--dim);margin-bottom:1px;}
+.companion-block a{display:block;color:var(--accent);text-decoration:none;font-family:'Courier New',monospace;font-size:11px;font-weight:700;line-height:1.7;}
+.companion-block a:hover{color:var(--text);text-decoration:underline;}
+.exchange-block{text-align:right;line-height:1.7;}
+.exchange-value{font-family:'Rajdhani',sans-serif;font-size:14px;color:var(--text);font-weight:700;letter-spacing:.04em;}
+
+.sb-scroll{overflow-y:auto;flex:1;}
+.sb-scroll::-webkit-scrollbar{width:4px;}
+.sb-scroll::-webkit-scrollbar-track{background:#08111e;}
+.sb-scroll::-webkit-scrollbar-thumb{background:#243c58;border-radius:2px;}
+
+.lh-table{width:100%;border-collapse:collapse;font-family:'Courier New',monospace;font-size:10px;}
+.lh-table th{background:var(--panel-alt);color:var(--dim);padding:3px 4px;border-bottom:1px solid var(--border);position:sticky;top:0;font-size:9px;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;}
+.lh-table th.sortable{cursor:pointer;user-select:none;}
+.lh-table th.sortable:hover{color:var(--text);}
+.lh-table th.lh-sort-active{color:var(--accent);}
+.lh-table td{padding:2px 4px;border-bottom:1px solid #0e1a28;white-space:nowrap;}
+.lh-table tr:hover td{background:#111e30;}
+.lh-tick{color:var(--text);font-weight:bold;cursor:pointer;}
+.lh-tick:hover{color:var(--accent);}
+.lh-name{color:var(--dim);font-size:9px;max-width:72px;overflow:hidden;text-overflow:ellipsis;}
+.lh-ir,.lh-zn,.lh-3mo{text-align:center;}
+.sort-arrow{font-size:9px;margin-left:2px;opacity:.5;}
+.sort-arrow.active{opacity:1;color:var(--accent);}
+.zone-badge{display:inline-block;padding:1px 4px;font-size:9px;font-weight:bold;border-radius:2px;color:#000;}
+.pos{color:#88cc44;} .neg{color:#e83535;} .zer{color:#b8cce0;}
+
+/* RIGHT CONTENT */
+.right-content{flex:1;overflow-y:auto;padding:10px 14px;}
+.right-content::-webkit-scrollbar{width:6px;}
+.right-content::-webkit-scrollbar-track{background:#08111e;}
+.right-content::-webkit-scrollbar-thumb{background:#243c58;border-radius:3px;}
+
+.histo-wrap{margin-bottom:0;}
+.histo-title{font-weight:700;font-size:13px;color:var(--text);text-align:center;margin-bottom:4px;letter-spacing:.03em;}
+.histo-desc{font-size:13px;color:var(--dim);text-align:center;line-height:1.5;margin-bottom:6px;padding:0 16px;font-style:italic;}
+.histo-range-label{text-align:center;font-size:10px;font-weight:600;color:var(--dim);letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px;}
+.histo-range-values{text-align:center;font-size:13px;font-weight:700;margin-bottom:6px;}
+.r-low{color:var(--z1);} .r-sep{color:var(--dim);margin:0 8px;} .r-high{color:var(--z6);}
+.histo-svg-box{background:var(--panel);border:1px solid var(--border);overflow:hidden;}
+
+.comment-box{background:var(--panel);border:1px solid var(--border);padding:10px 14px;margin-bottom:8px;}
+.comment-date{font-size:11px;color:var(--dim);font-family:'Courier New',monospace;margin-bottom:5px;}
+.comment-text{font-size:15px;font-style:italic;color:var(--dim);line-height:1.55;}
+
+/* Stats — centered */
+.stats-row{display:flex;gap:32px;justify-content:center;background:var(--panel);border:1px solid var(--border);padding:7px 14px;margin-bottom:10px;font-family:'Courier New',monospace;font-size:12px;color:var(--text);}
+.stat-label{color:var(--dim);margin-right:4px;}
+
+.section-heading{font-size:14px;font-weight:700;color:var(--gold);text-align:center;letter-spacing:.05em;text-transform:uppercase;margin:16px 0 10px;border-top:1px solid var(--border-lite);padding-top:12px;}
+.chart-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.chart-wrap{background:var(--panel);border:1px solid var(--border);padding:8px 12px 10px;}
+.chart-head{font-size:12px;font-weight:700;color:var(--text);text-align:center;letter-spacing:.03em;margin-bottom:2px;}
+.chart-sub{font-size:10px;color:var(--dim);text-align:center;margin-bottom:8px;font-style:italic;}
+.chart-cv{position:relative;height:220px;}
+
+.cc-block{text-align:center;margin-bottom:10px;}
+.cc-title{font-size:14px;font-weight:700;color:var(--text);letter-spacing:.04em;margin-bottom:3px;}
+.cc-name a{color:var(--accent);text-decoration:none;font-size:13px;font-weight:600;}
+.cc-name a:hover{color:var(--text);}
+
+.ref-section{background:var(--panel);border:1px solid var(--border);padding:12px 16px;margin-bottom:14px;}
+.ref-label{font-size:10px;font-weight:700;color:var(--dim);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;}
+.ref-text{font-size:13px;color:var(--dim);line-height:1.65;}
+
+#histo-tip{position:fixed;background:#0d1829;border:1px solid #3090d8;color:#ddeeff;font-family:'Courier New',monospace;font-size:11px;padding:5px 9px;border-radius:2px;box-shadow:0 2px 12px rgba(0,0,0,.6);white-space:nowrap;z-index:999;pointer-events:none;display:none;}
+</style>
+</head>
+<body>
+<div id="histo-tip"></div>
+
+<nav class="top-nav">
+  <button class="nav-back" onclick="navTo('sector.html','sectorPage')">← Back</button>
+  <div class="nav-spacer"></div>
+  <span id="alert-badge" class="alert-badge"></span>
+  <div class="nav-spacer"></div>
+  <input class="search-box" type="text" placeholder="Search ticker or name…" oninput="filterLH(this.value)">
+</nav>
+
+<div class="shell">
+  <aside class="sidebar">
+    <div class="sb-head">
+      <div class="sb-title">OEX Members</div>
+      <div class="period-btns">
+        <button class="p-btn active" data-period="90" onclick="handlePeriod(this)">90 IR</button>
+        <button class="p-btn" data-period="10" onclick="handlePeriod(this)">10 IR</button>
+      </div>
+    </div>
+    <div class="sb-scroll">
+      <table class="lh-table">
+        <thead><tr>
+          <th style="text-align:left">Tick</th>
+          <th style="text-align:left">Name</th>
+          <th class="sortable lh-sort-active" id="lh-th-ir" onclick="handleLHSort('ir')" style="text-align:center">IR&nbsp;<span class="sort-arrow active" id="lh-arr-ir">↓</span></th>
+          <th style="text-align:center">Zn</th>
+          <th class="sortable" id="lh-th-3mo" onclick="handleLHSort('3mo')" style="text-align:center">3Mo&nbsp;<span class="sort-arrow" id="lh-arr-3mo">↕</span></th>
+        </tr></thead>
+        <tbody id="lh-tbody"></tbody>
+      </table>
+    </div>
+  </aside>
+
+  <div class="right-content">
+
+    <!-- Info row — companion left, exchange right — matches Index Without Members format -->
+    <div class="info-row">
+      <div class="companion-block">
+        <div class="companion-label">Companion Securities</div>
+        <a href="XEO.html" onclick="navTo('XEO.html','symbolWindow');return false;">XEO</a>
+      </div>
+      <div class="exchange-block">
+        <div class="exchange-label">Exchange</div>
+        <span class="exchange-value">CBOE</span>
+      </div>
+    </div>
+
+    <div class="histo-wrap">
+      <div class="histo-title">S&amp;P 100 Index (OEX) — 90-Day Implied Risk Histogram</div>
+      <div class="histo-desc">The S&amp;P 100 Index is a capitalization-weighted index of 100 large-cap U.S. stocks drawn from the S&amp;P 500, with options trading on the Chicago Board Options Exchange as American-exercise, cash-settled contracts.</div>
+      <div class="histo-range-label">Expected 90-Day Trading Range</div>
+      <div class="histo-range-values"><span class="r-low">$140</span><span class="r-sep">—</span><span class="r-high">$215</span></div>
+      <div class="histo-svg-box">
+        <svg id="mainHisto" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block"></svg>
+      </div>
+    </div>
+
+    <div class="comment-box">
+      <div class="comment-date">Posted May 3, 2026</div>
+      <div class="comment-text">The S&amp;P 100 Index (OEX) sits in Zone 4 at −6, just slightly above 90-day neutral. The index reads −4 on a 10-day basis. Energy components ExxonMobil (XOM) and Chevron (CVX) are pushing deeper into overbought territory, both anchored in Zone 6. Technology leaders Apple (AAPL) and Tesla (TSLA) remain in Zone 1, anchoring the index's reversion-to-mean opportunity at the other extreme.</div>
+    </div>
+
+    <div class="stats-row">
+      <span><span class="stat-label">Close:</span>$182.40</span>
+      <span><span class="stat-label">Implied Volatility:</span>12.8%</span>
+    </div>
+
+    <div class="section-heading">Market Data</div>
+    <div class="chart-pair">
+      <div class="chart-wrap">
+        <div class="chart-head">OEX Implied Risk</div>
+        <div class="chart-sub">90-Day Zone · 10-Day Zone · 30 Days</div>
+        <div class="chart-cv"><canvas id="chart-oex-zone"></canvas></div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-head">OEX Price / Mean</div>
+        <div class="chart-sub">Closing Price · 90-Day Mean · 30 Days</div>
+        <div class="chart-cv"><canvas id="chart-oex-price"></canvas></div>
+      </div>
+    </div>
+
+    <div class="section-heading">Implied Risk Data</div>
+    <div class="cc-block">
+      <div class="cc-title">Compare and Contrast</div>
+      <div class="cc-name"><a href="XEO.html" onclick="navTo('XEO.html','symbolWindow');return false;">S&amp;P 100 European Settlement Index (XEO)</a></div>
+    </div>
+    <div class="chart-pair">
+      <div class="chart-wrap">
+        <div class="chart-head">XEO Implied Risk</div>
+        <div class="chart-sub">90-Day Zone · 10-Day Zone · 30 Days</div>
+        <div class="chart-cv"><canvas id="chart-xeo-zone"></canvas></div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-head">XEO Price / Mean</div>
+        <div class="chart-sub">Closing Price · 90-Day Mean · 30 Days</div>
+        <div class="chart-cv"><canvas id="chart-xeo-price"></canvas></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function navTo(url,w){if(window.innerWidth<768)location.href=url;else window.open(url,w);}
+
+const ZCL=['#00cc55','#88cc44','#7a9aaa','#aa9a7a','#ddcc00','#e83535'];
+function irToZone(ir){if(ir>=67)return 1;if(ir>=34)return 2;if(ir>=1)return 3;if(ir>=-33)return 4;if(ir>=-66)return 5;return 6;}
+function zoneBadge(z){return `<span class="zone-badge" style="background:${ZCL[z-1]}">${z}</span>`;}
+function irFmt(v){return(v>0?'+':'')+v;}
+function irCls(v){return v>0?'pos':v<0?'neg':'zer';}
+function trunc(s,n){return s.length>n?s.slice(0,n)+'…':s;}
+
+const MEMBERS=[
+  // Zone 1 — extreme oversold
+  {sym:'NVDA',name:'NVIDIA Corp',          ir90:+88,ir10:+82,mo3:-45},
+  {sym:'AMD', name:'Advanced Micro Dev',   ir90:+82,ir10:+76,mo3:-40},
+  {sym:'INTC',name:'Intel Corp',           ir90:+78,ir10:+72,mo3:-35},
+  {sym:'UNH', name:'UnitedHealth Group',   ir90:+74,ir10:+68,mo3:-30},
+  {sym:'BA',  name:'Boeing Co',            ir90:+72,ir10:+66,mo3:-28},
+  {sym:'ZOM', name:'Zomedica Corp',        ir90:+70,ir10:+64,mo3:-25},
+  {sym:'TSLA',name:'Tesla Inc',            ir90:+68,ir10:+62,mo3:-22},
+  {sym:'UBER',name:'Uber Technologies',    ir90:+67,ir10:+61,mo3:-20},
+  // Zone 2 — oversold
+  {sym:'PLTR',name:'Palantir Technologies',ir90:+62,ir10:+56,mo3:-18},
+  {sym:'CRM', name:'Salesforce Inc',       ir90:+58,ir10:+52,mo3:-15},
+  {sym:'QCOM',name:'Qualcomm Inc',         ir90:+54,ir10:+48,mo3:-12},
+  {sym:'SBUX',name:'Starbucks Corp',       ir90:+50,ir10:+44,mo3: -8},
+  {sym:'DIS', name:'Walt Disney Co',       ir90:+48,ir10:+42,mo3: -6},
+  {sym:'NFLX',name:'Netflix Inc',          ir90:+46,ir10:+40,mo3: -4},
+  {sym:'PYPL',name:'PayPal Holdings',      ir90:+44,ir10:+38,mo3: -2},
+  {sym:'GM',  name:'General Motors',       ir90:+42,ir10:+36,mo3:  0},
+  {sym:'BMY', name:'Bristol-Myers Squibb', ir90:+40,ir10:+35,mo3: +2},
+  {sym:'PFE', name:'Pfizer Inc',           ir90:+38,ir10:+33,mo3: +4},
+  {sym:'NKE', name:'Nike Inc',             ir90:+36,ir10:+31,mo3: +6},
+  {sym:'TGT', name:'Target Corp',          ir90:+36,ir10:+30,mo3: +8},
+  {sym:'T',   name:'AT&T Inc',             ir90:+34,ir10:+28,mo3:+10},
+  {sym:'GILD',name:'Gilead Sciences',      ir90:+34,ir10:+28,mo3:+10},
+  {sym:'CVS', name:'CVS Health',           ir90:+34,ir10:+27,mo3:+12},
+  {sym:'USB', name:'US Bancorp',           ir90:+34,ir10:+27,mo3:+12},
+  {sym:'MDT', name:'Medtronic PLC',        ir90:+34,ir10:+26,mo3:+14},
+  // Zone 3 — slightly oversold
+  {sym:'CMCSA',name:'Comcast Corp',        ir90:+28,ir10:+22,mo3:+16},
+  {sym:'NOW', name:'ServiceNow Inc',       ir90:+26,ir10:+20,mo3:+18},
+  {sym:'ADBE',name:'Adobe Inc',            ir90:+24,ir10:+18,mo3:+20},
+  {sym:'AVGO',name:'Broadcom Inc',         ir90:+22,ir10:+16,mo3:+22},
+  {sym:'ABBV',name:'AbbVie Inc',           ir90:+20,ir10:+14,mo3:+24},
+  {sym:'IBM', name:'IBM Corp',             ir90:+20,ir10:+14,mo3:+24},
+  {sym:'MMM', name:'3M Co',               ir90:+18,ir10:+12,mo3:+26},
+  {sym:'GE',  name:'GE Aerospace',         ir90:+18,ir10:+12,mo3:+26},
+  {sym:'NEE', name:'NextEra Energy',       ir90:+16,ir10:+10,mo3:+28},
+  {sym:'INTU',name:'Intuit Inc',           ir90:+16,ir10:+10,mo3:+28},
+  {sym:'SO',  name:'Southern Co',          ir90:+14,ir10: +8,mo3:+30},
+  {sym:'DUK', name:'Duke Energy',          ir90:+14,ir10: +8,mo3:+30},
+  {sym:'C',   name:'Citigroup Inc',        ir90:+12,ir10: +6,mo3:+32},
+  {sym:'ABT', name:'Abbott Laboratories',  ir90:+12,ir10: +6,mo3:+32},
+  {sym:'TXN', name:'Texas Instruments',    ir90:+10,ir10: +4,mo3:+34},
+  {sym:'DE',  name:'Deere & Co',           ir90:+10,ir10: +4,mo3:+34},
+  {sym:'CSCO',name:'Cisco Systems',        ir90: +8,ir10: +2,mo3:+36},
+  {sym:'RTX', name:'RTX Corp',             ir90: +8,ir10: +2,mo3:+36},
+  {sym:'SCHW',name:'Charles Schwab',       ir90: +8,ir10: +2,mo3:+36},
+  {sym:'UPS', name:'United Parcel Svc',    ir90: +8,ir10: +2,mo3:+37},
+  {sym:'BAC', name:'Bank of America',      ir90: +6,ir10: +1,mo3:+38},
+  {sym:'AMGN',name:'Amgen Inc',            ir90: +6,ir10: +1,mo3:+38},
+  {sym:'CAT', name:'Caterpillar Inc',      ir90: +6,ir10: +1,mo3:+38},
+  {sym:'TMO', name:'Thermo Fisher Sci',    ir90: +4,ir10: +1,mo3:+40},
+  {sym:'ACN', name:'Accenture PLC',        ir90: +4,ir10: +1,mo3:+40},
+  {sym:'DHR', name:'Danaher Corp',         ir90: +4,ir10: +1,mo3:+40},
+  {sym:'SMUS',name:'SMUS Security',        ir90: +2,ir10: +1,mo3:+42},
+  {sym:'BK',  name:'Bank of New York',     ir90: +2,ir10: +1,mo3:+42},
+  {sym:'EMR', name:'Emerson Electric',     ir90: +2,ir10: +1,mo3:+42},
+  // Zone 4 — slightly overbought (OEX white symbol here)
+  {sym:'OEX', name:'S&P 100 Index',        ir90: -6,ir10: -4,mo3:+18,isIndex:true},
+  {sym:'BKNG',name:'Booking Holdings',     ir90: -2,ir10: -1,mo3:+44},
+  {sym:'LIN', name:'Linde PLC',            ir90: -2,ir10: -1,mo3:+44},
+  {sym:'MDLZ',name:'Mondelez Intl',        ir90: -2,ir10: -1,mo3:+44},
+  {sym:'GD',  name:'General Dynamics',     ir90: -4,ir10: -2,mo3:+45},
+  {sym:'GOOGL',name:'Alphabet Inc Cl A',   ir90: -4,ir10: -2,mo3:+45},
+  {sym:'GOOG',name:'Alphabet Inc Cl C',    ir90: -4,ir10: -2,mo3:+45},
+  {sym:'ISRG',name:'Intuitive Surgical',   ir90: -6,ir10: -4,mo3:+46},
+  {sym:'MRK', name:'Merck & Co',           ir90: -8,ir10: -6,mo3:+48},
+  {sym:'MO',  name:'Altria Group',         ir90: -8,ir10: -6,mo3:+48},
+  {sym:'MCD', name:"McDonald's Corp",      ir90:-10,ir10: -8,mo3:+50},
+  {sym:'PEP', name:'PepsiCo Inc',          ir90:-10,ir10: -8,mo3:+50},
+  {sym:'KO',  name:'Coca-Cola Co',         ir90:-10,ir10: -8,mo3:+50},
+  {sym:'HON', name:'Honeywell Intl',       ir90:-12,ir10:-10,mo3:+52},
+  {sym:'PG',  name:'Procter & Gamble',     ir90:-12,ir10:-10,mo3:+52},
+  {sym:'CL',  name:'Colgate-Palmolive',    ir90:-14,ir10:-12,mo3:+54},
+  {sym:'PM',  name:'Philip Morris Intl',   ir90:-14,ir10:-12,mo3:+54},
+  {sym:'LMT', name:'Lockheed Martin',      ir90:-16,ir10:-14,mo3:+55},
+  {sym:'ORCL',name:'Oracle Corp',          ir90:-16,ir10:-14,mo3:+55},
+  {sym:'AXP', name:'American Express',     ir90:-18,ir10:-16,mo3:+56},
+  {sym:'JNJ', name:'Johnson & Johnson',    ir90:-20,ir10:-18,mo3:+57},
+  {sym:'HD',  name:'Home Depot',           ir90:-20,ir10:-18,mo3:+57},
+  {sym:'LOW', name:"Lowe's Cos",           ir90:-22,ir10:-20,mo3:+58},
+  {sym:'UNP', name:'Union Pacific',        ir90:-22,ir10:-20,mo3:+58},
+  {sym:'AAPL',name:'Apple Inc',            ir90:-24,ir10:-22,mo3:+59},
+  {sym:'MSFT',name:'Microsoft Corp',       ir90:-24,ir10:-22,mo3:+59},
+  {sym:'WFC', name:'Wells Fargo',          ir90:-26,ir10:-24,mo3:+60},
+  {sym:'COF', name:'Capital One Finl',     ir90:-26,ir10:-24,mo3:+60},
+  {sym:'SPG', name:'Simon Property Grp',   ir90:-28,ir10:-26,mo3:+61},
+  {sym:'AMT', name:'American Tower',       ir90:-28,ir10:-26,mo3:+61},
+  {sym:'AIG', name:'American Intl Grp',    ir90:-30,ir10:-28,mo3:+62},
+  {sym:'MET', name:'MetLife Inc',          ir90:-30,ir10:-28,mo3:+62},
+  {sym:'USD', name:'USD Security',         ir90:-32,ir10:-30,mo3:+63},
+  // Zone 5 — overbought
+  {sym:'META',name:'Meta Platforms',       ir90:-38,ir10:-35,mo3:+65},
+  {sym:'COP', name:'ConocoPhillips',       ir90:-40,ir10:-38,mo3:+66},
+  {sym:'WMT', name:'Walmart Inc',          ir90:-42,ir10:-40,mo3:+67},
+  {sym:'COST',name:'Costco Wholesale',     ir90:-44,ir10:-42,mo3:+68},
+  {sym:'MA',  name:'Mastercard Inc',       ir90:-45,ir10:-43,mo3:+68},
+  {sym:'BRKB',name:'Berkshire Hathaway B', ir90:-46,ir10:-44,mo3:+69},
+  {sym:'MS',  name:'Morgan Stanley',       ir90:-48,ir10:-46,mo3:+70},
+  {sym:'V',   name:'Visa Inc',             ir90:-50,ir10:-48,mo3:+71},
+  {sym:'FDX', name:'FedEx Corp',           ir90:-52,ir10:-50,mo3:+72},
+  {sym:'BLK', name:'BlackRock Inc',        ir90:-54,ir10:-52,mo3:+73},
+  {sym:'AMZN',name:'Amazon.com Inc',       ir90:-56,ir10:-54,mo3:+74},
+  // Zone 6 — extreme overbought
+  {sym:'GS',  name:'Goldman Sachs',        ir90:-68,ir10:-66,mo3:+78},
+  {sym:'LLY', name:'Eli Lilly & Co',       ir90:-70,ir10:-68,mo3:+79},
+  {sym:'JPM', name:'JPMorgan Chase',       ir90:-72,ir10:-70,mo3:+80},
+  {sym:'CVX', name:'Chevron Corp',         ir90:-75,ir10:-73,mo3:+82},
+];
+
+(function(){const ir=-6;const b=document.getElementById('alert-badge');if(Math.abs(ir)>=67){b.textContent=ir>0?'⚡ Trading Alert — Buy Zone':'⚡ Trading Alert — Sell Zone';b.className='alert-badge '+(ir>0?'alert-buy':'alert-sell');}})();
+
+let lhPeriod='90',lhSortField='ir',lhSortDir=1,lhFilter='';
+function handlePeriod(btn){document.querySelectorAll('.p-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');lhPeriod=btn.dataset.period;renderLH();}
+function handleLHSort(f){if(lhSortField===f)lhSortDir*=-1;else{lhSortField=f;lhSortDir=1;}renderLH();}
+function filterLH(v){lhFilter=v.toLowerCase();renderLH();}
+
+function renderLH(){
+  const irF=lhPeriod==='90'?'ir90':'ir10',sF=lhSortField==='ir'?irF:'mo3';
+  ['ir','3mo'].forEach(f=>{
+    const th=document.getElementById(`lh-th-${f}`),arr=document.getElementById(`lh-arr-${f}`);
+    const on=(f==='ir'&&lhSortField==='ir')||(f==='3mo'&&lhSortField==='3mo');
+    if(!th||!arr)return;
+    if(on){th.classList.add('lh-sort-active');arr.classList.add('active');arr.textContent=lhSortDir===1?'↓':'↑';}
+    else{th.classList.remove('lh-sort-active');arr.classList.remove('active');arr.textContent='↕';}
+  });
+  const data=[...MEMBERS].filter(m=>!lhFilter||m.sym.toLowerCase().includes(lhFilter)||m.name.toLowerCase().includes(lhFilter)).sort((a,b)=>(b[sF]-a[sF])*lhSortDir);
+  document.getElementById('lh-tbody').innerHTML=data.map(m=>{
+    const ir=m[irF],z=irToZone(ir),ts=m.isIndex?'style="color:#ffffff;font-weight:bold;"':'';
+    return `<tr><td class="lh-tick" ${ts} onclick="navTo('${m.sym}.html','symbolWindow')">${m.sym}</td><td class="lh-name">${trunc(m.name,14)}</td><td class="lh-ir"><span class="${irCls(ir)}">${irFmt(ir)}</span></td><td class="lh-zn">${zoneBadge(z)}</td><td class="lh-3mo"><span class="${irCls(m.mo3)}">${irFmt(m.mo3)}</span></td></tr>`;
+  }).join('');
+}
+
+function getSlotInfo(ir){
+  if(ir>=91)return{z:0,s:0};if(ir>=83)return{z:0,s:1};if(ir>=75)return{z:0,s:2};if(ir>=67)return{z:0,s:3};
+  if(ir>=59)return{z:1,s:0};if(ir>=52)return{z:1,s:1};if(ir>=43)return{z:1,s:2};if(ir>=34)return{z:1,s:3};
+  if(ir>=26)return{z:2,s:0};if(ir>=18)return{z:2,s:1};if(ir>=9)return{z:2,s:2};if(ir>=1)return{z:2,s:3};
+  if(ir>=-8)return{z:3,s:0};if(ir>=-17)return{z:3,s:1};if(ir>=-25)return{z:3,s:2};if(ir>=-33)return{z:3,s:3};
+  if(ir>=-42)return{z:4,s:0};if(ir>=-51)return{z:4,s:1};if(ir>=-58)return{z:4,s:2};if(ir>=-66)return{z:4,s:3};
+  if(ir>=-74)return{z:5,s:0};if(ir>=-82)return{z:5,s:1};if(ir>=-90)return{z:5,s:2};return{z:5,s:3};
+}
+
+function buildHistogram(){
+  const W=920,OW=28,BX=OW,BW=864,ZW=144,SLOT_PITCH=BW/24,SH=13;
+  const BELL_A=168,BELL_FLOOR=16,BELL_SIG=ZW,BCX=BX+BW/2;
+  const slots=Array.from({length:24},()=>[]);
+  MEMBERS.forEach(m=>{const{z,s}=getSlotInfo(m.ir90);slots[z*4+s].push(m);});
+  slots.forEach(sl=>sl.sort((a,b)=>a.sym.localeCompare(b.sym)));
+  let BY=205;const maxStk=Math.max(1,...slots.map(sl=>sl.length));if(maxStk*SH+20>BY)BY=maxStk*SH+20;
+  const H=BY+70;
+  const svg=document.getElementById('mainHisto');svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  let s=`<defs><filter id="glow"><feGaussianBlur stdDeviation="2.8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter><filter id="softglow"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
+  s+=`<rect x="0" y="0" width="${OW}" height="${BY}" fill="rgba(0,204,85,0.06)"/>`;
+  s+=`<rect x="${BX+BW}" y="0" width="${OW}" height="${BY}" fill="rgba(232,53,53,0.06)"/>`;
+  s+=`<text x="${OW/2}" y="13" text-anchor="middle" font-family="Courier New,monospace" font-size="7" fill="#00cc55">OOB</text><text x="${OW/2}" y="23" text-anchor="middle" font-family="Courier New,monospace" font-size="7" fill="#00cc55">Weak</text><text x="${OW/2}" y="33" text-anchor="middle" font-family="Courier New,monospace" font-size="7" fill="#00cc55">[0]</text><text x="${OW/2}" y="42" text-anchor="middle" font-family="Courier New,monospace" font-size="6" fill="rgba(0,204,85,0.5)">≥+99</text>`;
+  s+=`<text x="${W-OW/2}" y="13" text-anchor="middle" font-family="Courier New,monospace" font-size="7" fill="#e83535">OOB</text><text x="${W-OW/2}" y="23" text-anchor="middle" font-family="Courier New,monospace" font-size="7" fill="#e83535">Str</text><text x="${W-OW/2}" y="33" text-anchor="middle" font-family="Courier New,monospace" font-size="7" fill="#e83535">[0]</text><text x="${W-OW/2}" y="42" text-anchor="middle" font-family="Courier New,monospace" font-size="6" fill="rgba(232,53,53,0.5)">≤−99</text>`;
+  for(let zi=0;zi<6;zi++)s+=`<rect x="${BX+zi*ZW}" y="0" width="${ZW}" height="${BY}" fill="${ZCL[zi]}" fill-opacity="0.07"/>`;
+  s+=`<line x1="${BX}" y1="0" x2="${BX}" y2="${BY}" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>`;
+  s+=`<line x1="${BX+BW}" y1="0" x2="${BX+BW}" y2="${BY}" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>`;
+  for(let zi=1;zi<6;zi++){const dx=BX+zi*ZW;s+=`<line x1="${dx}" y1="0" x2="${dx}" y2="${BY}" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>`;}
+  for(let i=1;i<24;i++){if(i%4===0)continue;const dx=BX+i*SLOT_PITCH;s+=`<line x1="${dx}" y1="8" x2="${dx}" y2="${BY}" stroke="rgba(255,255,255,0.055)" stroke-width="0.5" stroke-dasharray="3,6"/>`;}
+  s+=`<line x1="0" x2="${W}" y1="${BY}" y2="${BY}" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>`;
+  function bellY(px){const dx=px-BCX;return BY-(BELL_A*Math.exp(-dx*dx/(2*BELL_SIG*BELL_SIG))+BELL_FLOOR);}
+  let pts=[];for(let px=BX;px<=BX+BW;px+=2)pts.push(`${px},${bellY(px).toFixed(1)}`);
+  const pd='M '+pts.join(' L ');
+  s+=`<path d="${pd}" fill="none" stroke="rgba(120,185,255,0.14)" stroke-width="8"/>`;
+  s+=`<path d="${pd}" fill="none" stroke="rgba(155,210,255,0.72)" stroke-width="1.6" stroke-dasharray="8,4" filter="url(#glow)"/>`;
+  s+=`<path d="${pd}" fill="none" stroke="rgba(205,235,255,0.38)" stroke-width="0.8" stroke-dasharray="8,4"/>`;
+  slots.forEach((sl,gi)=>{
+    const scx=BX+(gi+0.5)*SLOT_PITCH,zi=Math.floor(gi/4);
+    sl.forEach((m,idx)=>{
+      const sy=BY-(idx+0.5)*SH-2,fill=m.isIndex?'#ffffff':ZCL[zi];
+      const tip=`${m.sym} — ${m.name}  |  90-IR: ${irFmt(m.ir90)}  |  Zone ${irToZone(m.ir90)}`;
+      s+=`<text x="${scx}" y="${sy}" text-anchor="middle" font-family="Courier New,monospace" font-size="9" font-weight="bold" fill="${fill}" filter="url(#softglow)" cursor="pointer" data-tip="${tip}">${m.sym.slice(0,3)}</text>`;
+    });
+  });
+  const ranges=['+99 to +67','+66 to +34','+33 to +1','−1 to −33','−34 to −66','−67 to −99'];
+  for(let zi=0;zi<6;zi++){const cx=BX+zi*ZW+ZW/2;s+=`<text x="${cx}" y="${BY+18}" text-anchor="middle" font-family="Courier New,monospace" font-size="8.5" fill="rgba(255,255,255,0.48)">${ranges[zi]}</text><text x="${cx}" y="${BY+31}" text-anchor="middle" font-family="Trebuchet MS,sans-serif" font-size="10.5" font-weight="bold" fill="${ZCL[zi]}">Zone ${zi+1}</text>`;}
+  // Trading range values — row below Zone bold labels, left=low green, right=high red
+  s+=`<text x="${BX+6}" y="${BY+47}" font-family="Courier New,monospace" font-size="13" font-weight="bold" fill="#00cc55">$140</text>`;
+  s+=`<text x="${BX+BW-6}" y="${BY+47}" text-anchor="end" font-family="Courier New,monospace" font-size="13" font-weight="bold" fill="#e83535">$215</text>`;
+  s+=`<text x="${BX+4}" y="${H-5}" font-family="Trebuchet MS,sans-serif" font-size="7.5" fill="rgba(0,212,160,0.40)">← Weak / Oversold</text>`;
+  s+=`<text x="${BX+BW-4}" y="${H-5}" text-anchor="end" font-family="Trebuchet MS,sans-serif" font-size="7.5" fill="rgba(232,53,53,0.40)">Overbought / Strong →</text>`;
+  svg.innerHTML=s;
+  const tip=document.getElementById('histo-tip');
+  svg.addEventListener('mousemove',e=>{const t=e.target.getAttribute('data-tip');if(t){tip.textContent=t;tip.style.display='block';tip.style.left=(e.clientX+14)+'px';tip.style.top=(e.clientY-8)+'px';}else tip.style.display='none';});
+  svg.addEventListener('mouseleave',()=>{tip.style.display='none';});
+}
+
+function genDates30(){const d=[];let cur=new Date(),n=0;while(n<30){if(cur.getDay()!==0&&cur.getDay()!==6){d.unshift(cur.toLocaleDateString('en-US',{month:'numeric',day:'numeric'}));n++;}cur.setDate(cur.getDate()-1);}return d;}
+const DATES30=genDates30();
+Chart.defaults.color='#5a7a9a';Chart.defaults.borderColor='rgba(255,255,255,0.06)';
+
+function buildZoneChart(id,z90,z10){
+  const ctx=document.getElementById(id);if(!ctx)return;
+  new Chart(ctx,{type:'bar',data:{labels:DATES30,datasets:[{type:'bar',label:'90-Day Zone',data:z90,backgroundColor:z90.map(z=>ZCL[z-1]+'99'),borderColor:z90.map(z=>ZCL[z-1]),borderWidth:1,order:2},{type:'line',label:'10-Day Zone',data:z10,borderColor:'#c9a227',pointBackgroundColor:'#c9a227',pointRadius:2.5,pointHoverRadius:4,borderWidth:1.8,fill:false,tension:0.3,order:1}]},
+  options:{responsive:true,maintainAspectRatio:false,layout:{padding:{left:2,right:4,top:4,bottom:2}},plugins:{legend:{display:true,position:'top',labels:{color:'#5a7a9a',font:{family:"'Courier New',monospace",size:9},boxWidth:12,padding:8}}},
+  scales:{y:{min:0.3,max:6.5,title:{display:true,text:'Zone',color:'#5a7a9a',font:{family:"'Courier New',monospace",size:9},padding:{bottom:4}},ticks:{stepSize:1,callback:v=>(v>=1&&v<=6)?String(Math.round(v)):'',color:c=>{const v=Math.round(c.tick.value);return(v>=1&&v<=6)?ZCL[v-1]:'#5a7a9a';},font:{family:"'Courier New',monospace",size:9},padding:3},grid:{color:ctx=>(ctx.tick.value===3||ctx.tick.value===4)?'rgba(255,255,255,0.12)':'rgba(255,255,255,0.05)',lineWidth:ctx=>(ctx.tick.value===3||ctx.tick.value===4)?1.2:0.6},border:{color:'#243c58'}},x:{ticks:{maxRotation:45,autoSkip:true,maxTicksLimit:10,color:'#5a7a9a',font:{family:"'Courier New',monospace",size:8}},grid:{color:'rgba(255,255,255,0.03)'},border:{color:'#243c58'}}}}});
+}
+
+function buildPriceChart(id,prices,means){
+  const ctx=document.getElementById(id);if(!ctx)return;
+  new Chart(ctx,{type:'line',data:{labels:DATES30,datasets:[{label:'Close',data:prices,borderColor:'#ddeeff',backgroundColor:'rgba(221,238,255,0.04)',borderWidth:1.6,pointRadius:0,pointHoverRadius:3,fill:false,tension:0.3},{label:'Mean',data:means,borderColor:'#c9a227',backgroundColor:'transparent',borderWidth:1.4,borderDash:[5,3],pointRadius:0,pointHoverRadius:0,fill:false,tension:0.3}]},
+  options:{responsive:true,maintainAspectRatio:false,layout:{padding:{left:2,right:4,top:4,bottom:2}},plugins:{legend:{display:true,position:'top',labels:{color:'#5a7a9a',font:{family:"'Courier New',monospace",size:9},boxWidth:12,padding:8}}},
+  scales:{y:{ticks:{color:'#5a7a9a',font:{family:"'Courier New',monospace",size:9}},grid:{color:'rgba(255,255,255,0.05)'},border:{color:'#243c58'}},x:{ticks:{maxRotation:45,autoSkip:true,maxTicksLimit:10,color:'#5a7a9a',font:{family:"'Courier New',monospace",size:8}},grid:{color:'rgba(255,255,255,0.03)'},border:{color:'#243c58'}}}}});
+}
+
+const OEX_Z90=[3,3,3,4,4,3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4];
+const OEX_Z10=[3,4,4,3,3,4,4,5,4,4,3,4,4,4,5,4,4,4,3,4,4,5,4,4,4,4,3,4,4,4];
+const OEX_PRICES=[174.2,175.1,173.8,176.4,177.2,175.9,178.3,179.1,177.8,180.2,178.6,181.0,179.4,182.1,180.5,183.2,181.7,184.0,182.3,183.8,181.9,183.4,182.0,184.2,183.1,182.6,184.5,183.2,182.7,182.4];
+const OEX_MEANS=[172.0,172.2,172.4,172.6,172.8,173.0,173.2,173.4,173.6,173.8,174.0,174.2,174.4,174.6,174.8,175.0,175.2,175.4,175.6,175.8,176.0,176.1,176.2,176.2,176.3,176.2,176.3,176.2,176.2,176.2];
+const XEO_Z90=[3,3,3,3,4,4,4,4,4,4,4,4,4,5,4,4,4,4,4,5,5,5,4,4,4,4,5,5,4,5];
+const XEO_Z10=[3,3,4,4,3,4,4,5,5,4,4,5,5,5,4,4,5,5,4,5,5,4,4,4,5,5,4,5,5,5];
+const XEO_PRICES=[171.0,172.0,170.8,173.2,174.0,172.7,175.1,175.9,174.6,177.0,175.4,177.8,176.2,178.9,177.3,179.0,178.4,181.0,179.1,180.6,179.7,180.2,178.8,181.0,179.9,179.4,181.3,179.9,179.3,178.2];
+const XEO_MEANS=[168.5,168.7,168.9,169.1,169.3,169.5,169.7,169.9,170.1,170.3,170.5,170.7,170.9,171.1,171.3,171.5,171.7,171.9,172.0,172.1,172.2,172.3,172.4,172.4,172.5,172.4,172.5,172.4,172.4,172.5];
+
+renderLH();buildHistogram();
+buildZoneChart('chart-oex-zone',OEX_Z90,OEX_Z10);buildPriceChart('chart-oex-price',OEX_PRICES,OEX_MEANS);
+buildZoneChart('chart-xeo-zone',XEO_Z90,XEO_Z10);buildPriceChart('chart-xeo-price',XEO_PRICES,XEO_MEANS);
+</script>
+</body>
+</html>

@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Community Portfolios — Top Down Trading</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:          #08111e;
+  --panel:       #0d1829;
+  --panel-alt:   #0a1420;
+  --border:      #1a2d44;
+  --border-lite: #243c58;
+  --text:        #ddeeff;
+  --dim:         #5a7a9a;
+  --accent:      #3090d8;
+  --gold:        #c9a227;
+  --z1: #00cc55; --z2: #88cc44; --z3: #7a9aaa;
+  --z4: #aa9a7a; --z5: #ddcc00; --z6: #e83535;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: 'Rajdhani', sans-serif;
+  overflow: hidden;  /* REQUIRED — no page-level scroll */
+}
+
+/* ══ PATTERN B HEADER — 76px total ══ */
+.header-block { position: sticky; top: 0; z-index: 100; flex-shrink: 0; }
+.top-nav {
+  height: 44px; background: var(--panel-alt);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 16px;
+}
+.nav-back {
+  background: var(--panel); border: 1px solid var(--border-lite);
+  color: var(--dim); font-family: 'Rajdhani', sans-serif;
+  font-size: 12px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; padding: 5px 14px;
+  cursor: pointer; transition: all .15s;
+}
+.nav-back:hover { border-color: var(--accent); color: var(--text); }
+.page-title-bar {
+  height: 32px; background: var(--panel);
+  border-bottom: 2px solid var(--border-lite);
+  display: flex; align-items: center; justify-content: center;
+}
+.page-title-text {
+  font-size: 15px; font-weight: 700; color: var(--text);
+  letter-spacing: .06em; text-transform: uppercase;
+}
+
+/* ══════════════════════════════════════════════════════════
+   SHELL — the viewport-locked flex container.
+   Sidebar fills full height. Right panel scrolls internally.
+   This is the canonical pattern from the spec — identical to
+   how Sector, ETF Groups, and all Index sub-pages are built.
+   ══════════════════════════════════════════════════════════ */
+.shell {
+  display: flex;
+  height: calc(100vh - 76px);  /* total header = 76px */
+  overflow: hidden;             /* CRITICAL — prevents page-level scroll */
+}
+
+/* ══ LEFT HAND TOGGLE SIDEBAR — COMPORT.4 ══ */
+.lh-sidebar {
+  width: 285px;
+  min-width: 285px;
+  flex-shrink: 0;
+  border-right: 2px solid var(--border-lite);
+  background: var(--panel-alt);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Sidebar header — sticky inside the sidebar */
+.sb-head {
+  padding: 8px 10px 6px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.sb-title-main {
+  text-align: center; font-weight: 700; font-size: 12px;
+  color: var(--text); letter-spacing: .02em;
+}
+.sb-title-sub {
+  text-align: center; font-size: 11px; font-weight: 600;
+  color: var(--dim); margin-top: 2px; letter-spacing: .02em;
+}
+.period-btns { display: flex; justify-content: center; gap: 4px; margin-top: 6px; }
+.p-btn {
+  background: #1a2d44; border: 1px solid #1a2d44;
+  color: var(--dim); font-family: 'Rajdhani', sans-serif;
+  font-size: 11px; font-weight: 600; padding: 3px 10px;
+  cursor: pointer; transition: all .15s;
+}
+.p-btn.active            { background: #2a7abf; border-color: #3090d8; color: #fff; }
+.p-btn:hover:not(.active){ border-color: #3090d8; color: var(--text); }
+
+/* Scrollable table area — fills remaining sidebar height */
+.sb-scroll { overflow-y: auto; flex: 1; }
+.sb-scroll::-webkit-scrollbar       { width: 4px; }
+.sb-scroll::-webkit-scrollbar-track { background: #08111e; }
+.sb-scroll::-webkit-scrollbar-thumb { background: #243c58; border-radius: 2px; }
+
+.lh-table {
+  width: 100%; border-collapse: collapse;
+  font-family: 'Courier New', monospace; font-size: 11px;
+}
+.lh-table th {
+  background: var(--panel-alt); color: var(--dim); padding: 4px 6px;
+  border-bottom: 1px solid var(--border); position: sticky; top: 0;
+  font-size: 9px; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap;
+}
+.lh-table th.sort-active { color: var(--accent); }
+.sort-arrow        { font-size: 9px; margin-left: 2px; opacity: .5; }
+.sort-arrow.active { opacity: 1; color: var(--accent); }
+.lh-table td { padding: 3px 6px; border-bottom: 1px solid #0e1a28; white-space: nowrap; }
+.lh-table tr:hover td { background: #111e30; }
+.col-mon { font-weight: bold; cursor: default; letter-spacing: .04em; }
+.col-ir  { text-align: center; }
+.col-zn  { text-align: center; }
+.zone-badge { display: inline-block; padding: 1px 4px; font-size: 9px; font-weight: bold; border-radius: 2px; color: #000; }
+.pos { color: #88cc44; } .neg { color: #e83535; } .zer { color: #b8cce0; }
+.row-own td { background: rgba(201,162,39,0.05) !important; border-bottom: 1px solid rgba(201,162,39,0.12) !important; }
+
+/* ══ RIGHT CONTENT PANEL ══
+   Scrolls internally — contains intro, histogram+comment, bottom section.
+   The histogram SVG uses width="100%" with no explicit height, so the
+   viewBox aspect ratio determines the rendered height naturally.
+   No flex:1 on histo-svg-box — SVG drives its own height. */
+.right-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-width: 0;
+}
+.right-content::-webkit-scrollbar       { width: 6px; }
+.right-content::-webkit-scrollbar-track { background: #08111e; }
+.right-content::-webkit-scrollbar-thumb { background: #243c58; border-radius: 3px; }
+
+/* ── Access gate (shown when sharing is false) ── */
+.access-gate { display:none; flex-direction:column; align-items:center; justify-content:center; height:calc(100vh - 76px); padding:40px; text-align:center; }
+.access-gate.visible { display:flex; }
+.access-icon { font-size:36px; color:var(--border-lite); margin-bottom:20px; font-family:'Courier New',monospace; }
+.access-title { font-size:18px; font-weight:700; color:var(--text); letter-spacing:.05em; margin-bottom:14px; }
+.access-text { font-size:15px; font-weight:600; color:var(--dim); line-height:1.65; max-width:540px; margin-bottom:28px; }
+.access-btns { display:flex; gap:12px; }
+.access-btn { padding:8px 24px; font-family:'Rajdhani',sans-serif; font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; transition:all .15s; }
+.access-btn.primary { background:rgba(48,144,216,0.12); border:1px solid var(--accent); color:var(--accent); }
+.access-btn.primary:hover { background:rgba(48,144,216,0.24); color:var(--text); }
+.access-btn.secondary { background:transparent; border:1px solid var(--border-lite); color:var(--dim); }
+.access-btn.secondary:hover { border-color:var(--accent); color:var(--text); }
+
+/* ══ COMPORT.2 — PAGE INTRO ══ */
+.page-intro {
+  padding: 22px 40px 20px;
+  border-bottom: 2px solid var(--border-lite);
+  background: var(--panel-alt);
+}
+.intro-title {
+  font-size: 20px; font-weight: 700; color: var(--gold);
+  letter-spacing: .06em; text-align: center; margin-bottom: 14px;
+}
+.intro-bullets { list-style: none; }
+.intro-bullets li {
+  font-size: 14px; font-weight: 600; color: var(--dim);
+  line-height: 1.6; padding: 5px 0 5px 20px;
+  position: relative; border-bottom: 1px solid #0d1829;
+}
+.intro-bullets li:last-child { border-bottom: none; }
+.intro-bullets li::before {
+  content: '—'; position: absolute; left: 0;
+  color: var(--border-lite); font-weight: 400;
+}
+.intro-bullets li strong { color: var(--text); }
+
+/* ══ COMPORT.3 — HISTOGRAM AREA ══ */
+.histo-section { padding: 14px 14px 0; }
+.histo-label {
+  font-size: 13px; font-weight: 700; color: var(--text);
+  text-align: center; letter-spacing: .04em; text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.histo-svg-box {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+/* SVG: width="100%", no height attr — viewBox aspect ratio drives rendered height */
+.histo-svg-box svg { display: block; width: 100%; }
+
+/* Weekly comment — flush below histogram, full width */
+.comm-comment {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-top: none;
+  padding: 10px 16px 12px;
+  margin-bottom: 14px;
+}
+.comm-comment-text {
+  font-size: 15px; font-weight: 400; font-style: normal;
+  color: var(--dim); line-height: 1.55;
+  font-family: 'Rajdhani', sans-serif;
+}
+
+/* ══ BOTTOM SECTION — ComPort.5 (40%) + ComPort.6 (60%) ══ */
+.bottom-section {
+  display: flex;
+  border-top: 2px solid var(--border-lite);
+  min-height: 320px;
+}
+.top10-panel {
+  width: 40%; border-right: 1px solid var(--border-lite);
+  padding: 16px 20px; background: var(--panel-alt);
+}
+.graph-panel {
+  flex: 1; padding: 16px 20px 20px; background: var(--panel);
+}
+.panel-title-main {
+  font-size: 13px; font-weight: 700; color: var(--text);
+  letter-spacing: .04em; text-transform: uppercase; text-align: center;
+}
+.panel-title-sub {
+  font-size: 11px; font-weight: 600; color: var(--dim);
+  text-align: center; margin-top: 2px; letter-spacing: .02em; margin-bottom: 12px;
+}
+.top10-table {
+  width: 100%; border-collapse: collapse;
+  font-family: 'Courier New', monospace; font-size: 11px;
+}
+.top10-table th {
+  background: var(--panel); color: var(--dim); padding: 4px 6px;
+  border-bottom: 1px solid var(--border); font-size: 9px;
+  letter-spacing: .04em; text-transform: uppercase; white-space: nowrap;
+}
+.top10-table td { padding: 4px 6px; border-bottom: 1px solid #0e1a28; white-space: nowrap; }
+.top10-table tr:hover td { background: #0f1e30; }
+.t10-rank { color: var(--dim); text-align: center; font-size: 10px; }
+.t10-sym  { color: var(--text); font-weight: bold; cursor: pointer; }
+.t10-sym:hover { color: var(--accent); text-decoration: underline; }
+.t10-cnt  { text-align: center; color: var(--dim); }
+.t10-ir   { text-align: center; }
+
+.chart-cv { position: relative; height: 210px; margin-top: 4px; }
+.comm-scores {
+  display: flex; justify-content: center; gap: 32px;
+  margin-top: 10px; font-family: 'Courier New', monospace; font-size: 11px;
+}
+.comm-score-item { display: flex; gap: 6px; align-items: baseline; }
+.comm-score-lbl  { color: var(--dim); }
+.comm-score-val  { font-size: 13px; font-weight: bold; }
+
+/* ══ TOOLTIPS ══ */
+#comm-tip {
+  position: fixed; background: var(--panel); border: 1px solid var(--border-lite);
+  padding: 8px 12px; min-width: 180px; z-index: 500;
+  pointer-events: none; display: none;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+}
+.tip-header {
+  font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700;
+  color: var(--gold); letter-spacing: .06em; text-transform: uppercase;
+  margin-bottom: 6px; padding-bottom: 5px; border-bottom: 1px solid var(--border);
+}
+.tip-issue {
+  display: flex; justify-content: space-between; gap: 14px;
+  font-family: 'Courier New', monospace; font-size: 10px; padding: 2px 0;
+}
+.tip-sym { color: var(--text); font-weight: bold; min-width: 46px; }
+.tip-ir  { text-align: right; }
+.tip-pos { color: #88cc44; }
+.tip-neg { color: #e83535; }
+
+#histo-tip {
+  position: fixed; background: #0d1829; border: 1px solid #3090d8;
+  color: #ddeeff; font-family: 'Courier New', monospace; font-size: 11px;
+  padding: 5px 9px; border-radius: 2px; box-shadow: 0 2px 12px rgba(0,0,0,.6);
+  white-space: nowrap; z-index: 999; pointer-events: none; display: none;
+}
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER — Pattern B — 76px ══ -->
+<div class="header-block">
+  <nav class="top-nav">
+    <button class="nav-back" onclick="navTo('portfolio.html','portfolioPage')">← Back</button>
+  </nav>
+  <div class="page-title-bar">
+    <span class="page-title-text">Community Portfolios</span>
+  </div>
+</div>
+
+<!-- ══ ACCESS GATE — shown if sharing is false ══ -->
+<div class="access-gate" id="access-gate">
+  <div class="access-icon">○</div>
+  <div class="access-title">Portfolio Community Access</div>
+  <div class="access-text">
+    You haven't enabled Portfolio Sharing yet. To access the Community Portfolios page and see how your portfolio
+    compares with other members, visit your Portfolio Choices page and choose Share in Step 5.
+    Your portfolio will be identified only by your Moniker — completely anonymous to other members.
+  </div>
+  <div class="access-btns">
+    <button class="access-btn primary" onclick="navTo('choices.html','choicesPage')">Go to Portfolio Choices</button>
+    <button class="access-btn secondary" onclick="navTo('portfolio.html','portfolioPage')">Back to My Portfolio</button>
+  </div>
+</div>
+
+<!-- ══ SHELL: visible only when sharing is true ══ -->
+<div class="shell">
+
+  <!-- ══════════════════════════════════════════════════════════
+       COMPORT.4 — LEFT HAND TOGGLE (full viewport height)
+       Community portfolio monikers ranked weakest-first.
+       Rollover tooltip shows holdings + IR per period.
+       CONNECT POINT CP-COMM-2 (wiring pass): replace COMM_TOGGLE_DATA.
+       ══════════════════════════════════════════════════════════ -->
+  <div class="lh-sidebar">
+    <div class="sb-head">
+      <div class="sb-title-main">Community Portfolios</div>
+      <div class="sb-title-sub">Weakest / Strongest</div>
+      <div class="period-btns">
+        <button class="p-btn active" data-period="90" onclick="handleLhPeriod(this)">90 IR</button>
+        <button class="p-btn"        data-period="10" onclick="handleLhPeriod(this)">10 IR</button>
+      </div>
+    </div>
+    <div class="sb-scroll">
+      <table class="lh-table">
+        <thead><tr>
+          <th style="text-align:left; padding-left:8px">Moniker</th>
+          <th class="sort-active" style="text-align:center">
+            IR <span class="sort-arrow active" id="lh-arr">↓</span>
+          </th>
+          <th style="text-align:center">Zn</th>
+        </tr></thead>
+        <tbody id="lh-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ RIGHT CONTENT PANEL — scrolls internally ══ -->
+  <div class="right-content">
+
+    <!-- COMPORT.2 — Page intro (bullets) -->
+    <div class="page-intro">
+      <div class="intro-title">Community Portfolios</div>
+      <ul class="intro-bullets">
+        <li>Once you've registered your Personal Portfolio and chosen your Moniker, your portfolio's average IR score is measured daily against every other active member of the community — giving you a live read on where you stand relative to your peers.</li>
+        <li>Curious why another portfolio is outranking yours? <strong>Roll your cursor over any Moniker symbol in the list to the left</strong> to see the individual issues driving that portfolio's score, ranked by whichever IR period you're currently viewing.</li>
+        <li>The community's top-performing portfolios each quarter earn a recognition badge — a quiet acknowledgment that the reversion-to-mean process is working and that patience is being rewarded.</li>
+        <li><strong>Only active portfolios are displayed here.</strong> Any portfolio that has gone 30 days without an adjustment is automatically removed from the community rankings to keep the comparison meaningful and current.</li>
+      </ul>
+    </div>
+
+    <!-- COMPORT.3 — Histogram + Comment
+         SVG: width="100%", NO height attr, viewBox drives rendered height.
+         This is the canonical pattern — never set a height attribute on the SVG.
+         CONNECT POINT CP-COMM-1 (wiring pass): replace COMMUNITY_HISTO_DATA
+         and OWN_PORTFOLIO with database push + localStorage('portfolioChoices').
+    -->
+    <div class="histo-section">
+      <div class="histo-label">Community Portfolios Histogram — 90-Day Average IR</div>
+      <div class="histo-svg-box">
+        <svg id="commHisto" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block"></svg>
+      </div>
+      <div class="comm-comment">
+        <div class="comm-comment-text">
+          This week the community's center of gravity shifted slightly toward Zone 3, with the average portfolio IR
+          edging from −4 to +6 — a small but meaningful move toward oversold territory. Bond and commodity ETFs
+          continue to anchor the strongest portfolios, while technology-heavy portfolios feel the drag of overbought
+          readings in NVDA and META. If your portfolio lags the community average, review your 10-day IR column
+          for early signs of reversion beginning to take hold.
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTTOM ROW — ComPort.5 (40%) + ComPort.6 (60%) -->
+    <div class="bottom-section">
+
+      <!-- COMPORT.5 — Top 10 Favorite Issues
+           CONNECT POINT CP-COMM-3 (wiring pass): replace TOP10_DATA.
+      -->
+      <div class="top10-panel">
+        <div class="panel-title-main">Top 10 Favorite Issues</div>
+        <div class="panel-title-sub">Among Community Portfolio Managers</div>
+        <table class="top10-table">
+          <thead><tr>
+            <th style="text-align:center">#</th>
+            <th style="text-align:left">Symbol</th>
+            <th style="text-align:center">Portfolios</th>
+            <th style="text-align:center">Avg 90-Day IR</th>
+          </tr></thead>
+          <tbody id="top10-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- COMPORT.6 — Community Average Score Graph
+           CONNECT POINT CP-COMM-4 (wiring pass): replace COMM_Z90/Z10/CURR values.
+      -->
+      <div class="graph-panel">
+        <div class="panel-title-main">Community Portfolios</div>
+        <div class="panel-title-sub">Average Scores · 90-Day &amp; 10-Day · 30 Days</div>
+        <div class="chart-cv"><canvas id="comm-chart"></canvas></div>
+        <div class="comm-scores">
+          <div class="comm-score-item">
+            <span class="comm-score-lbl">Community 90 IR =</span>
+            <span class="comm-score-val" id="comm-curr-90">—</span>
+          </div>
+          <div class="comm-score-item">
+            <span class="comm-score-lbl">Community 10 IR =</span>
+            <span class="comm-score-val" id="comm-curr-10">—</span>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /bottom-section -->
+
+  </div><!-- /right-content -->
+
+</div><!-- /shell -->
+
+<div id="histo-tip"></div>
+<div id="comm-tip">
+  <div class="tip-header" id="tip-header"></div>
+  <div id="tip-issues"></div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════
+     SCRIPTS
+     ════════════════════════════════════════════════════════ -->
+<script>
+/* ── ZONE UTILITIES ── */
+const ZCL = ['#00cc55','#88cc44','#7a9aaa','#aa9a7a','#ddcc00','#e83535'];
+function irToZone(ir){ if(ir>=67)return 1;if(ir>=34)return 2;if(ir>=1)return 3;if(ir>=-33)return 4;if(ir>=-66)return 5;return 6; }
+function zoneBadge(z){ return `<span class="zone-badge" style="background:${ZCL[z-1]}">${z}</span>`; }
+function irFmt(v){ return (v>0?'+':'')+v; }
+function irCls(v){ return v>0?'pos':v<0?'neg':'zer'; }
+
+/* ════════════════════════════════════════════════════════
+   DATA — COMMUNITY HISTOGRAM
+   50 veteran portfolios: zone-colored by irToZone(ir).
+   Own portfolio: green (#88cc44) if ir ≥ 0, red (#e83535) if ir < 0.
+   CONNECT POINT CP-COMM-1
+   ════════════════════════════════════════════════════════ */
+const COMMUNITY_HISTO_DATA = [
+  {sym:'RGD',ir:28},{sym:'BED',ir:-12},{sym:'GFT',ir:42},{sym:'YLR',ir:-35},
+  {sym:'PAM',ir:8},{sym:'OWS',ir:-22},{sym:'KHJ',ir:55},{sym:'NCS',ir:-48},
+  {sym:'XEG',ir:15},{sym:'WDP',ir:-8},{sym:'REO',ir:32},{sym:'BTX',ir:-18},
+  {sym:'GTM',ir:-5},{sym:'YAS',ir:22},{sym:'POR',ir:-42},{sym:'OEP',ir:38},
+  {sym:'KWG',ir:-28},{sym:'NAJ',ir:12},{sym:'XTD',ir:-55},{sym:'WBS',ir:45},
+  {sym:'RHE',ir:-15},{sym:'BGM',ir:18},{sym:'GAX',ir:-32},{sym:'YPW',ir:62},
+  {sym:'POK',ir:-8},{sym:'OSN',ir:5},{sym:'KLD',ir:-45},{sym:'NFR',ir:25},
+  {sym:'XWJ',ir:-18},{sym:'WAE',ir:35},{sym:'RMB',ir:-62},{sym:'BAK',ir:48},
+  {sym:'GNP',ir:-25},{sym:'YEW',ir:8},{sym:'PKS',ir:-38},{sym:'OAT',ir:52},
+  {sym:'KJX',ir:-12},{sym:'NMW',ir:18},{sym:'XBF',ir:-28},{sym:'WGH',ir:38},
+  {sym:'RPS',ir:-8},{sym:'BXK',ir:22},{sym:'GRE',ir:-42},{sym:'YWA',ir:15},
+  {sym:'PNA',ir:-55},{sym:'OKB',ir:32},{sym:'KGS',ir:-18},{sym:'NWR',ir:45},
+  {sym:'XAJ',ir:-32},{sym:'WAT',ir:12},
+];
+
+/* ════════════════════════════════════════════════════════
+   ACCESS GATE
+   CONNECT POINT CP-C: reads portfolioChoices.sharing
+   ════════════════════════════════════════════════════════ */
+function checkAccess() {
+  try {
+    const cfg = JSON.parse(localStorage.getItem('portfolioChoices') || '{}');
+    if (cfg.sharing !== true) {
+      document.getElementById('access-gate').classList.add('visible');
+      document.querySelector('.shell').style.display = 'none';
+      return false;
+    }
+  } catch(e) {
+    document.getElementById('access-gate').classList.add('visible');
+    document.querySelector('.shell').style.display = 'none';
+    return false;
+  }
+  return true;
+}
+
+/* ════════════════════════════════════════════════════════
+   OWN PORTFOLIO — dynamic read from localStorage
+   CONNECT POINT CP-COMM-5
+   ════════════════════════════════════════════════════════ */
+function getOwnPortfolio() {
+  try {
+    const cfg = JSON.parse(localStorage.getItem('portfolioChoices') || '{}');
+    const sym = cfg.moniker ? cfg.moniker.symbol : 'WPD';
+    const phRaw = localStorage.getItem('pfHistoData');
+    if (phRaw) {
+      const ph = JSON.parse(phRaw);
+      const issues = (ph.allData || []).filter(d => d.type === 'issue');
+      if (issues.length > 0) {
+        const avgIr = Math.round(issues.reduce((s,d)=>s+d.ir, 0) / issues.length);
+        return { sym, ir: avgIr };
+      }
+    }
+    return { sym, ir: 14 };
+  } catch(e) { return { sym:'WPD', ir:14 }; }
+}
+
+const OWN_PORTFOLIO = getOwnPortfolio();
+
+/* ════════════════════════════════════════════════════════
+   DATA — TOGGLE (with issue rollover data)
+   CONNECT POINT CP-COMM-2
+   ════════════════════════════════════════════════════════ */
+const COMM_TOGGLE_DATA = [
+  {sym:'RMB',ir_90:-62,ir_10:-58,issues_90:[{sym:'XOM',ir:42},{sym:'CVX',ir:28},{sym:'COP',ir:15},{sym:'SLB',ir:-22},{sym:'HAL',ir:-45}],issues_10:[{sym:'XOM',ir:55},{sym:'CVX',ir:38},{sym:'COP',ir:22},{sym:'SLB',ir:-18},{sym:'HAL',ir:-52}]},
+  {sym:'PNA',ir_90:-55,ir_10:-48,issues_90:[{sym:'TSLA',ir:42},{sym:'NFLX',ir:28},{sym:'SHOP',ir:15},{sym:'ROKU',ir:-12},{sym:'SNAP',ir:-35}],issues_10:[{sym:'TSLA',ir:38},{sym:'NFLX',ir:22},{sym:'SHOP',ir:8},{sym:'ROKU',ir:-18},{sym:'SNAP',ir:-42}]},
+  {sym:'XTD',ir_90:-55,ir_10:-61,issues_90:[{sym:'COIN',ir:38},{sym:'MSTR',ir:25},{sym:'HOOD',ir:12},{sym:'RIOT',ir:-15},{sym:'MARA',ir:-48}],issues_10:[{sym:'COIN',ir:45},{sym:'MSTR',ir:32},{sym:'HOOD',ir:18},{sym:'RIOT',ir:-22},{sym:'MARA',ir:-55}]},
+  {sym:'KLD',ir_90:-45,ir_10:-52,issues_90:[{sym:'NVDA',ir:31},{sym:'META',ir:18},{sym:'AMD',ir:12},{sym:'AMZN',ir:-8},{sym:'GOOGL',ir:-22}],issues_10:[{sym:'NVDA',ir:45},{sym:'META',ir:28},{sym:'AMD',ir:18},{sym:'AMZN',ir:-5},{sym:'GOOGL',ir:-18}]},
+  {sym:'NCS',ir_90:-48,ir_10:-44,issues_90:[{sym:'JPM',ir:32},{sym:'BAC',ir:18},{sym:'GS',ir:8},{sym:'MS',ir:-15},{sym:'C',ir:-38}],issues_10:[{sym:'JPM',ir:25},{sym:'BAC',ir:12},{sym:'GS',ir:-5},{sym:'MS',ir:-28},{sym:'C',ir:-45}]},
+  {sym:'POR',ir_90:-42,ir_10:-38,issues_90:[{sym:'BA',ir:35},{sym:'GE',ir:22},{sym:'MMM',ir:8},{sym:'CAT',ir:-18},{sym:'HON',ir:-32}],issues_10:[{sym:'BA',ir:28},{sym:'GE',ir:15},{sym:'MMM',ir:5},{sym:'CAT',ir:-25},{sym:'HON',ir:-38}]},
+  {sym:'GAX',ir_90:-32,ir_10:-35,issues_90:[{sym:'DIS',ir:25},{sym:'NFLX',ir:12},{sym:'PARA',ir:-8},{sym:'WBD',ir:-28},{sym:'CMCSA',ir:-42}],issues_10:[{sym:'DIS',ir:18},{sym:'NFLX',ir:5},{sym:'PARA',ir:-15},{sym:'WBD',ir:-35},{sym:'CMCSA',ir:-48}]},
+  {sym:'XBF',ir_90:-28,ir_10:-22,issues_90:[{sym:'NEE',ir:18},{sym:'DUK',ir:8},{sym:'SO',ir:-5},{sym:'AEP',ir:-22},{sym:'D',ir:-38}],issues_10:[{sym:'NEE',ir:12},{sym:'DUK',ir:2},{sym:'SO',ir:-12},{sym:'AEP',ir:-28},{sym:'D',ir:-45}]},
+  {sym:'KWG',ir_90:-28,ir_10:-32,issues_90:[{sym:'PFE',ir:28},{sym:'JNJ',ir:15},{sym:'MRK',ir:8},{sym:'ABBV',ir:-18},{sym:'LLY',ir:-32}],issues_10:[{sym:'PFE',ir:22},{sym:'JNJ',ir:8},{sym:'MRK',ir:-5},{sym:'ABBV',ir:-25},{sym:'LLY',ir:-38}]},
+  {sym:'PKS',ir_90:-38,ir_10:-32,issues_90:[{sym:'T',ir:22},{sym:'VZ',ir:12},{sym:'TMUS',ir:-8},{sym:'LUMN',ir:-35},{sym:'DISH',ir:-52}],issues_10:[{sym:'T',ir:15},{sym:'VZ',ir:5},{sym:'TMUS',ir:-15},{sym:'LUMN',ir:-42},{sym:'DISH',ir:-58}]},
+  {sym:'OWS',ir_90:-22,ir_10:-28,issues_90:[{sym:'AMZN',ir:22},{sym:'WMT',ir:15},{sym:'TGT',ir:8},{sym:'COST',ir:-12},{sym:'EBAY',ir:-35}],issues_10:[{sym:'AMZN',ir:18},{sym:'WMT',ir:8},{sym:'TGT',ir:-5},{sym:'COST',ir:-22},{sym:'EBAY',ir:-42}]},
+  {sym:'BED',ir_90:-12,ir_10:-15,issues_90:[{sym:'GS',ir:18},{sym:'MS',ir:8},{sym:'BLK',ir:-5},{sym:'SCHW',ir:-22},{sym:'TDA',ir:-38}],issues_10:[{sym:'GS',ir:12},{sym:'MS',ir:2},{sym:'BLK',ir:-12},{sym:'SCHW',ir:-28},{sym:'TDA',ir:-42}]},
+  {sym:'GTM',ir_90:-5,ir_10:-8,issues_90:[{sym:'AAPL',ir:15},{sym:'MSFT',ir:8},{sym:'GOOGL',ir:-5},{sym:'META',ir:-18},{sym:'AMZN',ir:-28}],issues_10:[{sym:'AAPL',ir:10},{sym:'MSFT',ir:2},{sym:'GOOGL',ir:-12},{sym:'META',ir:-25},{sym:'AMZN',ir:-35}]},
+  {sym:'WPD',ir_90:14,ir_10:-2,issues_90:[{sym:'AAPL',ir:42},{sym:'JNJ',ir:35},{sym:'TSLA',ir:62},{sym:'AMZN',ir:15},{sym:'GOOGL',ir:8},{sym:'MSFT',ir:28},{sym:'JPM',ir:-8},{sym:'NVDA',ir:-31},{sym:'META',ir:-18},{sym:'XOM',ir:-42}],issues_10:[{sym:'TSLA',ir:44},{sym:'AMZN',ir:22},{sym:'JNJ',ir:19},{sym:'AAPL',ir:18},{sym:'JPM',ir:5},{sym:'MSFT',ir:-5},{sym:'GOOGL',ir:-12},{sym:'META',ir:-28},{sym:'NVDA',ir:-45},{sym:'XOM',ir:-55}]},
+  {sym:'PAM',ir_90:8,ir_10:12,issues_90:[{sym:'SPY',ir:22},{sym:'QQQ',ir:12},{sym:'IWM',ir:-5},{sym:'GLD',ir:-18},{sym:'TLT',ir:-32}],issues_10:[{sym:'SPY',ir:18},{sym:'QQQ',ir:8},{sym:'IWM',ir:-12},{sym:'GLD',ir:-25},{sym:'TLT',ir:-38}]},
+  {sym:'YEW',ir_90:8,ir_10:5,issues_90:[{sym:'COST',ir:28},{sym:'WMT',ir:15},{sym:'TGT',ir:5},{sym:'AMZN',ir:-8},{sym:'EBAY',ir:-28}],issues_10:[{sym:'COST',ir:22},{sym:'WMT',ir:8},{sym:'TGT',ir:-5},{sym:'AMZN',ir:-18},{sym:'EBAY',ir:-35}]},
+  {sym:'XEG',ir_90:15,ir_10:18,issues_90:[{sym:'AAPL',ir:45},{sym:'MSFT',ir:32},{sym:'GOOGL',ir:18},{sym:'META',ir:5},{sym:'AMZN',ir:-12}],issues_10:[{sym:'AAPL',ir:38},{sym:'MSFT',ir:25},{sym:'GOOGL',ir:12},{sym:'META',ir:-5},{sym:'AMZN',ir:-22}]},
+  {sym:'NAJ',ir_90:12,ir_10:8,issues_90:[{sym:'TSLA',ir:55},{sym:'RIVN',ir:42},{sym:'LCID',ir:28},{sym:'NIO',ir:-15},{sym:'F',ir:-35}],issues_10:[{sym:'TSLA',ir:48},{sym:'RIVN',ir:35},{sym:'LCID',ir:22},{sym:'NIO',ir:-22},{sym:'F',ir:-42}]},
+  {sym:'NFR',ir_90:25,ir_10:22,issues_90:[{sym:'GLD',ir:62},{sym:'SLV',ir:45},{sym:'GOLD',ir:32},{sym:'NEM',ir:18},{sym:'AEM',ir:5}],issues_10:[{sym:'GLD',ir:55},{sym:'SLV',ir:38},{sym:'GOLD',ir:25},{sym:'NEM',ir:12},{sym:'AEM',ir:-8}]},
+  {sym:'RGD',ir_90:28,ir_10:25,issues_90:[{sym:'IWM',ir:48},{sym:'VB',ir:35},{sym:'SCHA',ir:22},{sym:'VTWO',ir:8},{sym:'PRFZ',ir:-12}],issues_10:[{sym:'IWM',ir:42},{sym:'VB',ir:28},{sym:'SCHA',ir:15},{sym:'VTWO',ir:2},{sym:'PRFZ',ir:-22}]},
+  {sym:'WAE',ir_90:35,ir_10:32,issues_90:[{sym:'TLT',ir:65},{sym:'IEF',ir:48},{sym:'BND',ir:35},{sym:'AGG',ir:22},{sym:'LQD',ir:8}],issues_10:[{sym:'TLT',ir:58},{sym:'IEF',ir:42},{sym:'BND',ir:28},{sym:'AGG',ir:15},{sym:'LQD',ir:2}]},
+  {sym:'GFT',ir_90:42,ir_10:38,issues_90:[{sym:'GLD',ir:72},{sym:'GDX',ir:55},{sym:'GDXJ',ir:42},{sym:'NEM',ir:28},{sym:'AEM',ir:15}],issues_10:[{sym:'GLD',ir:65},{sym:'GDX',ir:48},{sym:'GDXJ',ir:35},{sym:'NEM',ir:22},{sym:'AEM',ir:8}]},
+  {sym:'OAT',ir_90:52,ir_10:45,issues_90:[{sym:'IWM',ir:65},{sym:'VTI',ir:48},{sym:'SCHD',ir:35},{sym:'VYM',ir:22},{sym:'DVY',ir:12}],issues_10:[{sym:'IWM',ir:58},{sym:'VTI',ir:42},{sym:'SCHD',ir:28},{sym:'VYM',ir:15},{sym:'DVY',ir:5}]},
+  {sym:'KHJ',ir_90:55,ir_10:48,issues_90:[{sym:'TLT',ir:72},{sym:'BND',ir:58},{sym:'AGG',ir:45},{sym:'GLD',ir:38},{sym:'SLV',ir:22}],issues_10:[{sym:'TLT',ir:65},{sym:'BND',ir:52},{sym:'AGG',ir:38},{sym:'GLD',ir:32},{sym:'SLV',ir:18}]},
+  {sym:'YPW',ir_90:62,ir_10:55,issues_90:[{sym:'GLD',ir:78},{sym:'GOLD',ir:62},{sym:'NEM',ir:48},{sym:'AEM',ir:35},{sym:'WPM',ir:22}],issues_10:[{sym:'GLD',ir:72},{sym:'GOLD',ir:55},{sym:'NEM',ir:42},{sym:'AEM',ir:28},{sym:'WPM',ir:15}]},
+];
+
+/* ════════════════════════════════════════════════════════
+   TOP 10 DATA — CONNECT POINT CP-COMM-3
+   ════════════════════════════════════════════════════════ */
+const TOP10_DATA = [
+  {sym:'AAPL', name:'Apple Inc',         count:38, avgIr: 42},
+  {sym:'MSFT', name:'Microsoft Corp',    count:34, avgIr: 28},
+  {sym:'NVDA', name:'NVIDIA Corp',       count:31, avgIr:-18},
+  {sym:'AMZN', name:'Amazon.com Inc',    count:29, avgIr: 15},
+  {sym:'GLD',  name:'SPDR Gold Shares',  count:26, avgIr: 55},
+  {sym:'TSLA', name:'Tesla Inc',         count:24, avgIr: 62},
+  {sym:'TLT',  name:'20+ Year Tsy ETF',  count:22, avgIr: 71},
+  {sym:'GOOGL',name:'Alphabet Inc',      count:20, avgIr:  8},
+  {sym:'JPM',  name:'JPMorgan Chase',    count:18, avgIr: -8},
+  {sym:'IWM',  name:'Russell 2000 ETF',  count:16, avgIr: 22},
+];
+
+/* ════════════════════════════════════════════════════════
+   CHART DATA — CONNECT POINT CP-COMM-4
+   ════════════════════════════════════════════════════════ */
+const COMM_Z90 = [3,3,3,4,3,3,4,3,3,3,3,3,4,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3];
+const COMM_Z10 = [4,3,4,4,3,3,4,4,4,3,3,4,4,3,3,3,4,3,3,4,3,3,4,3,3,3,4,3,3,4];
+const CURR_90  =  6;
+const CURR_10  = -4;
+
+
+/* ════════════════════════════════════════════════════════
+   HISTOGRAM — COMPORT.3
+   Veterans: zone-colored. Own: green or red by sign.
+   SVG never gets a height attribute — viewBox drives height.
+   ════════════════════════════════════════════════════════ */
+function buildCommHistogram() {
+  const svg = document.getElementById('commHisto');
+  if (!svg) return;
+
+  const W=920, OW=28, BX=OW, BW=W-2*OW, ZW=BW/6, SP=BW/24;
+  const SH=13, SFS=9, BELL_A=168, BELL_FLOOR=16, BELL_SIG=ZW, BCX=BX+BW/2;
+
+  function getSlot(ir) {
+    if(ir>=91)return{z:0,s:0};if(ir>=83)return{z:0,s:1};if(ir>=75)return{z:0,s:2};if(ir>=67)return{z:0,s:3};
+    if(ir>=59)return{z:1,s:0};if(ir>=52)return{z:1,s:1};if(ir>=43)return{z:1,s:2};if(ir>=34)return{z:1,s:3};
+    if(ir>=26)return{z:2,s:0};if(ir>=18)return{z:2,s:1};if(ir>=9)return{z:2,s:2};if(ir>=1)return{z:2,s:3};
+    if(ir>=-8)return{z:3,s:0};if(ir>=-17)return{z:3,s:1};if(ir>=-25)return{z:3,s:2};if(ir>=-33)return{z:3,s:3};
+    if(ir>=-42)return{z:4,s:0};if(ir>=-51)return{z:4,s:1};if(ir>=-58)return{z:4,s:2};if(ir>=-66)return{z:4,s:3};
+    if(ir>=-74)return{z:5,s:0};if(ir>=-82)return{z:5,s:1};if(ir>=-90)return{z:5,s:2};return{z:5,s:3};
+  }
+
+  const allData = [
+    ...COMMUNITY_HISTO_DATA.map(d => ({...d, own:false})),
+    {...OWN_PORTFOLIO, own:true},
+  ];
+
+  const oobWeak = allData.filter(d => d.ir >= 99);
+  const oobStr  = allData.filter(d => d.ir <= -99);
+  const slots   = Array.from({length:24}, () => []);
+  allData.filter(d => d.ir > -99 && d.ir < 99).forEach(d => {
+    const {z,s} = getSlot(d.ir); slots[z*4+s].push(d);
+  });
+  slots.forEach(sl => sl.sort((a,b) => a.sym.localeCompare(b.sym)));
+
+  const maxStk = Math.max(1, ...slots.map(s => s.length));
+  let BY = 205;
+  if (maxStk * SH + 24 > BY) BY = maxStk * SH + 24;
+  const H = BY + 63;
+
+  /* viewBox only — NEVER set height attribute */
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+  let mk = `<defs>
+    <filter id="cG"><feGaussianBlur stdDeviation="2.8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="cS"><feGaussianBlur stdDeviation="1.5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="cO"><feGaussianBlur stdDeviation="2.8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>`;
+
+  mk += `<rect x="0" y="0" width="${OW}" height="${BY}" fill="${ZCL[0]}" fill-opacity="0.07"/>`;
+  mk += `<rect x="${W-OW}" y="0" width="${OW}" height="${BY}" fill="${ZCL[5]}" fill-opacity="0.07"/>`;
+  for(let z=0;z<6;z++) mk+=`<rect x="${BX+z*ZW}" y="0" width="${ZW}" height="${BY}" fill="${ZCL[z]}" fill-opacity="0.07"/>`;
+  for(let z=1;z<=5;z++) mk+=`<line x1="${BX+z*ZW}" y1="0" x2="${BX+z*ZW}" y2="${BY}" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>`;
+  mk+=`<line x1="${BX}" y1="0" x2="${BX}" y2="${BY}" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>`;
+  mk+=`<line x1="${W-OW}" y1="0" x2="${W-OW}" y2="${BY}" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>`;
+  for(let i=1;i<24;i++){if(i%4===0)continue;const lx=BX+i*SP;mk+=`<line x1="${lx}" y1="8" x2="${lx}" y2="${BY}" stroke="rgba(255,255,255,0.055)" stroke-width="0.5" stroke-dasharray="3,6"/>`;}
+  mk+=`<line x1="0" y1="${BY}" x2="${W}" y2="${BY}" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>`;
+
+  let pH='',pM='',pL='';
+  for(let px=BX;px<=BX+BW;px+=2){
+    const dx=px-BCX, by=BY-(BELL_A*Math.exp(-dx*dx/(2*BELL_SIG*BELL_SIG))+BELL_FLOOR);
+    const cmd=px===BX?'M':'L', pt=`${cmd}${px},${by.toFixed(1)} `;
+    pH+=pt; pM+=pt; pL+=pt;
+  }
+  mk+=`<path d="${pH}" fill="none" stroke="rgba(120,185,255,0.14)" stroke-width="8"/>`;
+  mk+=`<path d="${pM}" fill="none" stroke="rgba(155,210,255,0.72)" stroke-width="1.6" stroke-dasharray="8,4" filter="url(#cG)"/>`;
+  mk+=`<path d="${pL}" fill="none" stroke="rgba(205,235,255,0.38)" stroke-width="0.8" stroke-dasharray="8,4"/>`;
+
+  for(let gi=0;gi<24;gi++){
+    const z=Math.floor(gi/4), scx=BX+(gi+0.5)*SP;
+    slots[gi].forEach((d,idx)=>{
+      const sy=BY-(idx+0.5)*SH;
+      const fill   = d.own ? '#ffffff' : ZCL[irToZone(d.ir)-1];
+      const filter = d.own ? 'url(#cO)' : 'url(#cS)';
+      const tip    = d.own
+        ? `YOUR PORTFOLIO: ${d.sym}  |  Avg 90-IR: ${irFmt(d.ir)}  |  Zone ${irToZone(d.ir)}`
+        : `${d.sym}  |  Avg 90-IR: ${irFmt(d.ir)}  |  Zone ${irToZone(d.ir)}`;
+      mk+=`<text x="${scx}" y="${sy}" text-anchor="middle"
+            font-family="'Courier New',monospace" font-size="${SFS}"
+            font-weight="bold" fill="${fill}"
+            filter="${filter}" cursor="default"
+            data-htip="${tip}">${d.sym}</text>`;
+    });
+  }
+
+  const RANGES=['+99 to +67','+66 to +34','+33 to +1','−1 to −33','−34 to −66','−67 to −99'];
+  const LABELS=['Zone 1','Zone 2','Zone 3','Zone 4','Zone 5','Zone 6'];
+  for(let z=0;z<6;z++){
+    const cx=BX+z*ZW+ZW/2;
+    mk+=`<text x="${cx}" y="${BY+18}" text-anchor="middle" font-family="'Courier New',monospace" font-size="8.5" fill="rgba(255,255,255,0.48)">${RANGES[z]}</text>`;
+    mk+=`<text x="${cx}" y="${BY+31}" text-anchor="middle" font-family="'Trebuchet MS',sans-serif" font-size="10.5" font-weight="bold" fill="${ZCL[z]}">${LABELS[z]}</text>`;
+  }
+  [{x:OW/2,col:ZCL[0],mid:'Weak',n:oobWeak.length},{x:W-OW/2,col:ZCL[5],mid:'Str',n:oobStr.length}].forEach(o=>{
+    mk+=`<text x="${o.x}" y="11" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${o.col}" opacity="0.8">OOB</text>`;
+    mk+=`<text x="${o.x}" y="20" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${o.col}" opacity="0.8">${o.mid}</text>`;
+    mk+=`<text x="${o.x}" y="29" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${o.col}" opacity="0.65">[${o.n}]</text>`;
+  });
+  mk+=`<text x="${BX+8}" y="${H-5}" font-family="'Trebuchet MS',sans-serif" font-size="7.5" fill="rgba(0,212,160,0.40)">← Weak / Oversold</text>`;
+  mk+=`<text x="${BX+BW-8}" y="${H-5}" text-anchor="end" font-family="'Trebuchet MS',sans-serif" font-size="7.5" fill="rgba(232,53,53,0.40)">Overbought / Strong →</text>`;
+
+  svg.innerHTML = mk;
+
+  const htip = document.getElementById('histo-tip');
+  svg.addEventListener('mousemove', e => {
+    const dt = e.target.getAttribute('data-htip');
+    if(dt){ htip.textContent=dt; htip.style.display='block'; htip.style.left=(e.clientX+14)+'px'; htip.style.top=(e.clientY-26)+'px'; }
+    else   { htip.style.display='none'; }
+  });
+  svg.addEventListener('mouseleave', () => { htip.style.display='none'; });
+}
+
+
+/* ════════════════════════════════════════════════════════
+   LEFT HAND TOGGLE — COMPORT.4
+   ════════════════════════════════════════════════════════ */
+let lhPeriod = '90';
+
+function handleLhPeriod(btn) {
+  btn.closest('.period-btns').querySelectorAll('.p-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  lhPeriod = btn.dataset.period;
+  renderLhTable();
+}
+
+function renderLhTable() {
+  const iF   = lhPeriod === '90' ? 'ir_90' : 'ir_10';
+  /* Weakest first: descending = highest positive IR at top */
+  const rows = [...COMM_TOGGLE_DATA].sort((a,b) => b[iF] - a[iF]);
+
+  document.getElementById('lh-tbody').innerHTML = rows.map(r => {
+    const ir     = r[iF];
+    const z      = irToZone(ir);
+    const isOwn  = r.sym === OWN_PORTFOLIO.sym;
+    const rowCls = isOwn ? 'row-own' : '';
+    const monColor = isOwn ? '#ffffff' : ZCL[z - 1];
+
+    return `<tr class="${rowCls}"
+      onmouseenter="showCommTip(event,'${r.sym}','${lhPeriod}')"
+      onmouseleave="hideCommTip()">
+      <td class="col-mon" style="color:${monColor}; padding-left:8px">${r.sym}${isOwn?' ★':''}</td>
+      <td class="col-ir"><span class="${irCls(ir)}">${irFmt(ir)}</span></td>
+      <td class="col-zn">${zoneBadge(z)}</td>
+    </tr>`;
+  }).join('');
+}
+
+
+/* ════════════════════════════════════════════════════════
+   ROLLOVER TOOLTIP
+   ════════════════════════════════════════════════════════ */
+function showCommTip(e, sym, period) {
+  const tip    = document.getElementById('comm-tip');
+  const header = document.getElementById('tip-header');
+  const issues = document.getElementById('tip-issues');
+  const record = COMM_TOGGLE_DATA.find(r => r.sym === sym);
+  if (!record) return;
+
+  const issueList = period === '90' ? record.issues_90 : record.issues_10;
+  const isOwn     = sym === OWN_PORTFOLIO.sym;
+  header.textContent = sym + (isOwn ? ' ★ — Your Holdings' : ' — Holdings');
+
+  issues.innerHTML = issueList.map(iss => {
+    const cls = iss.ir > 0 ? 'tip-pos' : iss.ir < 0 ? 'tip-neg' : '';
+    return `<div class="tip-issue">
+      <span class="tip-sym">${iss.sym}</span>
+      <span class="tip-ir ${cls}">${irFmt(iss.ir)}</span>
+    </div>`;
+  }).join('');
+
+  tip.style.display = 'block';
+  positionTip(e, tip);
+}
+
+function hideCommTip() {
+  document.getElementById('comm-tip').style.display = 'none';
+}
+
+function positionTip(e, tip) {
+  const m=14, tipW=200, tipH=240;
+  let x=e.clientX+m, y=e.clientY-m;
+  if (x+tipW > window.innerWidth)  x = e.clientX-tipW-m;
+  if (y+tipH > window.innerHeight) y = e.clientY-tipH;
+  tip.style.left=x+'px'; tip.style.top=y+'px';
+}
+
+document.addEventListener('mousemove', e => {
+  const tip = document.getElementById('comm-tip');
+  if (tip.style.display !== 'none') positionTip(e, tip);
+});
+
+
+/* ════════════════════════════════════════════════════════
+   TOP 10 TABLE — COMPORT.5
+   ════════════════════════════════════════════════════════ */
+function buildTop10() {
+  document.getElementById('top10-tbody').innerHTML = TOP10_DATA.map((r,i) => {
+    const cls = r.avgIr > 0 ? 'pos' : r.avgIr < 0 ? 'neg' : 'zer';
+    return `<tr>
+      <td class="t10-rank">${i+1}</td>
+      <td class="t10-sym" onclick="navTo('symbol/${r.sym}.html','symbolWindow')" title="${r.name}">${r.sym}</td>
+      <td class="t10-cnt">${r.count}</td>
+      <td class="t10-ir"><span class="${cls}">${irFmt(r.avgIr)}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+
+/* ════════════════════════════════════════════════════════
+   COMMUNITY AVERAGE SCORE CHART — COMPORT.6
+   ════════════════════════════════════════════════════════ */
+Chart.defaults.color       = '#5a7a9a';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+
+function genDates30() {
+  const out=[],cur=new Date();let n=0;
+  while(n<30){if(cur.getDay()!==0&&cur.getDay()!==6){out.unshift(cur.toLocaleDateString('en-US',{month:'numeric',day:'numeric'}));n++;}cur.setDate(cur.getDate()-1);}
+  return out;
+}
+const D30 = genDates30();
+
+function buildCommChart() {
+  const ctx = document.getElementById('comm-chart');
+  if (!ctx) return;
+  new Chart(ctx, {
+    type:'bar',
+    data:{labels:D30,datasets:[
+      {type:'bar', label:'90-Day Community Zone', data:COMM_Z90,
+        backgroundColor:COMM_Z90.map(z=>ZCL[z-1]+'99'),
+        borderColor:COMM_Z90.map(z=>ZCL[z-1]), borderWidth:1, order:2},
+      {type:'line', label:'10-Day Community Zone', data:COMM_Z10,
+        borderColor:'#c9a227', pointBackgroundColor:'#c9a227',
+        pointRadius:2.5, pointHoverRadius:4, borderWidth:1.8,
+        fill:false, tension:0.3, order:1}
+    ]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      layout:{padding:{left:2,right:4,top:4,bottom:2}},
+      plugins:{legend:{display:true,position:'top',
+        labels:{color:'#5a7a9a',font:{family:"'Courier New',monospace",size:9},boxWidth:12,padding:8}}},
+      scales:{
+        y:{min:0.3,max:6.5,
+          title:{display:true,text:'Zone',color:'#5a7a9a',font:{family:"'Courier New',monospace",size:9},padding:{bottom:4}},
+          ticks:{stepSize:1,
+            callback:v=>(v>=1&&v<=6)?String(Math.round(v)):'',
+            color:c=>{const v=Math.round(c.tick.value);return(v>=1&&v<=6)?ZCL[v-1]:'#5a7a9a';},
+            font:{family:"'Courier New',monospace",size:9},padding:3},
+          grid:{color:ctx=>(ctx.tick.value===3||ctx.tick.value===4)?'rgba(255,255,255,0.12)':'rgba(255,255,255,0.05)',
+            lineWidth:ctx=>(ctx.tick.value===3||ctx.tick.value===4)?1.2:0.6},
+          border:{color:'#243c58'}},
+        x:{ticks:{maxRotation:45,autoSkip:true,maxTicksLimit:10,
+          color:'#5a7a9a',font:{family:"'Courier New',monospace",size:8}},
+          grid:{color:'rgba(255,255,255,0.03)'},border:{color:'#243c58'}}
+      }
+    }
+  });
+
+  const el90=document.getElementById('comm-curr-90');
+  const el10=document.getElementById('comm-curr-10');
+  el90.textContent=irFmt(CURR_90);
+  el90.className='comm-score-val '+(CURR_90>0?'pos':CURR_90<0?'neg':'zer');
+  el10.textContent=irFmt(CURR_10);
+  el10.className='comm-score-val '+(CURR_10>0?'pos':CURR_10<0?'neg':'zer');
+}
+
+
+/* ════════════════════════════════════════════════════════
+   NAVIGATION + INIT
+   ════════════════════════════════════════════════════════ */
+function navTo(url, winName) {
+  if (window.innerWidth < 768) { location.href = url; }
+  else { window.open(url, winName); }
+}
+
+if (checkAccess()) {
+  buildCommHistogram();
+  renderLhTable();
+  buildTop10();
+  buildCommChart();
+}
+</script>
+</body>
+</html>

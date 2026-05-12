@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio Tracker — Top Down Trading</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:#08111e; --panel:#0d1829; --panel-alt:#0a1420;
+  --border:#1a2d44; --border-lite:#243c58;
+  --text:#ddeeff; --dim:#5a7a9a; --accent:#3090d8; --gold:#c9a227;
+  --z1:#00cc55; --z2:#88cc44; --z3:#7a9aaa; --z4:#aa9a7a; --z5:#ddcc00; --z6:#e83535;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;overflow:hidden;}
+
+/* Header */
+.header-block{position:sticky;top:0;z-index:100;}
+.top-nav{height:44px;background:var(--panel-alt);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 16px;}
+.nav-back{background:var(--panel);border:1px solid var(--border-lite);color:var(--dim);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:5px 14px;cursor:pointer;transition:all .15s;}
+.nav-back:hover{border-color:var(--accent);color:var(--text);}
+.page-title-bar{height:32px;background:var(--panel);border-bottom:2px solid var(--border-lite);display:flex;align-items:center;justify-content:center;}
+.page-title-text{font-size:15px;font-weight:700;color:var(--text);letter-spacing:.06em;text-transform:uppercase;}
+
+/* Shell */
+.shell{height:calc(100vh - 76px);overflow-y:auto;}
+.shell::-webkit-scrollbar{width:6px;}.shell::-webkit-scrollbar-track{background:#08111e;}.shell::-webkit-scrollbar-thumb{background:#243c58;border-radius:3px;}
+
+/* Section wrappers */
+.tracker-section{padding:18px 20px 16px;border-bottom:1px solid var(--border);}
+.mid-section{padding:20px 40px 16px;border-bottom:1px solid var(--border);}
+.chart-section{padding:14px 20px 16px;border-bottom:1px solid var(--border);}
+.hist-section{padding:18px 20px 40px;}
+
+/* Tracker title */
+.tracker-title{font-size:14px;font-weight:700;color:var(--text);letter-spacing:.04em;text-transform:uppercase;margin-bottom:2px;}
+.tracker-date{font-family:'Courier New',monospace;font-size:11px;color:var(--dim);margin-bottom:10px;letter-spacing:.04em;}
+
+/* Tables */
+.table-scroll{width:100%;overflow-x:auto;}
+.table-scroll::-webkit-scrollbar{height:4px;}.table-scroll::-webkit-scrollbar-track{background:#08111e;}.table-scroll::-webkit-scrollbar-thumb{background:#243c58;border-radius:2px;}
+.tracker-table{width:100%;border-collapse:collapse;font-family:'Courier New',monospace;font-size:11px;min-width:820px;}
+.tracker-table th,.tracker-table td{border:1px solid var(--border);padding:4px 7px;white-space:nowrap;}
+.tracker-table thead th{background:var(--panel-alt);color:var(--dim);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;text-align:center;position:sticky;top:0;line-height:1.3;padding:5px 7px;}
+.th-top{display:block;}.th-bot{display:block;color:rgba(90,122,154,0.75);}
+.col-sym{position:sticky;left:0;z-index:2;background:var(--panel-alt);font-weight:bold;color:var(--text);cursor:pointer;min-width:64px;text-align:left;}
+.col-sym:hover{color:var(--accent);text-decoration:underline;}
+thead .col-sym{z-index:3;text-align:left;background:var(--panel-alt);}
+.tracker-table tbody tr:nth-child(odd) td{background:var(--panel);}
+.tracker-table tbody tr:nth-child(even) td{background:#0b1521;}
+.tracker-table tbody tr:nth-child(odd) .col-sym{background:var(--panel);}
+.tracker-table tbody tr:nth-child(even) .col-sym{background:#0b1521;}
+.tracker-table tbody tr:hover td{background:#111e30;}
+.tracker-table tbody tr:hover .col-sym{background:#111e30;}
+.td-ctr{text-align:center;}.td-rt{text-align:right;}
+.clr-pos{color:#88cc44;}.clr-neg{color:#e83535;}.clr-zer{color:var(--dim);}
+.col-sep{border-left:2px solid var(--border-lite)!important;}
+
+/* Empty state */
+.table-empty{text-align:center;padding:32px;font-family:'Courier New',monospace;font-size:12px;color:var(--border-lite);letter-spacing:.04em;}
+.table-empty a{color:var(--accent);cursor:pointer;text-decoration:underline;}
+
+/* Risk Assessment */
+.risk-title{font-size:15px;font-weight:700;color:var(--text);letter-spacing:.05em;text-transform:uppercase;text-align:center;margin-bottom:14px;}
+.risk-boxes{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;max-width:680px;margin:0 auto;}
+.risk-box{border:1px solid var(--border);background:var(--panel);min-height:72px;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+.risk-box.empty{border-style:dashed;border-color:#131f30;background:transparent;}
+.risk-box.populated{border-color:var(--border-lite);}
+.risk-label{font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-bottom:6px;}
+.risk-value{font-family:'Share Tech Mono',monospace;font-size:26px;font-weight:bold;letter-spacing:.02em;line-height:1;}
+
+/* Sharing */
+.share-status{display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 0;}
+.share-status-label{font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);}
+.share-status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.share-status-dot.on{background:var(--z1);box-shadow:0 0 6px rgba(0,204,85,0.45);}
+.share-status-dot.off{background:var(--border-lite);}
+.share-status-text{font-family:'Courier New',monospace;font-size:11px;font-weight:bold;letter-spacing:.05em;}
+.share-status-text.on{color:var(--z1);}.share-status-text.off{color:var(--dim);}
+.share-status-change{background:none;border:none;cursor:pointer;padding:0 0 0 6px;font-family:'Courier New',monospace;font-size:10px;letter-spacing:.04em;color:rgba(90,122,154,0.38);text-decoration:underline;text-underline-offset:2px;text-transform:lowercase;transition:color .15s;}
+.share-status-change:hover{color:var(--accent);}
+.share-toggle-panel{animation:shareIn .22s ease;}
+@keyframes shareIn{from{opacity:0;transform:translateY(-4px);}to{opacity:1;transform:translateY(0);}}
+.share-wrap{max-width:480px;margin:18px auto 0;}
+.share-row{display:flex;}
+.share-btn{flex:1;padding:16px 12px;background:var(--panel-alt);border:1px solid var(--border-lite);color:var(--dim);font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;letter-spacing:.06em;text-align:center;cursor:pointer;transition:all .2s;text-transform:uppercase;}
+.share-btn:first-child{border-right:none;}
+.share-btn small{display:block;font-size:10px;font-weight:600;margin-top:4px;text-transform:none;letter-spacing:.02em;opacity:0.70;}
+.share-btn:hover{border-color:var(--accent);color:var(--text);}
+.share-btn.active-yes{background:rgba(0,204,85,0.09);border-color:var(--z1);color:var(--z1);}
+.share-btn.active-yes small{color:var(--z1);}
+.share-btn.active-no{background:rgba(90,122,154,0.07);border-color:var(--border-lite);color:var(--dim);}
+.share-comment{font-size:13px;font-weight:600;color:var(--dim);text-align:center;margin-top:10px;line-height:1.55;max-width:480px;margin-left:auto;margin-right:auto;}
+.hidden{display:none!important;}
+
+/* Charts */
+.chart-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.chart-wrap{background:var(--panel);border:1px solid var(--border-lite);padding:8px 12px 10px;}
+.chart-head{font-size:12px;font-weight:700;color:var(--text);text-align:center;letter-spacing:.03em;margin-bottom:2px;}
+.chart-sub{font-size:10px;color:var(--dim);text-align:center;margin-bottom:8px;font-style:italic;}
+.chart-cv{position:relative;height:220px;}
+</style>
+</head>
+<body>
+
+<div class="header-block">
+  <nav class="top-nav">
+    <button class="nav-back" onclick="navTo('portfolio.html','portfolioPage')">← Back</button>
+  </nav>
+  <div class="page-title-bar">
+    <span class="page-title-text" id="tracker-page-title">Personal Portfolio Tracker</span>
+  </div>
+</div>
+
+<div class="shell">
+
+  <!-- PPT.3 — CURRENT PORTFOLIO -->
+  <div class="tracker-section">
+    <div class="tracker-title">Current Personal Portfolio Performance</div>
+    <div class="tracker-date" id="current-date"></div>
+    <div class="table-scroll">
+      <table class="tracker-table" id="current-table">
+        <thead>
+          <tr>
+            <th class="col-sym">Symbol</th>
+            <th><span class="th-top">Buy</span><span class="th-bot">Date</span></th>
+            <th><span class="th-top">Total</span><span class="th-bot">Days</span></th>
+            <th><span class="th-top">Buy</span><span class="th-bot">$</span></th>
+            <th><span class="th-top">Current</span><span class="th-bot">$</span></th>
+            <th>Profit/Loss</th>
+            <th class="col-sep"><span class="th-top">Buy</span><span class="th-bot">90 IR</span></th>
+            <th><span class="th-top">Current</span><span class="th-bot">90 IR</span></th>
+            <th><span class="th-top">Results</span><span class="th-bot">90 IR</span></th>
+            <th class="col-sep"><span class="th-top">Buy</span><span class="th-bot">10 IR</span></th>
+            <th><span class="th-top">Current</span><span class="th-bot">10 IR</span></th>
+            <th><span class="th-top">Results</span><span class="th-bot">10 IR</span></th>
+          </tr>
+        </thead>
+        <tbody id="current-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PPT.4 — RISK ASSESSMENT -->
+  <div class="mid-section">
+    <div class="risk-title">Current Portfolio Risk</div>
+    <div class="risk-boxes">
+      <div class="risk-box empty"></div>
+      <div class="risk-box empty"></div>
+      <div class="risk-box populated" id="risk-box-90">
+        <div class="risk-label">Avg 90-day IR</div>
+        <div class="risk-value" id="risk-val-90">—</div>
+      </div>
+      <div class="risk-box populated" id="risk-box-10">
+        <div class="risk-label">Avg 10-day IR</div>
+        <div class="risk-value" id="risk-val-10">—</div>
+      </div>
+      <div class="risk-box empty"></div>
+      <div class="risk-box empty"></div>
+    </div>
+  </div>
+
+  <!-- PPT.5 — SHARING BUTTON (compact chip + expandable toggle) -->
+  <div class="mid-section" style="padding-top:10px;padding-bottom:12px">
+    <!-- Status chip (shown when choice already made) -->
+    <div class="share-status hidden" id="share-status">
+      <span class="share-status-label">Portfolio Community:</span>
+      <span class="share-status-dot" id="share-dot"></span>
+      <span class="share-status-text" id="share-status-text"></span>
+      <button class="share-status-change" onclick="expandShareToggle()">change</button>
+    </div>
+    <!-- Full toggle (shown for new users or after "change" is clicked) -->
+    <div class="share-toggle-panel" id="share-toggle-panel">
+      <div class="share-wrap">
+        <div class="share-row">
+          <button class="share-btn" id="share-yes" onclick="setSharing(true)">
+            Share <small>Activates Portfolio Community access</small>
+          </button>
+          <button class="share-btn" id="share-no" onclick="setSharing(false)">
+            Don't Share <small>Community button remains inactive</small>
+          </button>
+        </div>
+      </div>
+      <div class="share-comment">
+        Share the standing of your Personal Portfolio to gain access to the Portfolio Community page,
+        where you can view your portfolio ranked against other members'.
+        If you Share, your portfolio will be identified by your Portfolio Moniker —
+        or by your first name until you create one.
+      </div>
+    </div>
+  </div>
+
+  <!-- PPT.6 + PPT.7 — PORTFOLIO RISK CHARTS -->
+  <div class="chart-section">
+    <div class="chart-pair">
+      <div class="chart-wrap">
+        <div class="chart-head">90-day Portfolio Implied Risk</div>
+        <div class="chart-sub">Portfolio Average · 30 Days · Zone Scale</div>
+        <div class="chart-cv"><canvas id="chart-90"></canvas></div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-head">10-day Portfolio Implied Risk</div>
+        <div class="chart-sub">Portfolio Average · 30 Days · Zone Scale</div>
+        <div class="chart-cv"><canvas id="chart-10"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PPT.8 — HISTORICAL TRACKER -->
+  <div class="hist-section">
+    <div class="tracker-title">Historical Personal Portfolio Performance</div>
+    <div class="tracker-date" style="margin-bottom:10px">Closed Positions</div>
+    <div class="table-scroll">
+      <table class="tracker-table" id="hist-table">
+        <thead>
+          <tr>
+            <th class="col-sym">Symbol</th>
+            <th><span class="th-top">Buy</span><span class="th-bot">Date</span></th>
+            <th><span class="th-top">Sell</span><span class="th-bot">Date</span></th>
+            <th><span class="th-top">Days</span><span class="th-bot">Held</span></th>
+            <th><span class="th-top">Buy</span><span class="th-bot">$</span></th>
+            <th><span class="th-top">Sell</span><span class="th-bot">$</span></th>
+            <th>Profit/Loss</th>
+            <th class="col-sep"><span class="th-top">Buy</span><span class="th-bot">90 IR</span></th>
+            <th><span class="th-top">Sell</span><span class="th-bot">90 IR</span></th>
+            <th><span class="th-top">Result</span><span class="th-bot">90 IR</span></th>
+            <th class="col-sep"><span class="th-top">Buy</span><span class="th-bot">10 IR</span></th>
+            <th><span class="th-top">Sell</span><span class="th-bot">10 IR</span></th>
+            <th><span class="th-top">Result</span><span class="th-bot">10 IR</span></th>
+          </tr>
+        </thead>
+        <tbody id="hist-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+<script>
+/* ── UTILITIES ── */
+const ZCL=['#00cc55','#88cc44','#7a9aaa','#aa9a7a','#ddcc00','#e83535'];
+function irToZone(ir){if(ir>=67)return 1;if(ir>=34)return 2;if(ir>=1)return 3;if(ir>=-33)return 4;if(ir>=-66)return 5;return 6;}
+function irFmt(v){return(v>0?'+':'')+v;}
+function irCls(v){return v>0?'clr-pos':v<0?'clr-neg':'clr-zer';}
+function fmtPrice(v){return v!=null?'$'+parseFloat(v).toFixed(2):'—';}
+function fmtPL(v){ if(v==null)return'—'; const abs=Math.abs(v).toFixed(2); return (v>=0?'+$':'−$')+abs; }
+function plCls(v){if(v==null)return'clr-zer';return v>=0?'clr-pos':'clr-neg';}
+function fmtDate(d){ if(!d)return'—'; const dt=new Date(d); return dt.toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'2-digit'}); }
+
+/* ════════════════════════════════════════════════════════════
+   SAMPLE FALLBACK DATA
+   Used when portfolioTracker / portfolioHistory not yet set.
+   CONNECT POINT CP-T-CURR: swap SAMPLE_CURRENT for localStorage read.
+   CONNECT POINT CP-T-HIST: swap SAMPLE_HISTORICAL for localStorage read.
+   ════════════════════════════════════════════════════════════ */
+const SAMPLE_CURRENT = [
+  {sym:'AAPL',buyDate:'01/15/26',days:104,buyP:172.40,currP:189.44,buy90:68,curr90:42,buy10:45,curr10:18},
+  {sym:'MSFT',buyDate:'02/03/26',days:85, buyP:358.20,currP:378.92,buy90:52,curr90:28,buy10:38,curr10:-5},
+  {sym:'NVDA',buyDate:'03/12/26',days:48, buyP:920.00,currP:875.33,buy90:-8,curr90:-31,buy10:-15,curr10:-45},
+  {sym:'AMZN',buyDate:'01/28/26',days:91, buyP:168.50,currP:181.75,buy90:35,curr90:15,buy10:22,curr10:22},
+  {sym:'GOOGL',buyDate:'02/20/26',days:68,buyP:158.80,currP:165.22,buy90:28,curr90:8,buy10:15,curr10:-12},
+  {sym:'META',buyDate:'03/05/26',days:55, buyP:510.30,currP:484.10,buy90:-5,curr90:-18,buy10:-8,curr10:-28},
+  {sym:'TSLA',buyDate:'01/10/26',days:109,buyP:220.50,currP:177.58,buy90:85,curr90:62,buy10:65,curr10:44},
+  {sym:'JPM', buyDate:'02/14/26',days:74, buyP:188.70,currP:198.22,buy90:-2,curr90:-8,buy10:8,curr10:5},
+  {sym:'JNJ', buyDate:'03/20/26',days:40, buyP:146.80,currP:152.34,buy90:52,curr90:35,buy10:32,curr10:19},
+  {sym:'XOM', buyDate:'01/05/26',days:114,buyP:104.20,currP:111.87,buy90:-28,curr90:-42,buy10:-18,curr10:-55},
+];
+const SAMPLE_HISTORICAL = [
+  {sym:'NFLX',buyDate:'10/15/25',sellDate:'12/22/25',days:68, buyP:395.20,sellP:485.30,buy90:72,sell90:18,buy10:55,sell10:-12},
+  {sym:'AMD', buyDate:'09/08/25',sellDate:'11/30/25',days:83, buyP:108.50,sellP:138.20,buy90:65,sell90:22,buy10:48,sell10:8},
+  {sym:'COST',buyDate:'11/01/25',sellDate:'01/18/26',days:78, buyP:720.00,sellP:875.30,buy90:58,sell90:15,buy10:42,sell10:-5},
+  {sym:'INTC',buyDate:'08/20/25',sellDate:'10/05/25',days:46, buyP:32.40, sellP:22.80, buy90:88,sell90:45,buy10:72,sell10:28},
+];
+
+/* Chart data — CONNECT POINT CP-T-CHARTS */
+const PF_Z90=[3,3,3,4,3,3,4,4,3,3,3,3,3,4,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3];
+const PF_Z10=[4,3,4,4,3,3,3,4,4,4,3,3,3,4,4,4,4,3,3,3,4,4,3,3,3,4,4,4,3,4];
+
+/* ════════════════════════════════════════════════════════════
+   LOAD FROM LOCALSTORAGE
+   Normalises localStorage records to the same shape as sample data.
+   ════════════════════════════════════════════════════════════ */
+function loadCurrentPositions() {
+  try {
+    const raw = localStorage.getItem('portfolioTracker');
+    if (!raw) return null;
+    const all = JSON.parse(raw).filter(t=>t.active);
+    if (all.length === 0) return null;
+
+    /* Normalise localStorage record → display format
+       CONNECT POINT CP-T-CURR-PRICE: currP, curr90, curr10 come from
+       database daily push — null until then */
+    return all.map(t => {
+      const days = Math.floor((new Date()-new Date(t.buyDate))/(1000*60*60*24));
+      return {
+        sym:    t.sym,
+        buyDate:fmtDate(t.buyDate),
+        days,
+        buyP:   t.buyPrice,
+        currP:  null,   // CONNECT POINT
+        buy90:  t.buyIr90||0,
+        curr90: null,   // CONNECT POINT
+        buy10:  t.buyIr10||0,
+        curr10: null,   // CONNECT POINT
+      };
+    });
+  } catch(e){ return null; }
+}
+
+function loadHistoricalPositions() {
+  try {
+    const raw = localStorage.getItem('portfolioHistory');
+    if (!raw) return null;
+    const all = JSON.parse(raw);
+    if (all.length === 0) return null;
+
+    return all.map(t => ({
+      sym:      t.sym,
+      buyDate:  fmtDate(t.buyDate),
+      sellDate: fmtDate(t.sellDate),
+      days:     t.daysHeld,
+      buyP:     t.buyPrice,
+      sellP:    t.sellPrice,
+      buy90:    t.buyIr90||0,
+      sell90:   t.sellIr90||0,
+      buy10:    t.buyIr10||0,
+      sell10:   t.sellIr10||0,
+    }));
+  } catch(e){ return null; }
+}
+
+/* ════════════════════════════════════════════════════════════
+   CURRENT TABLE — PPT.3
+   ════════════════════════════════════════════════════════════ */
+function buildCurrentTable() {
+  const now = new Date();
+  document.getElementById('current-date').textContent =
+    'As of '+now.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+
+  const live = loadCurrentPositions();
+  const rows = live || SAMPLE_CURRENT;
+  const tbody = document.getElementById('current-tbody');
+
+  if (rows.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="12" class="table-empty">No active positions. <a onclick="navTo('portfolio.html','portfolioPage')">Click Buy on any stock card in My Portfolio to open a position.</a></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.map(r => {
+    const pl   = (r.currP!=null&&r.buyP!=null) ? r.currP-r.buyP : null;
+    const res90= (r.curr90!=null) ? r.curr90-r.buy90 : null;
+    const res10= (r.curr10!=null) ? r.curr10-r.buy10 : null;
+    return `<tr>
+      <td class="col-sym" onclick="navTo('symbol/${r.sym}.html','symbolWindow')" title="${r.sym}">${r.sym}</td>
+      <td class="td-ctr">${r.buyDate}</td>
+      <td class="td-ctr">${r.days}</td>
+      <td class="td-rt">${fmtPrice(r.buyP)}</td>
+      <td class="td-rt">${fmtPrice(r.currP)}</td>
+      <td class="td-rt ${plCls(pl)}">${fmtPL(pl)}</td>
+      <td class="td-ctr col-sep ${irCls(r.buy90)}">${irFmt(r.buy90)}</td>
+      <td class="td-ctr ${r.curr90!=null?irCls(r.curr90):'clr-zer'}">${r.curr90!=null?irFmt(r.curr90):'—'}</td>
+      <td class="td-ctr ${res90!=null?irCls(res90):'clr-zer'}">${res90!=null?irFmt(res90):'—'}</td>
+      <td class="td-ctr col-sep ${irCls(r.buy10)}">${irFmt(r.buy10)}</td>
+      <td class="td-ctr ${r.curr10!=null?irCls(r.curr10):'clr-zer'}">${r.curr10!=null?irFmt(r.curr10):'—'}</td>
+      <td class="td-ctr ${res10!=null?irCls(res10):'clr-zer'}">${res10!=null?irFmt(res10):'—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ════════════════════════════════════════════════════════════
+   RISK ASSESSMENT — PPT.4
+   ════════════════════════════════════════════════════════════ */
+function buildRiskAssessment() {
+  const live = loadCurrentPositions();
+  const rows = live || SAMPLE_CURRENT;
+  const n = rows.length;
+  if (n === 0) return;
+
+  /* Use curr90/curr10 when available, fall back to buy90/buy10 */
+  const avg90 = Math.round(rows.reduce((s,r)=>s+(r.curr90!=null?r.curr90:r.buy90),0)/n);
+  const avg10 = Math.round(rows.reduce((s,r)=>s+(r.curr10!=null?r.curr10:r.buy10),0)/n);
+
+  const el90=document.getElementById('risk-val-90');
+  const el10=document.getElementById('risk-val-10');
+  el90.textContent=irFmt(avg90); el90.className='risk-value '+(avg90>0?'clr-pos':avg90<0?'clr-neg':'clr-zer');
+  el10.textContent=irFmt(avg10); el10.className='risk-value '+(avg10>0?'clr-pos':avg10<0?'clr-neg':'clr-zer');
+}
+
+/* ════════════════════════════════════════════════════════════
+   SHARING BUTTON — PPT.5
+   Same compact chip + expand toggle as before, but also
+   reads portfolioChoices on load for correct initial state.
+   CONNECT POINT CP-C: writing sharing triggers StorageEvent
+   which portfolio.html Community button listens for.
+   ════════════════════════════════════════════════════════════ */
+function loadSharing() {
+  try {
+    const cfg = JSON.parse(localStorage.getItem('portfolioChoices')||'{}');
+    if (cfg.sharing !== undefined) {
+      updateShareStatus(cfg.sharing);
+      document.getElementById('share-status').classList.remove('hidden');
+      document.getElementById('share-toggle-panel').classList.add('hidden');
+      document.getElementById('share-yes').className='share-btn'+(cfg.sharing?' active-yes':'');
+      document.getElementById('share-no').className= 'share-btn'+(!cfg.sharing?' active-no':'');
+    }
+  } catch(e){}
+}
+
+function updateShareStatus(val) {
+  const dot=document.getElementById('share-dot'), text=document.getElementById('share-status-text');
+  dot.className ='share-status-dot '+(val?'on':'off');
+  text.className='share-status-text '+(val?'on':'off');
+  text.textContent=val?'Sharing':'Not Sharing';
+}
+
+function expandShareToggle() {
+  document.getElementById('share-status').classList.add('hidden');
+  document.getElementById('share-toggle-panel').classList.remove('hidden');
+}
+
+function setSharing(val) {
+  document.getElementById('share-yes').className='share-btn'+(val?' active-yes':'');
+  document.getElementById('share-no').className= 'share-btn'+(!val?' active-no':'');
+  try {
+    const cfg=JSON.parse(localStorage.getItem('portfolioChoices')||'{}');
+    cfg.sharing=val; cfg.lastUpdated=new Date().toISOString();
+    localStorage.setItem('portfolioChoices',JSON.stringify(cfg));
+  } catch(e){ console.warn('sharing save failed:',e); }
+  updateShareStatus(val);
+  document.getElementById('share-toggle-panel').classList.add('hidden');
+  document.getElementById('share-status').classList.remove('hidden');
+}
+
+/* ════════════════════════════════════════════════════════════
+   CHARTS — PPT.6 + PPT.7
+   ════════════════════════════════════════════════════════════ */
+Chart.defaults.color='#5a7a9a'; Chart.defaults.borderColor='rgba(255,255,255,0.06)';
+
+function genDates30(){
+  const out=[],cur=new Date();let n=0;
+  while(n<30){if(cur.getDay()!==0&&cur.getDay()!==6){out.unshift(cur.toLocaleDateString('en-US',{month:'numeric',day:'numeric'}));n++;}cur.setDate(cur.getDate()-1);}
+  return out;
+}
+const D30=genDates30();
+
+const ZONE_Y={
+  min:0.3,max:6.5,
+  title:{display:true,text:'Zone',color:'#5a7a9a',font:{family:"'Courier New',monospace",size:9},padding:{bottom:4}},
+  ticks:{stepSize:1,callback:v=>(v>=1&&v<=6)?String(Math.round(v)):'',
+    color:c=>{const v=Math.round(c.tick.value);return(v>=1&&v<=6)?ZCL[v-1]:'#5a7a9a';},
+    font:{family:"'Courier New',monospace",size:9},padding:3},
+  grid:{color:ctx=>(ctx.tick.value===3||ctx.tick.value===4)?'rgba(255,255,255,0.12)':'rgba(255,255,255,0.05)',
+    lineWidth:ctx=>(ctx.tick.value===3||ctx.tick.value===4)?1.2:0.6},
+  border:{color:'#243c58'}
+};
+const X_AXIS={ticks:{maxRotation:45,autoSkip:true,maxTicksLimit:10,color:'#5a7a9a',font:{family:"'Courier New',monospace",size:8}},grid:{color:'rgba(255,255,255,0.03)'},border:{color:'#243c58'}};
+
+function buildChart90(){
+  const ctx=document.getElementById('chart-90');if(!ctx)return;
+  new Chart(ctx,{type:'bar',data:{labels:D30,datasets:[{label:'90-Day Portfolio Zone',data:PF_Z90,backgroundColor:PF_Z90.map(z=>ZCL[z-1]+'99'),borderColor:PF_Z90.map(z=>ZCL[z-1]),borderWidth:1}]},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{left:2,right:4,top:4,bottom:2}},
+      plugins:{legend:{display:true,position:'top',labels:{color:'#5a7a9a',font:{family:"'Courier New',monospace",size:9},boxWidth:12,padding:8}}},
+      scales:{y:ZONE_Y,x:X_AXIS}}});
+}
+function buildChart10(){
+  const ctx=document.getElementById('chart-10');if(!ctx)return;
+  new Chart(ctx,{type:'line',data:{labels:D30,datasets:[{label:'10-Day Portfolio Zone',data:PF_Z10,borderColor:'#c9a227',pointBackgroundColor:'#c9a227',pointRadius:2.5,pointHoverRadius:4,borderWidth:1.8,fill:false,tension:0.3}]},
+    options:{responsive:true,maintainAspectRatio:false,layout:{padding:{left:2,right:4,top:4,bottom:2}},
+      plugins:{legend:{display:true,position:'top',labels:{color:'#5a7a9a',font:{family:"'Courier New',monospace",size:9},boxWidth:12,padding:8}}},
+      scales:{y:ZONE_Y,x:X_AXIS}}});
+}
+
+/* ════════════════════════════════════════════════════════════
+   HISTORICAL TABLE — PPT.8
+   ════════════════════════════════════════════════════════════ */
+function buildHistoricalTable() {
+  const live = loadHistoricalPositions();
+  const rows = live || SAMPLE_HISTORICAL;
+  const tbody = document.getElementById('hist-tbody');
+
+  if (rows.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="13" class="table-empty">No closed positions yet. When you Sell a position from My Portfolio, it will be archived here.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = rows.map(r => {
+    const pl   = (r.sellP!=null&&r.buyP!=null) ? r.sellP-r.buyP : null;
+    const res90= r.sell90-r.buy90;
+    const res10= r.sell10-r.buy10;
+    return `<tr>
+      <td class="col-sym" onclick="navTo('symbol/${r.sym}.html','symbolWindow')">${r.sym}</td>
+      <td class="td-ctr">${r.buyDate}</td>
+      <td class="td-ctr">${r.sellDate}</td>
+      <td class="td-ctr">${r.days}</td>
+      <td class="td-rt">${fmtPrice(r.buyP)}</td>
+      <td class="td-rt">${fmtPrice(r.sellP)}</td>
+      <td class="td-rt ${plCls(pl)}">${fmtPL(pl)}</td>
+      <td class="td-ctr col-sep ${irCls(r.buy90)}">${irFmt(r.buy90)}</td>
+      <td class="td-ctr ${irCls(r.sell90)}">${irFmt(r.sell90)}</td>
+      <td class="td-ctr ${irCls(res90)}">${irFmt(res90)}</td>
+      <td class="td-ctr col-sep ${irCls(r.buy10)}">${irFmt(r.buy10)}</td>
+      <td class="td-ctr ${irCls(r.sell10)}">${irFmt(r.sell10)}</td>
+      <td class="td-ctr ${irCls(res10)}">${irFmt(res10)}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ════════════════════════════════════════════════════════════
+   PORTFOLIO NAME — CONNECT POINT CP-B-NAME
+   ════════════════════════════════════════════════════════════ */
+function loadPortfolioName() {
+  try {
+    const cfg=JSON.parse(localStorage.getItem('portfolioChoices')||'{}');
+    if(cfg.portfolioName){
+      document.getElementById('tracker-page-title').textContent=cfg.portfolioName+' — Tracker';
+    }
+  } catch(e){}
+}
+
+/* ════════════════════════════════════════════════════════════
+   STORAGEEVENT — cross-tab sync
+   When portfolio.html writes portfolioTracker (Buy/Sell),
+   or choices.html writes portfolioChoices (sharing), refresh.
+   ════════════════════════════════════════════════════════════ */
+window.addEventListener('storage', e => {
+  if (e.key === 'portfolioTracker') {
+    buildCurrentTable();
+    buildRiskAssessment();
+  }
+  if (e.key === 'portfolioChoices') {
+    loadPortfolioName();
+    loadSharing();
+  }
+});
+
+function navTo(url,winName){if(window.innerWidth<768){location.href=url;}else{window.open(url,winName);}}
+
+/* ── INIT ── */
+loadPortfolioName();
+buildCurrentTable();
+buildRiskAssessment();
+loadSharing();
+buildChart90();
+buildChart10();
+buildHistoricalTable();
+</script>
+</body>
+</html>

@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Financial Instrument ETFs — Top Down Trading</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#08111e;color:#b8cce0;font-family:'Rajdhani',sans-serif;overflow:hidden}
+
+/* ── NAV ──────────────────────────────────────────────── */
+.top-nav{display:flex;align-items:center;justify-content:space-between;
+  padding:0 14px;background:#0a1420;border-bottom:1px solid #1a2d44;
+  height:44px;position:sticky;top:0;z-index:80}
+.nav-left{display:flex;align-items:center;gap:6px}
+.nav-btn{background:#0d1829;border:1px solid #243c58;color:#8ab0cc;
+  font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;
+  padding:4px 14px;cursor:pointer;border-radius:2px;
+  letter-spacing:.04em;transition:all .15s}
+.nav-btn:hover{border-color:#3090d8;color:#ddeeff}
+.nav-btn.back{border-color:#3090d8;color:#3090d8}
+.nav-btn.back:hover{background:#162a3e;color:#ddeeff}
+.search-box{background:#0d1829;border:1px solid #243c58;color:#ddeeff;
+  font-family:'Rajdhani',sans-serif;font-size:12px;padding:4px 14px;
+  border-radius:2px;outline:none;width:190px;letter-spacing:.04em}
+.search-box::placeholder{color:#3a5a7a}
+.search-box:focus{border-color:#3090d8}
+
+/* ── SHELL ────────────────────────────────────────────── */
+#shell{display:flex;height:calc(100vh - 44px);overflow:hidden}
+
+/* ── LEFT SIDEBAR ─────────────────────────────────────── */
+.sidebar{width:285px;min-width:285px;background:#0a1420;
+  border-right:2px solid #243c58;display:flex;flex-direction:column;
+  overflow:hidden;flex-shrink:0}
+.sb-head{padding:8px 10px 6px;border-bottom:1px solid #1a2d44;flex-shrink:0}
+.sb-title{text-align:center;font-weight:700;font-size:12px;color:#ddeeff;
+  margin-bottom:5px;letter-spacing:.03em}
+.sb-btns{display:flex;justify-content:center;gap:4px}
+.per-btn{background:#1a2d44;border:1px solid #1a2d44;color:#5a7a9a;
+  font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600;
+  padding:2px 12px;cursor:pointer;border-radius:2px;transition:all .15s}
+.per-btn.active{background:#2a7abf;border-color:#3090d8;color:#fff}
+.per-btn:hover:not(.active){border-color:#3090d8;color:#ddeeff}
+.sb-scroll{overflow-y:auto;flex:1}
+.sb-scroll::-webkit-scrollbar{width:4px}
+.sb-scroll::-webkit-scrollbar-track{background:#08111e}
+.sb-scroll::-webkit-scrollbar-thumb{background:#243c58;border-radius:2px}
+
+/* LH TABLE */
+.lh-table{width:100%;border-collapse:collapse;
+  font-family:'Courier New',monospace;font-size:11px}
+.lh-table th{background:#0a1420;color:#5a7a9a;padding:4px 6px;
+  text-align:left;border-bottom:1px solid #1a2d44;position:sticky;top:0;
+  font-size:10px;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.lh-table th.sortable{cursor:pointer;user-select:none}
+.lh-table th.sortable:hover{color:#ddeeff}
+.lh-table th.sort-active{color:#3090d8}
+.lh-table td{padding:3px 6px;border-bottom:1px solid #0e1a28;white-space:nowrap}
+.lh-table tr:hover td{background:#111e30}
+.sort-arrow{font-size:10px;margin-left:3px;opacity:.5}
+.sort-arrow.active{opacity:1;color:#3090d8}
+.zone-badge{display:inline-block;padding:1px 5px;font-size:10px;
+  font-weight:700;border-radius:2px;color:#000}
+.pos{color:#88cc44}
+.neg{color:#e83535}
+.zer{color:#b8cce0}
+
+/* ── RIGHT CONTENT ────────────────────────────────────── */
+.right-content{flex:1;overflow-y:auto;padding:10px 14px}
+.right-content::-webkit-scrollbar{width:6px}
+.right-content::-webkit-scrollbar-track{background:#08111e}
+.right-content::-webkit-scrollbar-thumb{background:#243c58;border-radius:3px}
+
+/* PAGE TITLE */
+.page-title-block{text-align:center;margin-bottom:12px;padding:10px 0 6px}
+.page-title{font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;
+  color:#c9a227;letter-spacing:.05em}
+.page-sub{font-family:'Rajdhani',sans-serif;font-size:13px;
+  color:#5a7a9a;font-style:italic;margin-top:3px}
+
+/* HISTOGRAM */
+.histo-wrap{margin-bottom:12px}
+.histo-label{text-align:center;font-family:'Rajdhani',sans-serif;
+  font-size:13px;font-weight:700;color:#ddeeff;
+  letter-spacing:.03em;margin-bottom:6px}
+.histo-svg-box{background:#0d1829;border:1px solid #1a2d44;overflow:hidden}
+
+/* TOOLTIP */
+#histo-tip{position:fixed;background:#0d1829;border:1px solid #3090d8;
+  color:#ddeeff;font-family:'Courier New',monospace;font-size:11px;
+  padding:5px 9px;border-radius:2px;box-shadow:0 2px 12px rgba(0,0,0,.6);
+  white-space:nowrap;z-index:999;pointer-events:none;display:none}
+
+/* TWO-COLUMN GRID */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+
+/* SECTION TITLE */
+.sec-title{font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;
+  color:#ddeeff;text-align:center;letter-spacing:.04em;
+  margin-bottom:8px;margin-top:4px}
+
+/* COMBO CHARTS */
+.chart-wrap{background:#0d1829;border:1px solid #1a2d44;padding:8px 12px 10px}
+.chart-head{font-size:12px;font-weight:700;color:#ddeeff;text-align:center;
+  letter-spacing:.03em;margin-bottom:2px}
+.chart-sub{font-size:10px;color:#5a7a9a;text-align:center;
+  margin-bottom:8px;font-style:italic}
+.chart-cv{position:relative;height:220px}
+
+/* REGULAR TOGGLE */
+.toggle-wrap{background:#0d1829;border:1px solid #1a2d44;overflow:hidden}
+.toggle-header{background:#0a1420;border-bottom:1px solid #1a2d44;
+  padding:6px 10px;display:flex;align-items:center;justify-content:space-between}
+.toggle-title{font-weight:700;font-size:12px;color:#ddeeff}
+.toggle-btns{display:flex;gap:3px}
+.toggle-btn{background:#1a2d44;border:1px solid #1a2d44;color:#5a7a9a;
+  font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600;
+  padding:3px 10px;cursor:pointer;border-radius:2px;transition:all .15s}
+.toggle-btn.active{background:#2a7abf;border-color:#3090d8;color:#fff}
+.toggle-btn:hover:not(.active){border-color:#3090d8;color:#ddeeff}
+.scroll-table{max-height:340px;overflow-y:auto}
+.scroll-table::-webkit-scrollbar{width:4px}
+.scroll-table::-webkit-scrollbar-track{background:#08111e}
+.scroll-table::-webkit-scrollbar-thumb{background:#243c58;border-radius:2px}
+.ir-table{width:100%;border-collapse:collapse;
+  font-family:'Courier New',monospace;font-size:11px}
+.ir-table th{background:#0d1829;color:#5a7a9a;padding:4px 6px;text-align:left;
+  border-bottom:1px solid #1a2d44;position:sticky;top:0;
+  font-size:10px;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.ir-table th.sortable{cursor:pointer;user-select:none}
+.ir-table th.sortable:hover{color:#ddeeff}
+.ir-table th.sort-active{color:#3090d8}
+.ir-table td{padding:3px 6px;border-bottom:1px solid #0e1a28;white-space:nowrap}
+.ir-table tr:hover td{background:#111e30}
+.col-symbol{color:#ddeeff;font-weight:700}
+.col-ir{text-align:center}
+.col-zone{text-align:center}
+.col-3mo{text-align:center;font-size:10px}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="top-nav">
+  <div class="nav-left">
+    <button class="nav-btn back" onclick="window.location.href='market.html'">← BACK</button>
+  </div>
+  <input class="search-box" type="text" placeholder="⌕  SEARCH">
+</nav>
+
+<!-- SHELL -->
+<div id="shell">
+
+  <!-- LEFT SIDEBAR — LH TOGGLE -->
+  <div class="sidebar">
+    <div class="sb-head">
+      <div class="sb-title">Financial Instrument ETFs</div>
+      <div class="sb-btns">
+        <button class="per-btn active" data-group="lh" data-period="90" onclick="handleLHPeriod(this)">90 IR</button>
+        <button class="per-btn"        data-group="lh" data-period="10" onclick="handleLHPeriod(this)">10 IR</button>
+      </div>
+    </div>
+    <div class="sb-scroll">
+      <table class="lh-table">
+        <thead><tr>
+          <th style="text-align:left">Tick</th>
+          <th style="text-align:left">Name</th>
+          <th class="sortable sort-active" id="lh-th-ir" onclick="handleLHSort()" style="text-align:center">IR <span class="sort-arrow active" id="lh-arr-ir">↓</span></th>
+          <th style="text-align:center">Zn</th>
+        </tr></thead>
+        <tbody id="lh-tbody"></tbody>
+      </table>
+    </div>
+  </div><!-- /sidebar -->
+
+  <!-- RIGHT CONTENT -->
+  <div class="right-content">
+
+    <!-- FIN.2 PAGE TITLE -->
+    <div class="page-title-block">
+      <div class="page-title">Financial Instrument ETFs</div>
+      <div class="page-sub">ETFs that feature financial instruments, such as bonds, currencies and cryptos</div>
+    </div>
+
+    <!-- FIN.4 HISTOGRAM -->
+    <div class="histo-wrap">
+      <div class="histo-label">Financial Instrument ETFs — 90-Day Implied Risk Histogram</div>
+      <div class="histo-svg-box">
+        <svg id="mainHisto" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block"></svg>
+      </div>
+    </div>
+
+    <!-- FIN.5 + FIN.6 COMBO CHARTS -->
+    <div class="two-col" style="margin-bottom:12px">
+      <div class="chart-wrap">
+        <div class="chart-head">Short Term Interest Rate Index (IRX)</div>
+        <div class="chart-sub">90-Day Zone · 10-Day Zone · 30 Days</div>
+        <div class="chart-cv"><canvas id="chart-irx"></canvas></div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-head">Ten Year Interest Rate Index (TNX)</div>
+        <div class="chart-sub">90-Day Zone · 10-Day Zone · 30 Days</div>
+        <div class="chart-cv"><canvas id="chart-tnx"></canvas></div>
+      </div>
+    </div>
+
+    <!-- BOND ETFs HISTOGRAM -->
+    <div class="histo-wrap">
+      <div class="histo-label">Bond ETFs — 90-Day Implied Risk Histogram</div>
+      <div class="histo-svg-box">
+        <svg id="bondHisto" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block"></svg>
+      </div>
+    </div>
+
+    <!-- FIN.7 + FIN.8 -->
+    <div class="two-col">
+      <!-- FIN.7 Gov't Bond -->
+      <div>
+        <div class="sec-title">Gov't Bond ETFs</div>
+        <div class="toggle-wrap">
+          <div class="toggle-header">
+            <span class="toggle-title">Gov't Bond ETFs</span>
+            <div class="toggle-btns">
+              <button class="toggle-btn active" data-group="govb" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+              <button class="toggle-btn"        data-group="govb" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+            </div>
+          </div>
+          <div class="scroll-table">
+            <table class="ir-table">
+              <thead><tr>
+                <th style="text-align:left">Ticker</th>
+                <th style="text-align:left">Name</th>
+                <th class="sortable sort-active" id="govb-th-ir"  onclick="handleSortClick('govb','ir')"  style="text-align:center">IR <span class="sort-arrow active" id="govb-arr-ir">↓</span></th>
+                <th style="text-align:center">Zn</th>
+                <th class="sortable" id="govb-th-3mo" onclick="handleSortClick('govb','3mo')" style="text-align:center;padding-left:14px">3Mo Ago <span class="sort-arrow" id="govb-arr-3mo">↕</span></th>
+              </tr></thead>
+              <tbody id="govb-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!-- FIN.8 Corp/Muni -->
+      <div>
+        <div class="sec-title">Corp / Muni Bond ETFs</div>
+        <div class="toggle-wrap">
+          <div class="toggle-header">
+            <span class="toggle-title">Corp / Muni Bond ETFs</span>
+            <div class="toggle-btns">
+              <button class="toggle-btn active" data-group="corp" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+              <button class="toggle-btn"        data-group="corp" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+            </div>
+          </div>
+          <div class="scroll-table">
+            <table class="ir-table">
+              <thead><tr>
+                <th style="text-align:left">Ticker</th>
+                <th style="text-align:left">Name</th>
+                <th class="sortable sort-active" id="corp-th-ir"  onclick="handleSortClick('corp','ir')"  style="text-align:center">IR <span class="sort-arrow active" id="corp-arr-ir">↓</span></th>
+                <th style="text-align:center">Zn</th>
+                <th class="sortable" id="corp-th-3mo" onclick="handleSortClick('corp','3mo')" style="text-align:center;padding-left:14px">3Mo Ago <span class="sort-arrow" id="corp-arr-3mo">↕</span></th>
+              </tr></thead>
+              <tbody id="corp-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div><!-- /two-col govb+corp -->
+
+    <!-- CURRENCY & CRYPTO ETFs HISTOGRAM -->
+    <div class="histo-wrap">
+      <div class="histo-label">Crypto and Currency ETFs — 90-Day Implied Risk Histogram</div>
+      <div class="histo-svg-box">
+        <svg id="crypHisto" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block"></svg>
+      </div>
+    </div>
+
+    <!-- FIN.9 + FIN.10 -->
+    <div class="two-col">
+      <!-- FIN.10 Crypto (now LEFT) -->
+      <div>
+        <div class="sec-title">Crypto ETFs</div>
+        <div class="toggle-wrap">
+          <div class="toggle-header">
+            <span class="toggle-title">Crypto ETFs</span>
+            <div class="toggle-btns">
+              <button class="toggle-btn active" data-group="cryp" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+              <button class="toggle-btn"        data-group="cryp" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+            </div>
+          </div>
+          <div class="scroll-table">
+            <table class="ir-table">
+              <thead><tr>
+                <th style="text-align:left">Ticker</th>
+                <th style="text-align:left">Name</th>
+                <th class="sortable sort-active" id="cryp-th-ir"  onclick="handleSortClick('cryp','ir')"  style="text-align:center">IR <span class="sort-arrow active" id="cryp-arr-ir">↓</span></th>
+                <th style="text-align:center">Zn</th>
+                <th class="sortable" id="cryp-th-3mo" onclick="handleSortClick('cryp','3mo')" style="text-align:center;padding-left:14px">3Mo Ago <span class="sort-arrow" id="cryp-arr-3mo">↕</span></th>
+              </tr></thead>
+              <tbody id="cryp-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!-- FIN.9 Currency (now RIGHT) -->
+      <div>
+        <div class="sec-title">Currency ETFs</div>
+        <div class="toggle-wrap">
+          <div class="toggle-header">
+            <span class="toggle-title">Currency ETFs</span>
+            <div class="toggle-btns">
+              <button class="toggle-btn active" data-group="curr" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+              <button class="toggle-btn"        data-group="curr" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+            </div>
+          </div>
+          <div class="scroll-table">
+            <table class="ir-table">
+              <thead><tr>
+                <th style="text-align:left">Ticker</th>
+                <th style="text-align:left">Name</th>
+                <th class="sortable sort-active" id="curr-th-ir"  onclick="handleSortClick('curr','ir')"  style="text-align:center">IR <span class="sort-arrow active" id="curr-arr-ir">↓</span></th>
+                <th style="text-align:center">Zn</th>
+                <th class="sortable" id="curr-th-3mo" onclick="handleSortClick('curr','3mo')" style="text-align:center;padding-left:14px">3Mo Ago <span class="sort-arrow" id="curr-arr-3mo">↕</span></th>
+              </tr></thead>
+              <tbody id="curr-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div><!-- /two-col curr+cryp -->
+
+  </div><!-- /right-content -->
+</div><!-- /shell -->
+
+<div id="histo-tip"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   ZONE UTILITIES
+═══════════════════════════════════════════════════════════ */
+const ZCL=['#00cc55','#88cc44','#7a9aaa','#aa9a7a','#ddcc00','#e83535'];
+function irToZone(ir){return ir>=67?1:ir>=34?2:ir>=1?3:ir>=-33?4:ir>=-66?5:6}
+function zoneBadge(z){return `<span class="zone-badge" style="background:${ZCL[z-1]}">${z}</span>`}
+function irFmt(v){return(v>0?'+':'')+v}
+function irCls(v){return v>0?'pos':v<0?'neg':'zer'}
+
+/* ═══════════════════════════════════════════════════════════
+   MASTER DATA — 98 TICKERS
+═══════════════════════════════════════════════════════════ */
+const FIN_DATA=[
+  // TREASURY BONDS
+  {sym:'SGOV',name:'0-3 Month Treasury Bond ETF',                      ir90:  6,ir10:  4,mo90:  9,mo10:  6},
+  {sym:'SHV', name:'Short Treasury Bond ETF',                          ir90:  9,ir10:  6,mo90: 12,mo10:  9},
+  {sym:'SHY', name:'1-3 Year Treasury Bond ETF',                       ir90: 14,ir10:  9,mo90: 19,mo10: 13},
+  {sym:'IEI', name:'3-7 Year Treasury Bond ETF',                       ir90: 22,ir10: 14,mo90: 29,mo10: 19},
+  {sym:'IEF', name:'7-10 Year Treasury Bond ETF',                      ir90: 31,ir10: 20,mo90: 40,mo10: 27},
+  {sym:'TLH', name:'10-20 Year Treasury Bond ETF',                     ir90: 44,ir10: 29,mo90: 55,mo10: 38},
+  {sym:'TLT', name:'20+ Year Treasury Bond ETF',                       ir90: 58,ir10: 39,mo90: 67,mo10: 50},
+  {sym:'GOVT',name:'U.S. Treasury Bond ETF',                           ir90: 18,ir10: 11,mo90: 24,mo10: 16},
+  {sym:'TIPS',name:'TIPS Bond ETF',                                    ir90: 13,ir10:  8,mo90: 17,mo10: 11},
+  // TIPS MUTUAL FUND SHARE CLASSES
+  {sym:'BIIPX',name:'Short-Term TIPS Bond Index Fund — Institutional', ir90:  8,ir10:  5,mo90: 11,mo10:  7},
+  {sym:'BAIPX',name:'Short-Term TIPS Bond Index Fund — Investor A',    ir90:  7,ir10:  4,mo90: 10,mo10:  6},
+  {sym:'BKIPX',name:'Short-Term TIPS Bond Index Fund — Investor K',    ir90:  8,ir10:  5,mo90: 11,mo10:  7},
+  // CORE / BROAD BONDS
+  {sym:'ISTB',name:'Core 1-5 Year USD Bond ETF',                       ir90: 16,ir10: 10,mo90: 22,mo10: 14},
+  {sym:'IMTB',name:'Core 5-10 Year USD Bond ETF',                      ir90: 28,ir10: 18,mo90: 37,mo10: 25},
+  {sym:'ILTB',name:'Core 10+ Year USD Bond ETF',                       ir90: 46,ir10: 30,mo90: 57,mo10: 40},
+  // MBS
+  {sym:'MBB', name:'MBS ETF',                                          ir90: 19,ir10: 12,mo90: 26,mo10: 17},
+  {sym:'SPMB',name:'Portfolio Mortgage Backed Bond ETF',               ir90: 21,ir10: 13,mo90: 28,mo10: 18},
+  // MONEY MARKET
+  {sym:'MMK', name:'Prime Money Market ETF',                           ir90:  4,ir10:  2,mo90:  5,mo10:  3},
+  // CORPORATE BONDS
+  {sym:'SPSB',name:'Portfolio Short Term Corporate Bond ETF',          ir90: 11,ir10:  7,mo90: 15,mo10: 10},
+  {sym:'SPIB',name:'Portfolio Intermediate Term Corporate Bond ETF',   ir90: 22,ir10: 14,mo90: 30,mo10: 19},
+  {sym:'SPBO',name:'Portfolio Corporate Bond ETF',                     ir90: 18,ir10: 11,mo90: 24,mo10: 16},
+  {sym:'SPLB',name:'Portfolio Long Term Corporate Bond ETF',           ir90: 42,ir10: 27,mo90: 53,mo10: 36},
+  {sym:'IGIB',name:'Intermediate-Term Corporate Bond ETF',             ir90: 16,ir10: 10,mo90: 22,mo10: 14},
+  {sym:'IGLB',name:'Long-Term Corporate Bond ETF',                     ir90: 44,ir10: 28,mo90: 55,mo10: 37},
+  {sym:'LQD', name:'iBoxx $ Investment Grade Corporate Bond ETF',      ir90: 14,ir10:  9,mo90: 20,mo10: 13},
+  {sym:'HYG', name:'iBoxx $ High Yield Corporate Bond ETF',            ir90:-18,ir10:-23,mo90:-11,mo10:-15},
+  {sym:'SHYG',name:'0-5 Year High Yield Corporate Bond ETF',           ir90:-22,ir10:-28,mo90:-14,mo10:-18},
+  {sym:'USHY',name:'Broad USD High Yield Corporate Bond ETF',          ir90:-16,ir10:-21,mo90: -9,mo10:-13},
+  // MUNI INDEX MUTUAL FUND CLASSES
+  {sym:'BIDPX',name:'Municipal Bond Index Fund — Investor P',          ir90: 24,ir10: 15,mo90: 32,mo10: 21},
+  {sym:'BIDAX',name:'Municipal Bond Index Fund — Investor A',          ir90: 23,ir10: 15,mo90: 31,mo10: 20},
+  {sym:'BIDIX',name:'Municipal Bond Index Fund — Institutional',       ir90: 25,ir10: 16,mo90: 33,mo10: 22},
+  {sym:'BMOPX',name:'U.S. Aggregate Bond Index Fund — Investor P',     ir90: 17,ir10: 11,mo90: 23,mo10: 16},
+  // STATE MUNI MUTUAL FUND CLASSES
+  {sym:'MKPYX',name:'PA Municipal Bond Fund — Class K',                ir90: 28,ir10: 18,mo90: 37,mo10: 24},
+  {sym:'MKNJX',name:'NJ Municipal Bond Fund — Class K',                ir90: 32,ir10: 20,mo90: 42,mo10: 27},
+  {sym:'MKPJX',name:'NJ Municipal Bond Fund — Class J',                ir90: 31,ir10: 20,mo90: 41,mo10: 27},
+  // NATIONAL MUNI BOND ETFS
+  {sym:'SUB', name:'Short-Term National Muni Bond ETF',                ir90:  8,ir10:  5,mo90: 11,mo10:  7},
+  {sym:'SMB', name:'Short Muni ETF',                                   ir90: 10,ir10:  6,mo90: 14,mo10:  9},
+  {sym:'ITM', name:'AMT-Free Intermediate Muni ETF',                   ir90: 26,ir10: 16,mo90: 35,mo10: 22},
+  {sym:'MLN', name:'AMT-Free Long Muni ETF',                           ir90: 38,ir10: 24,mo90: 48,mo10: 32},
+  {sym:'HYD', name:'High Yield Muni ETF',                              ir90:-14,ir10:-18,mo90: -8,mo10:-11},
+  {sym:'SHYD',name:'Short High Yield Muni ETF',                        ir90:-11,ir10:-15,mo90: -6,mo10: -9},
+  // STATE MUNI BOND ETFS
+  {sym:'CMF', name:'California Muni Bond ETF',                         ir90: 20,ir10: 13,mo90: 27,mo10: 18},
+  {sym:'CALI',name:'Short-Term California Muni Active ETF',            ir90:  9,ir10:  5,mo90: 12,mo10:  8},
+  {sym:'NYF', name:'New York Muni Bond ETF',                           ir90: 22,ir10: 14,mo90: 29,mo10: 19},
+  {sym:'FTMA',name:'Massachusetts Municipal Income ETF',               ir90: 18,ir10: 11,mo90: 24,mo10: 16},
+  {sym:'FTMN',name:'Minnesota Municipal Income ETF',                   ir90: 16,ir10: 10,mo90: 22,mo10: 15},
+  {sym:'FTOH',name:'Ohio Municipal Income ETF',                        ir90: 15,ir10:  9,mo90: 21,mo10: 14},
+  // CURRENCY
+  {sym:'FXA', name:'CurrencyShares Australian Dollar Trust',           ir90:-28,ir10:-36,mo90:-18,mo10:-24},
+  {sym:'FXB', name:'CurrencyShares British Pound Sterling Trust',      ir90:-15,ir10:-20,mo90: -8,mo10:-13},
+  {sym:'FXC', name:'CurrencyShares Canadian Dollar Trust',             ir90:-22,ir10:-29,mo90:-14,mo10:-19},
+  {sym:'FXE', name:'CurrencyShares Euro Currency Trust',               ir90:-19,ir10:-25,mo90:-11,mo10:-16},
+  {sym:'FXF', name:'CurrencyShares Swiss Franc Trust',                 ir90:-12,ir10:-16,mo90: -6,mo10:-10},
+  {sym:'FXY', name:'CurrencyShares Japanese Yen Trust',                ir90: 42,ir10: 54,mo90: 28,mo10: 38},
+  {sym:'UUP', name:'DB US Dollar Index Bullish Fund',                  ir90:-38,ir10:-48,mo90:-24,mo10:-32},
+  {sym:'UDN', name:'DB US Dollar Index Bearish Fund',                  ir90: 36,ir10: 46,mo90: 23,mo10: 31},
+  {sym:'USDU',name:'Bloomberg U.S. Dollar Bullish Fund',               ir90:-32,ir10:-42,mo90:-20,mo10:-27},
+  // PRECIOUS METALS
+  {sym:'IAU', name:'Gold Trust',                                       ir90:-58,ir10:-71,mo90:-36,mo10:-50},
+  {sym:'SLV', name:'Silver Trust',                                     ir90:-44,ir10:-56,mo90:-28,mo10:-38},
+  // BASE METALS
+  {sym:'DBB', name:'DB Base Metals Fund',                              ir90:-35,ir10:-45,mo90:-22,mo10:-30},
+  // BITCOIN SPOT
+  {sym:'IBIT',name:'Bitcoin Trust ETF',                                ir90:-42,ir10:-54,mo90:-26,mo10:-36},
+  {sym:'GBTC',name:'Bitcoin Trust ETF',                                ir90:-46,ir10:-58,mo90:-29,mo10:-40},
+  {sym:'BTC', name:'Bitcoin Mini Trust ETF',                           ir90:-44,ir10:-56,mo90:-28,mo10:-38},
+  {sym:'FBTC',name:'Wise Origin Bitcoin Fund',                         ir90:-43,ir10:-55,mo90:-27,mo10:-37},
+  {sym:'BITB',name:'Bitcoin ETF',                                      ir90:-44,ir10:-56,mo90:-28,mo10:-38},
+  {sym:'ARKB',name:'21Shares Bitcoin ETF',                             ir90:-47,ir10:-59,mo90:-30,mo10:-41},
+  {sym:'BRRR',name:'Bitcoin Fund',                                     ir90:-45,ir10:-57,mo90:-28,mo10:-39},
+  {sym:'EZBC',name:'Bitcoin ETF',                                      ir90:-43,ir10:-55,mo90:-27,mo10:-37},
+  {sym:'BTCW',name:'Bitcoin Fund',                                     ir90:-44,ir10:-56,mo90:-28,mo10:-38},
+  {sym:'HODL',name:'Bitcoin Trust',                                    ir90:-46,ir10:-58,mo90:-29,mo10:-40},
+  // BITCOIN FUTURES/STRATEGY
+  {sym:'BITO',name:'Bitcoin Strategy ETF',                             ir90:-52,ir10:-64,mo90:-33,mo10:-45},
+  {sym:'BTCO',name:'Galaxy Bitcoin ETF',                               ir90:-44,ir10:-55,mo90:-28,mo10:-38},
+  {sym:'BTRN',name:'Bitcoin Trend Strategy ETF',                       ir90:-36,ir10:-46,mo90:-22,mo10:-31},
+  // ETHEREUM SPOT
+  {sym:'ETHA',name:'Ethereum Trust ETF',                               ir90:-61,ir10:-74,mo90:-40,mo10:-54},
+  {sym:'ETHV',name:'Ethereum Trust',                                   ir90:-62,ir10:-75,mo90:-41,mo10:-55},
+  // ETHEREUM STRATEGY
+  {sym:'QETH',name:'Galaxy Ethereum ETF',                              ir90:-58,ir10:-71,mo90:-38,mo10:-52},
+  {sym:'EETH',name:'Ether Strategy ETF',                               ir90:-63,ir10:-76,mo90:-42,mo10:-57},
+  // SOLANA / AVALANCHE
+  {sym:'VSOL',name:'Solana ETF',                                       ir90:-68,ir10:-80,mo90:-46,mo10:-62},
+  {sym:'QSOL',name:'Galaxy Solana ETF',                                ir90:-71,ir10:-83,mo90:-48,mo10:-65},
+  {sym:'VAVX',name:'Avalanche ETF',                                    ir90:-74,ir10:-85,mo90:-50,mo10:-67},
+  // MULTI-ASSET CRYPTO
+  {sym:'KRYP',name:'CoinDesk 20 Crypto ETF',                          ir90:-55,ir10:-67,mo90:-36,mo10:-49},
+  {sym:'BETE',name:'Bitcoin & Ether Equal Weight Strategy ETF',        ir90:-51,ir10:-63,mo90:-32,mo10:-44},
+  {sym:'BETH',name:'Bitcoin & Ether Market Cap Weight ETF',            ir90:-52,ir10:-64,mo90:-33,mo10:-45},
+  {sym:'BITS',name:'Blockchain & Bitcoin Strategy ETF',                ir90:-38,ir10:-49,mo90:-24,mo10:-33},
+  // GRAYSCALE SEC REPORTING (6-MONTH)
+  {sym:'BCHG',name:'Bitcoin Cash Trust',                               ir90:-72,ir10:-83,mo90:-50,mo10:-64},
+  {sym:'ETCG',name:'Ethereum Classic Trust',                           ir90:-69,ir10:-80,mo90:-47,mo10:-61},
+  {sym:'HZEN',name:'Horizen Trust',                                    ir90: 76,ir10: 84,mo90: 55,mo10: 67},
+  {sym:'LTCN',name:'Litecoin Trust',                                   ir90: 72,ir10: 80,mo90: 52,mo10: 64},
+  {sym:'GXLM',name:'Stellar Lumens Trust',                             ir90: 78,ir10: 86,mo90: 57,mo10: 70},
+  {sym:'ZCSH',name:'Zcash Trust',                                      ir90: 74,ir10: 82,mo90: 53,mo10: 65},
+  // GRAYSCALE 12-MONTH HOLD
+  {sym:'GBAT',name:'Basic Attention Token Trust',                      ir90: 88,ir10: 92,mo90: 64,mo10: 76},
+  {sym:'GTAO',name:'Bittensor Trust',                                  ir90: 91,ir10: 95,mo90: 67,mo10: 80},
+  {sym:'MANA',name:'Decentraland Trust',                               ir90: 85,ir10: 90,mo90: 62,mo10: 74},
+  {sym:'DEFG',name:'Decentralized Finance Fund',                       ir90: 82,ir10: 88,mo90: 60,mo10: 72},
+  {sym:'FILG',name:'Filecoin Trust',                                   ir90: 90,ir10: 94,mo90: 66,mo10: 79},
+  {sym:'GLIV',name:'Livepeer Trust',                                   ir90: 86,ir10: 91,mo90: 63,mo10: 75},
+  {sym:'GSNR',name:'Near Trust',                                       ir90: 84,ir10: 89,mo90: 62,mo10: 74},
+  {sym:'STCK',name:'Stacks Trust',                                     ir90: 89,ir10: 93,mo90: 65,mo10: 78},
+];
+
+// Fast lookup
+const DM={};
+FIN_DATA.forEach(d=>DM[d.sym]=d);
+
+/* ═══════════════════════════════════════════════════════════
+   TOGGLE GROUP MEMBERSHIP
+═══════════════════════════════════════════════════════════ */
+const GROUPS={
+  govb:['SGOV','TLT','TLH','ILTB','IEF','IEI','IMTB','ISTB','SHY','SHV','GOVT','TIPS','BIIPX','BAIPX','BKIPX','SPMB'],
+  corp:['USHY','IGIB','MBB','SUB','LQD','HYG','SHYG','IGLB','BIDPX','BIDAX','BIDIX','BMOPX','MKPYX','MKNJX','MKPJX','CMF','SHYD','SMB','MLN','ITM','HYD','SPSB','SPMB','SPLB','SPIB','SPBO','MMK','FTMA','FTMN','FTOH'],
+  curr:['FXA','FXB','FXC','FXE','FXF','FXY','UDN','UUP','USDU'],
+  cryp:['BTCO','QETH','QSOL','IBIT','ETHA','GBTC','BTC','GBAT','BCHG','GTAO','MANA','DEFG','ETCG','FILG','HZEN','LTCN','GLIV','GSNR','STCK','GXLM','ZCSH','FBTC','BITB','ARKB','BRRR','EZBC','BTCW','HODL','VSOL','VAVX','ETHV','BITO','EETH','BETH','BETE','KRYP','BITS','BTRN']
+};
+
+/* ═══════════════════════════════════════════════════════════
+   LEFT HAND TOGGLE
+═══════════════════════════════════════════════════════════ */
+let lhPeriod='90', lhDir=1;
+
+function renderLH(){
+  const iF=lhPeriod==='90'?'ir90':'ir10';
+  const rows=[...FIN_DATA].sort((a,b)=>(b[iF]-a[iF])*lhDir);
+  document.getElementById('lh-tbody').innerHTML=rows.map(r=>{
+    const ir=r[iF], z=irToZone(ir);
+    const nm=r.name.length>22?r.name.slice(0,22)+'…':r.name;
+    return `<tr>
+      <td style="color:#ddeeff;font-weight:700">${r.sym}</td>
+      <td style="color:#5a7a9a;font-size:10px">${nm}</td>
+      <td class="col-ir"><span class="${irCls(ir)}">${irFmt(ir)}</span></td>
+      <td style="text-align:center">${zoneBadge(z)}</td>
+    </tr>`;
+  }).join('');
+  // Update sort arrow
+  const arr=document.getElementById('lh-arr-ir');
+  if(arr) arr.textContent=lhDir===1?'↓':'↑';
+}
+
+function handleLHPeriod(btn){
+  btn.closest('.sb-btns').querySelectorAll('.per-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  lhPeriod=btn.dataset.period;
+  renderLH();
+}
+function handleLHSort(){
+  lhDir*=-1;
+  renderLH();
+}
+
+/* ═══════════════════════════════════════════════════════════
+   REGULAR TOGGLES
+═══════════════════════════════════════════════════════════ */
+const sortState={}, periodState={};
+
+function handlePeriodToggle(btn){
+  btn.closest('.toggle-btns').querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  periodState[btn.dataset.group]=btn.dataset.period;
+  renderToggleTable(btn.dataset.group);
+}
+
+function handleSortClick(gid,field){
+  if(!sortState[gid]) sortState[gid]={field:'ir',dir:1};
+  const s=sortState[gid];
+  sortState[gid]=(s.field===field)?{field,dir:s.dir*-1}:{field,dir:1};
+  renderToggleTable(gid);
+}
+
+function updateSortArrows(gid){
+  const {field,dir}=sortState[gid];
+  ['ir','3mo'].forEach(f=>{
+    const th=document.getElementById(`${gid}-th-${f}`);
+    const arr=document.getElementById(`${gid}-arr-${f}`);
+    if(!th||!arr) return;
+    const on=f===field;
+    if(on){th.classList.add('sort-active');arr.classList.add('active');arr.textContent=dir===1?'↓':'↑';}
+    else{th.classList.remove('sort-active');arr.classList.remove('active');arr.textContent='↕';}
+  });
+}
+
+function renderToggleTable(gid){
+  if(!sortState[gid])  sortState[gid]={field:'ir',dir:1};
+  if(!periodState[gid]) periodState[gid]='90';
+  const p=periodState[gid];
+  const iF=p==='90'?'ir90':'ir10';
+  const mF=p==='90'?'mo90':'mo10';
+  const {field,dir}=sortState[gid];
+  const sF=field==='ir'?iF:mF;
+  const syms=GROUPS[gid];
+  const rows=[...syms].map(s=>DM[s]).filter(Boolean).sort((a,b)=>(b[sF]-a[sF])*dir);
+  document.getElementById(gid+'-tbody').innerHTML=rows.map(r=>{
+    const ir=r[iF], mo=r[mF], z=irToZone(ir);
+    const nm=r.name.length>22?r.name.slice(0,22)+'…':r.name;
+    const irs=v=>(v>0?'+':'')+v;
+    return `<tr>
+      <td class="col-symbol">${r.sym}</td>
+      <td style="color:#5a7a9a;font-size:10px">${nm}</td>
+      <td class="col-ir"><span class="${irCls(ir)}">${irs(ir)}</span></td>
+      <td class="col-zone">${zoneBadge(z)}</td>
+      <td class="col-3mo" style="padding-left:14px"><span class="${irCls(mo)}">${irs(mo)}</span></td>
+    </tr>`;
+  }).join('');
+  updateSortArrows(gid);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HISTOGRAM — getSlotInfo
+═══════════════════════════════════════════════════════════ */
+function getSlotInfo(ir){
+  if(ir>=91) return{z:0,s:0}; if(ir>=83) return{z:0,s:1};
+  if(ir>=75) return{z:0,s:2}; if(ir>=67) return{z:0,s:3};
+  if(ir>=59) return{z:1,s:0}; if(ir>=52) return{z:1,s:1};
+  if(ir>=43) return{z:1,s:2}; if(ir>=34) return{z:1,s:3};
+  if(ir>=26) return{z:2,s:0}; if(ir>=18) return{z:2,s:1};
+  if(ir>= 9) return{z:2,s:2}; if(ir>= 1) return{z:2,s:3};
+  if(ir>=-8) return{z:3,s:0}; if(ir>=-17) return{z:3,s:1};
+  if(ir>=-25) return{z:3,s:2}; if(ir>=-33) return{z:3,s:3};
+  if(ir>=-42) return{z:4,s:0}; if(ir>=-51) return{z:4,s:1};
+  if(ir>=-58) return{z:4,s:2}; if(ir>=-66) return{z:4,s:3};
+  if(ir>=-74) return{z:5,s:0}; if(ir>=-82) return{z:5,s:1};
+  if(ir>=-90) return{z:5,s:2}; return{z:5,s:3};
+}
+
+function buildHistogram(svgId, data){
+  const el=document.getElementById(svgId);
+  if(!el) return;
+
+  // Geometry
+  const W=920, OW=28, BX=28, BW=864, ZW=144, SLOT_PITCH=36;
+  const SH=13, SFS=9;
+  const BELL_A=168, BELL_FLOOR=16, BELL_SIG=ZW, BCX=460;
+
+  // Build 24 slots: slots[zone][slot_in_zone] = [symbols]
+  const slots=Array.from({length:6},()=>Array.from({length:4},()=>[]));
+  const oobL=[], oobR=[];
+
+  data.forEach(d=>{
+    const ir=d.ir90;
+    if(ir>=99){oobL.push(d.sym);return;}
+    if(ir<=-99){oobR.push(d.sym);return;}
+    const {z,s}=getSlotInfo(ir);
+    slots[z][s].push(d.sym);
+  });
+  // Sort alpha within each slot
+  slots.forEach(z=>z.forEach(sl=>sl.sort()));
+
+  // Dynamic height
+  let BY=205;
+  const maxStk=Math.max(1,...slots.flatMap(z=>z.map(sl=>sl.length)));
+  if(maxStk*SH+20>BY) BY=maxStk*SH+20;
+  const H=BY+63;
+  el.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  // NEVER set height attribute
+
+  const LY_RANGE=BY+18, LY_ZONE=BY+31;
+
+  // --- Helper: hexToRgba
+  function hr(hex,a){const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);return`rgba(${r},${g},${b},${a})`;}
+
+  let s='';
+
+  // DEFS
+  s+=`<defs>
+    <filter id="glow"><feGaussianBlur stdDeviation="2.8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="softglow"><feGaussianBlur stdDeviation="1.5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>`;
+
+  // BG
+  s+=`<rect width="${W}" height="${H}" fill="#0d1829"/>`;
+
+  // OOB backgrounds
+  s+=`<rect x="0" y="0" width="${OW}" height="${BY}" fill="${hr(ZCL[0],0.12)}"/>`;
+  s+=`<rect x="${W-OW}" y="0" width="${OW}" height="${BY}" fill="${hr(ZCL[5],0.12)}"/>`;
+
+  // Zone backgrounds
+  for(let zi=0;zi<6;zi++){
+    const zx=BX+zi*ZW;
+    s+=`<rect x="${zx}" y="0" width="${ZW}" height="${BY}" fill="${hr(ZCL[zi],0.07)}"/>`;
+  }
+
+  // OOB boundary lines
+  s+=`<line x1="${OW}" y1="0" x2="${OW}" y2="${BY}" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>`;
+  s+=`<line x1="${W-OW}" y1="0" x2="${W-OW}" y2="${BY}" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>`;
+
+  // Zone dividers (inner)
+  for(let zi=1;zi<6;zi++){
+    const zx=BX+zi*ZW;
+    s+=`<line x1="${zx}" y1="0" x2="${zx}" y2="${BY}" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>`;
+  }
+
+  // Slot dividers (23 dashed)
+  for(let i=1;i<24;i++){
+    const sx=BX+i*SLOT_PITCH;
+    s+=`<line x1="${sx}" y1="8" x2="${sx}" y2="${BY}" stroke="rgba(255,255,255,0.055)" stroke-width="0.5" stroke-dasharray="3,6"/>`;
+  }
+
+  // Baseline
+  s+=`<line x1="0" y1="${BY}" x2="${W}" y2="${BY}" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>`;
+
+  // Bell curve — build path
+  function bellY(px){const dx=px-BCX;return BY-(BELL_A*Math.exp(-dx*dx/(2*BELL_SIG*BELL_SIG))+BELL_FLOOR);}
+  function bellPath(){
+    let p=`M ${BX} ${bellY(BX)}`;
+    for(let px=BX+2;px<=BX+BW;px+=2) p+=` L ${px} ${bellY(px)}`;
+    return p;
+  }
+  const bp=bellPath();
+  // Halo
+  s+=`<path d="${bp}" fill="none" stroke="rgba(120,185,255,0.14)" stroke-width="8"/>`;
+  // Main
+  s+=`<path d="${bp}" fill="none" stroke="rgba(155,210,255,0.72)" stroke-width="1.6" stroke-dasharray="8,4" filter="url(#glow)"/>`;
+  // Highlight
+  s+=`<path d="${bp}" fill="none" stroke="rgba(205,235,255,0.38)" stroke-width="0.8" stroke-dasharray="8,4"/>`;
+
+  // Symbols
+  slots.forEach((zone,zi)=>{
+    zone.forEach((sl,si)=>{
+      if(!sl.length) return;
+      const gi=zi*4+si;
+      const scx=BX+(gi+0.5)*SLOT_PITCH;
+      sl.forEach((sym,idx)=>{
+        const sy=BY-((idx+1)*SH)+(SH*0.75);
+        const abbr=sym.slice(0,3);
+        const d=DM[sym];
+        const tip=d?`${sym} — ${d.name} | 90-IR: ${irFmt(d.ir90)} | Zone ${irToZone(d.ir90)}`:'';
+        s+=`<text x="${scx}" y="${sy}" text-anchor="middle" font-family="'Courier New',monospace" font-size="${SFS}" font-weight="700" fill="${ZCL[zi]}" filter="url(#softglow)" cursor="pointer" data-tip="${tip}">${abbr}</text>`;
+      });
+    });
+  });
+
+  // Zone range labels + zone labels
+  const RANGES=['+99 to +67','+66 to +34','+33 to +1','−1 to −33','−34 to −66','−67 to −99'];
+  const ZLABELS=['Zone 1','Zone 2','Zone 3','Zone 4','Zone 5','Zone 6'];
+  for(let zi=0;zi<6;zi++){
+    const cx=BX+zi*ZW+ZW/2;
+    s+=`<text x="${cx}" y="${LY_RANGE}" text-anchor="middle" font-family="'Courier New',monospace" font-size="8.5" fill="rgba(255,255,255,0.48)">${RANGES[zi]}</text>`;
+    s+=`<text x="${cx}" y="${LY_ZONE}" text-anchor="middle" font-family="'Trebuchet MS',sans-serif" font-size="10.5" font-weight="700" fill="${ZCL[zi]}">${ZLABELS[zi]}</text>`;
+  }
+
+  // OOB labels
+  s+=`<text x="${OW/2}" y="14" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[0]}" opacity="0.8">OOB</text>`;
+  s+=`<text x="${OW/2}" y="25" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[0]}" opacity="0.8">Weak</text>`;
+  s+=`<text x="${OW/2}" y="36" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[0]}" opacity="0.7">[${oobL.length}]</text>`;
+  s+=`<text x="${W-OW/2}" y="14" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[5]}" opacity="0.8">OOB</text>`;
+  s+=`<text x="${W-OW/2}" y="25" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[5]}" opacity="0.8">Str</text>`;
+  s+=`<text x="${W-OW/2}" y="36" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[5]}" opacity="0.7">[${oobR.length}]</text>`;
+  s+=`<text x="4" y="${H-5}" font-family="'Trebuchet MS',sans-serif" font-size="7.5" fill="rgba(0,212,160,0.40)">← Weak / Oversold</text>`;
+  s+=`<text x="${W-4}" y="${H-5}" text-anchor="end" font-family="'Trebuchet MS',sans-serif" font-size="7.5" fill="rgba(232,53,53,0.40)">Overbought / Strong →</text>`;
+
+  el.innerHTML=s;
+
+  // Tooltip
+  const tip=document.getElementById('histo-tip');
+  el.querySelectorAll('text[data-tip]').forEach(t=>{
+    t.addEventListener('mousemove',e=>{
+      tip.style.display='block';
+      tip.style.left=(e.clientX+14)+'px';
+      tip.style.top=(e.clientY-10)+'px';
+      tip.textContent=t.dataset.tip;
+    });
+    t.addEventListener('mouseleave',()=>{tip.style.display='none';});
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ZONE COMBO CHARTS — IRX & TNX
+═══════════════════════════════════════════════════════════ */
+function genDates30(){
+  const d=[];let cur=new Date(),n=0;
+  while(n<30){if(cur.getDay()!==0&&cur.getDay()!==6){d.unshift(cur.toLocaleDateString('en-US',{month:'numeric',day:'numeric'}));n++;}cur.setDate(cur.getDate()-1);}
+  return d;
+}
+const DATES30=genDates30();
+
+// IRX — Short-term rates, stable Zone 3-4 range
+const IRX_Z90=[3,3,3,3,3,4,4,3,3,3,4,4,4,3,3,3,4,4,3,3,3,3,4,4,4,3,3,4,4,4];
+const IRX_Z10=[3,4,3,3,4,4,3,3,4,5,4,4,3,3,4,4,4,5,4,3,3,4,5,4,4,3,4,5,4,5];
+// TNX — 10-year rates, trending toward Zone 3 (rates rising, bonds oversold)
+const TNX_Z90=[4,4,3,3,3,3,3,3,3,3,3,3,3,3,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3];
+const TNX_Z10=[4,5,4,3,3,4,3,2,3,2,3,3,2,3,2,1,2,3,2,3,3,2,3,3,2,3,3,2,3,2];
+
+function buildZoneChart(canvasId,z90,z10,dates){
+  const ctx=document.getElementById(canvasId);
+  if(!ctx) return;
+  new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:dates,
+      datasets:[
+        {type:'bar',label:'90-Day Zone',data:z90,
+          backgroundColor:z90.map(z=>ZCL[z-1]+'99'),
+          borderColor:z90.map(z=>ZCL[z-1]),
+          borderWidth:1,order:2},
+        {type:'line',label:'10-Day Zone',data:z10,
+          borderColor:'#c9a227',pointBackgroundColor:'#c9a227',
+          pointRadius:2.5,pointHoverRadius:4,
+          borderWidth:1.8,fill:false,tension:0.3,order:1}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      layout:{padding:{left:2,right:4,top:4,bottom:2}},
+      plugins:{legend:{display:true,position:'top',labels:{color:'#5a7a9a',font:{family:"'Courier New',monospace",size:9},boxWidth:12,padding:8}}},
+      scales:{
+        y:{min:0.3,max:6.5,
+          title:{display:true,text:'Zone',color:'#5a7a9a',font:{family:"'Courier New',monospace",size:9},padding:{bottom:4}},
+          ticks:{stepSize:1,
+            callback:(v)=>(v>=1&&v<=6)?String(Math.round(v)):'',
+            color:(c)=>{const v=Math.round(c.tick.value);return(v>=1&&v<=6)?ZCL[v-1]:'#5a7a9a';},
+            font:{family:"'Courier New',monospace",size:9},padding:3},
+          grid:{color:(c)=>c.tick.value===3||c.tick.value===4?'rgba(255,255,255,0.12)':'rgba(255,255,255,0.05)',
+            lineWidth:(c)=>c.tick.value===3||c.tick.value===4?1.2:0.6},
+          border:{color:'#243c58'}},
+        x:{ticks:{maxRotation:45,autoSkip:true,maxTicksLimit:10,color:'#5a7a9a',font:{family:"'Courier New',monospace",size:8}},
+          grid:{color:'rgba(255,255,255,0.03)'},border:{color:'#243c58'}}
+      }
+    }
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded',()=>{
+  // LH Toggle
+  renderLH();
+
+  // Histograms — build data subsets (deduplicated)
+  function subset(syms){
+    const seen=new Set();
+    return syms.filter(s=>DM[s]&&!seen.has(s)&&seen.add(s)).map(s=>DM[s]);
+  }
+  const bondSyms=[...new Set([...GROUPS.govb,...GROUPS.corp])];
+  const crypSyms=[...new Set([...GROUPS.curr,...GROUPS.cryp])];
+
+  buildHistogram('mainHisto', FIN_DATA);
+  buildHistogram('bondHisto', subset(bondSyms));
+  buildHistogram('crypHisto', subset(crypSyms));
+
+  // Combo charts
+  Chart.defaults.color='#5a7a9a';
+  Chart.defaults.borderColor='rgba(255,255,255,0.06)';
+  buildZoneChart('chart-irx',IRX_Z90,IRX_Z10,DATES30);
+  buildZoneChart('chart-tnx',TNX_Z90,TNX_Z10,DATES30);
+
+  // Regular toggles
+  ['govb','corp','curr','cryp'].forEach(gid=>{
+    sortState[gid]={field:'ir',dir:1};
+    periodState[gid]='90';
+    renderToggleTable(gid);
+  });
+});
+</script>
+</body>
+</html>

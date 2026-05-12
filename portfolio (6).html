@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Portfolio — Top Down Trading</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:          #08111e;
+  --panel:       #0d1829;
+  --panel-alt:   #0a1420;
+  --border:      #1a2d44;
+  --border-lite: #243c58;
+  --text:        #ddeeff;
+  --dim:         #5a7a9a;
+  --accent:      #3090d8;
+  --gold:        #c9a227;
+  --z1: #00cc55; --z2: #88cc44; --z3: #7a9aaa;
+  --z4: #aa9a7a; --z5: #ddcc00; --z6: #e83535;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Rajdhani', sans-serif; overflow: hidden; }
+
+/* ══ HEADER ══ */
+.top-nav {
+  height: 52px; background: var(--panel-alt);
+  border-bottom: 2px solid var(--border-lite);
+  display: grid; grid-template-columns: repeat(5,1fr);
+  align-items: center; padding: 0 14px; gap: 10px;
+  position: sticky; top: 0; z-index: 200;
+}
+.nav-cell { display: flex; justify-content: center; align-items: center; }
+.nav-btn {
+  height: 34px; padding: 0 16px;
+  background: var(--panel); border: 1px solid var(--border-lite);
+  color: var(--dim); font-family: 'Rajdhani', sans-serif;
+  font-size: 12px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; cursor: pointer; transition: all .15s;
+  white-space: nowrap; display: inline-flex; align-items: center;
+}
+.nav-btn:hover { border-color: var(--accent); color: var(--text); }
+.nav-btn.inactive { opacity: 0.50; border-style: dashed; }
+.nav-btn.inactive:hover { opacity: 0.68; border-color: var(--border-lite); color: var(--dim); }
+.nav-btn.active-community { opacity: 1; border-style: solid; border-color: var(--z1); color: var(--z1); }
+.search-box {
+  height: 34px; width: 175px; padding: 0 10px;
+  background: var(--panel); border: 1px solid var(--border-lite);
+  color: var(--text); font-family: 'Rajdhani', sans-serif; font-size: 12px;
+  outline: none; transition: border-color .15s;
+}
+.search-box::placeholder { color: var(--dim); }
+.search-box:focus { border-color: var(--accent); }
+
+/* ══ SHELL ══ */
+.shell { height: calc(100vh - 52px); overflow-y: auto; overflow-x: hidden; }
+.shell::-webkit-scrollbar       { width: 6px; }
+.shell::-webkit-scrollbar-track { background: #08111e; }
+.shell::-webkit-scrollbar-thumb { background: #243c58; border-radius: 3px; }
+
+/* Portfolio Name */
+.pf-name-bar { text-align: center; padding: 11px 16px 8px; background: var(--panel-alt); border-bottom: 1px solid var(--border); }
+.pf-name-text { font-size: 20px; font-weight: 700; color: var(--gold); letter-spacing: .08em; text-transform: uppercase; }
+
+/* Section bars */
+.section-bar { padding: 8px 16px 7px; border-top: 1px solid var(--border-lite); border-bottom: 1px solid var(--border-lite); background: var(--panel-alt); margin-top: 12px; }
+.section-bar.first { margin-top: 0; }
+.section-heading-text { font-size: 14px; font-weight: 700; color: var(--text); letter-spacing: .06em; text-transform: uppercase; text-decoration: underline; text-decoration-color: var(--border-lite); text-underline-offset: 4px; }
+
+/* ══ MARKET SECTION ══ */
+.market-section { padding: 10px 16px 0; }
+.market-row { display: flex; border: 1px solid var(--border); overflow: hidden; min-height: 560px; }
+
+/* Personal Toggle */
+.personal-toggle { width: 224px; min-width: 224px; flex-shrink: 0; border-right: 1px solid var(--border-lite); background: var(--panel-alt); display: flex; flex-direction: column; overflow: hidden; }
+.pt-head { padding: 7px 8px 5px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.pt-title { text-align: center; font-weight: 700; font-size: 11px; color: var(--text); margin-bottom: 5px; letter-spacing: .02em; }
+.pt-btns { display: flex; justify-content: center; gap: 3px; }
+.pt-btn { padding: 2px 10px; background: #1a2d44; border: 1px solid #1a2d44; color: var(--dim); font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 600; cursor: pointer; transition: all .15s; }
+.pt-btn.active            { background: #2a7abf; border-color: #3090d8; color: #fff; }
+.pt-btn:hover:not(.active){ border-color: #3090d8; color: var(--text); }
+.pt-scroll { flex: 1; overflow-y: auto; }
+.pt-scroll::-webkit-scrollbar { width: 4px; }
+.pt-scroll::-webkit-scrollbar-track { background: #08111e; }
+.pt-scroll::-webkit-scrollbar-thumb { background: #243c58; border-radius: 2px; }
+.pt-table { width: 100%; border-collapse: collapse; font-family: 'Courier New', monospace; font-size: 11px; }
+.pt-table th { background: var(--panel-alt); color: var(--dim); padding: 3px 5px; border-bottom: 1px solid var(--border); position: sticky; top: 0; font-size: 9px; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
+.pt-table th.sortable { cursor: pointer; user-select: none; }
+.pt-table th.sortable:hover { color: var(--text); }
+.pt-table th.sort-active { color: var(--accent); }
+.sort-arrow { font-size: 9px; margin-left: 2px; opacity: .5; }
+.sort-arrow.active { opacity: 1; color: var(--accent); }
+.pt-table td { padding: 3px 5px; border-bottom: 1px solid #0e1a28; white-space: nowrap; }
+.pt-table tr:hover td { background: #111e30; }
+.col-sym { color: var(--text); font-weight: bold; cursor: pointer; }
+.col-sym:hover { color: var(--accent); text-decoration: underline; }
+.col-ir { text-align: center; }
+.col-zn { text-align: center; }
+.zone-badge { display: inline-block; padding: 1px 4px; font-size: 9px; font-weight: bold; border-radius: 2px; color: #000; }
+.pos { color: #88cc44; } .neg { color: #e83535; } .zer { color: #b8cce0; }
+.row-assess td { background: rgba(201,162,39,0.05) !important; border-bottom: 1px solid rgba(201,162,39,0.15) !important; }
+.row-index  td { opacity: 0.85; }
+.row-issue .col-sym { color: #ffffff; }
+
+/* Right column */
+.right-col { flex: 1; display: flex; flex-direction: column; min-width: 0; overflow: hidden; background: var(--panel); }
+.histo-title-row { text-align: center; font-weight: 700; font-size: 11px; color: var(--text); padding: 5px 8px 4px; letter-spacing: .02em; flex-shrink: 0; border-bottom: 1px solid var(--border); }
+.histo-svg-box { overflow: hidden; }
+.histo-svg-box svg { display: block; width: 100%; }
+.comment-quote-box { flex-shrink: 0; background: var(--panel); border-top: 1px solid var(--border-lite); padding: 12px 16px 13px; }
+.comment-text { font-family: 'Rajdhani', sans-serif; font-size: 15px; font-style: normal; font-weight: 400; color: var(--dim); line-height: 1.55; }
+.quote-gap { height: 13px; }
+.quote-text { font-family: 'Share Tech Mono', monospace; font-size: 12.5px; font-style: italic; color: rgba(90,122,154,0.78); line-height: 1.55; }
+.quote-attr { margin-top: 5px; font-family: 'Courier New', monospace; font-size: 10px; color: rgba(90,122,154,0.55); }
+.quote-attr a { color: rgba(90,122,154,0.72); text-decoration: underline; text-decoration-color: rgba(90,122,154,0.30); text-underline-offset: 2px; transition: color .15s; }
+.quote-attr a:hover { color: var(--gold); text-decoration-color: var(--gold); }
+
+/* ══ CHART GRIDS ══ */
+.sector-section, .stock-section { padding: 10px 16px 4px; }
+.chart-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+
+/* Chart card */
+.chart-card { position: relative; background: var(--panel); border: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; cursor: pointer; transition: border-color .15s; }
+.chart-card:hover { border-color: var(--accent); }
+
+/* Card number badge */
+.card-num { position: absolute; top: 5px; left: 7px; font-family: 'Courier New', monospace; font-size: 9px; font-weight: bold; color: rgba(90,122,154,0.50); z-index: 2; pointer-events: none; }
+.has-num .cc-head { padding-left: 26px; text-align: left; }
+
+.cc-head { font-size: 11px; font-weight: 700; color: var(--text); text-align: center; padding: 6px 8px 1px; letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
+.cc-sub  { font-size: 9px; color: var(--dim); text-align: center; font-style: italic; padding-bottom: 4px; flex-shrink: 0; }
+.cc-cv   { position: relative; height: 148px; padding: 0 5px; flex-shrink: 0; }
+.cc-key  { font-family: 'Courier New', monospace; font-size: 9px; color: var(--dim); text-align: center; padding: 3px 8px 2px; border-top: 1px solid var(--border); flex-shrink: 0; }
+.cc-ir   { font-family: 'Courier New', monospace; font-size: 10px; text-align: center; padding: 3px 8px 5px; display: flex; justify-content: center; gap: 16px; flex-shrink: 0; }
+.cc-ir .ir-lbl { color: var(--dim); }
+.cc-price { font-family: 'Courier New', monospace; font-size: 10px; text-align: center; padding: 3px 8px 5px; display: flex; justify-content: center; gap: 14px; border-top: 1px solid var(--border); flex-shrink: 0; }
+.cc-price-range { color: var(--dim); }
+.cc-pl { font-weight: bold; }
+
+/* Buy/Sell buttons */
+.cc-btns { display: flex; border-top: 1px solid var(--border); flex-shrink: 0; margin-top: auto; }
+.buy-btn, .sell-btn {
+  flex: 1; padding: 6px 0;
+  font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; cursor: pointer; border: none;
+  transition: all .15s; text-align: center;
+}
+/* Research state: Buy green, Sell dim */
+.buy-btn  { background: rgba(0,204,85,0.08);  color: var(--z1); border-right: 1px solid var(--border); }
+.sell-btn { background: rgba(90,122,154,0.06); color: var(--border-lite); cursor: default; }
+.buy-btn:hover  { background: rgba(0,204,85,0.20); }
+
+/* Tracking state: Buy dim, Sell active red */
+.buy-btn.tracking  { background: rgba(90,122,154,0.06); color: var(--border-lite); cursor: default; font-size: 10px; }
+.sell-btn.tracking { background: rgba(232,53,53,0.08); color: var(--z6); cursor: pointer; }
+.sell-btn.tracking:hover { background: rgba(232,53,53,0.22); }
+
+/* Empty card placeholder */
+.card-empty {
+  background: var(--panel); border: 1px dashed var(--border);
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 10px; min-height: 200px;
+  opacity: 0.45;
+}
+.card-empty-num { font-family: 'Courier New', monospace; font-size: 11px; color: var(--dim); }
+.card-empty-msg { font-size: 12px; color: var(--dim); font-weight: 600; }
+.card-empty-link {
+  font-size: 11px; color: var(--accent); cursor: pointer;
+  text-decoration: underline; text-underline-offset: 2px; background: none; border: none;
+}
+
+/* Tooltip */
+#histo-tip { position: fixed; background: #0d1829; border: 1px solid #3090d8; color: #ddeeff; font-family: 'Courier New', monospace; font-size: 11px; padding: 5px 9px; border-radius: 2px; box-shadow: 0 2px 12px rgba(0,0,0,.6); white-space: nowrap; z-index: 999; pointer-events: none; display: none; }
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<nav class="top-nav">
+  <div class="nav-cell">
+    <button class="nav-btn" onclick="navTo('tracker.html','trackerPage')">Portfolio Tracker</button>
+  </div>
+  <div class="nav-cell">
+    <button class="nav-btn" onclick="navTo('choices.html','choicesPage')">Portfolio Choices</button>
+  </div>
+  <div class="nav-cell">
+    <button class="nav-btn inactive" id="community-btn" onclick="communityClick()">Portfolio Community</button>
+  </div>
+  <div class="nav-cell"><!-- empty --></div>
+  <div class="nav-cell">
+    <input class="search-box" type="text" placeholder="Search ticker or name…" oninput="handleSearch(this.value)">
+  </div>
+</nav>
+
+<div class="shell">
+
+  <div class="pf-name-bar">
+    <div class="pf-name-text" id="pf-name">My Portfolio</div>
+  </div>
+
+  <!-- ══ MARKET ══ -->
+  <div class="section-bar first">
+    <span class="section-heading-text">Market</span>
+  </div>
+  <div class="market-section">
+    <div class="market-row">
+
+      <!-- Personal Toggle -->
+      <div class="personal-toggle">
+        <div class="pt-head">
+          <div class="pt-title">Personal Portfolio Rankings</div>
+          <div class="pt-btns">
+            <button class="pt-btn active" data-period="90" onclick="handlePtToggle(this)">90 IR</button>
+            <button class="pt-btn"        data-period="10" onclick="handlePtToggle(this)">10 IR</button>
+          </div>
+        </div>
+        <div class="pt-scroll">
+          <table class="pt-table">
+            <thead><tr>
+              <th style="text-align:left">Tick</th>
+              <th class="sortable sort-active" id="pt-th-ir" onclick="handlePtSort()" style="text-align:center">
+                IR <span class="sort-arrow active" id="pt-arr">↓</span>
+              </th>
+              <th style="text-align:center">Zn</th>
+            </tr></thead>
+            <tbody id="pt-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Right column: Histogram + Comment/Quote -->
+      <div class="right-col">
+        <div class="histo-title-row" id="histo-title-row">
+          Personal Portfolio Histogram &nbsp;·&nbsp; OEX Background
+        </div>
+        <div class="histo-svg-box">
+          <svg id="pfHisto" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block"></svg>
+        </div>
+        <div class="comment-quote-box">
+          <div class="comment-text">
+            Your portfolio is showing an average IR of +14, placing the aggregate in Zone 3 — slightly oversold territory.
+            The bond position (TLT) remains the strongest contributor at +71, while energy (XOM) continues to weigh at −42.
+            Watch for reversion candidates as TSLA and AAPL press deeper into Zone 2 and begin to cycle back toward the mean.
+          </div>
+          <div class="quote-gap"></div>
+          <div class="quote-text">
+            "There is nothing new in Wall Street. There can't be because speculation is as old as the hills.
+            Whatever happens in the stock market today has happened before and will happen again."
+          </div>
+          <div class="quote-attr">
+            — <a href="/resources.html" target="_blank"><em>Reminiscences of a Stock Operator</em></a>&nbsp;&nbsp;Edwin Lefèvre
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══ SECTOR — dynamically populated ══ -->
+  <div class="section-bar">
+    <span class="section-heading-text">Sector</span>
+  </div>
+  <div class="sector-section" id="sector-section">
+    <!-- Populated by buildSectorCards() from portfolioChoices.researchIndexes -->
+  </div>
+
+  <!-- ══ STOCK — dynamically populated ══ -->
+  <div class="section-bar">
+    <span class="section-heading-text">Stock</span>
+  </div>
+  <div class="stock-section" id="stock-section">
+    <!-- Populated by buildStockCards() from portfolioChoices.portfolioIssues -->
+  </div>
+
+</div><!-- /shell -->
+<div id="histo-tip"></div>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     SCRIPTS
+     ════════════════════════════════════════════════════════════ -->
+<script>
+/* ── ZONE UTILITIES ── */
+const ZCL = ['#00cc55','#88cc44','#7a9aaa','#aa9a7a','#ddcc00','#e83535'];
+function irToZone(ir){ if(ir>=67)return 1;if(ir>=34)return 2;if(ir>=1)return 3;if(ir>=-33)return 4;if(ir>=-66)return 5;return 6; }
+function zoneBadge(z){ return `<span class="zone-badge" style="background:${ZCL[z-1]}">${z}</span>`; }
+function irFmt(v){ return (v>0?'+':'')+v; }
+function irCls(v){ return v>0?'pos':v<0?'neg':'zer'; }
+
+/* ── SYMBOL NAME LOOKUP ── */
+const SYMBOL_NAMES = {
+  'AAPL':'Apple Inc','MSFT':'Microsoft Corp','NVDA':'NVIDIA Corp',
+  'AMZN':'Amazon.com Inc','GOOGL':'Alphabet Inc','META':'Meta Platforms Inc',
+  'TSLA':'Tesla Inc','JPM':'JPMorgan Chase & Co','JNJ':'Johnson & Johnson',
+  'XOM':'Exxon Mobil Corp','SPY':'S&P 500 ETF','QQQ':'Invesco QQQ Trust',
+  'IWM':'iShares Russell 2000 ETF','GLD':'SPDR Gold Shares ETF',
+  'TLT':'iShares 20+ Year Treasury ETF','VNQ':'Vanguard Real Estate ETF',
+  'V':'Visa Inc','MA':'Mastercard Inc','BAC':'Bank of America',
+  'WMT':'Walmart Inc','COST':'Costco Wholesale','HD':'Home Depot',
+  'PG':'Procter & Gamble','KO':'Coca-Cola Co','PEP':'PepsiCo Inc',
+  'AMD':'AMD Inc','INTC':'Intel Corp','CRM':'Salesforce Inc',
+  'NFLX':'Netflix Inc','DIS':'Walt Disney Co','MRK':'Merck & Co',
+  'PFE':'Pfizer Inc','CVX':'Chevron Corp','GS':'Goldman Sachs Group',
+  'C':'Citigroup Inc','UNH':'UnitedHealth Group','ABBV':'AbbVie Inc',
+  'LLY':'Eli Lilly & Co','NKE':'Nike Inc','MCD':"McDonald's Corp",
+};
+function symName(sym) { return SYMBOL_NAMES[sym] || sym; }
+
+/* ── FALLBACK DATA (when portfolioChoices not yet set) ── */
+const FALLBACK_ISSUES  = ['AAPL','MSFT','NVDA','AMZN','GOOGL','META','TSLA','JPM','JNJ','XOM'];
+const FALLBACK_INDEXES = ['SPY','QQQ','IWM','GLD','TLT','VNQ'];
+
+/* ════════════════════════════════════════════════════════════
+   PORTFOLIO STATE — read from localStorage
+   ════════════════════════════════════════════════════════════ */
+let CFG = {};            // portfolioChoices
+let TRACKER = [];        // portfolioTracker (active buy records)
+let PF_DATA = [];        // 17-item toggle data (built from CFG)
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem('portfolioChoices');
+    CFG = raw ? JSON.parse(raw) : {};
+  } catch(e) { CFG = {}; }
+
+  try {
+    const raw = localStorage.getItem('portfolioTracker');
+    TRACKER = raw ? JSON.parse(raw).filter(t => t.active) : [];
+  } catch(e) { TRACKER = []; }
+}
+
+function saveTracker(records) {
+  try {
+    /* Merge new active record into existing tracker (keep inactive history) */
+    const existing = JSON.parse(localStorage.getItem('portfolioTracker') || '[]');
+    const merged = [...existing.filter(t => !t.active), ...records];
+    localStorage.setItem('portfolioTracker', JSON.stringify(merged));
+  } catch(e) { console.warn('portfolioTracker save failed:', e); }
+}
+
+/* ════════════════════════════════════════════════════════════
+   PAGE INITIALISATION
+   ════════════════════════════════════════════════════════════ */
+function initPage() {
+  loadState();
+
+  /* Portfolio name
+     CONNECT POINT CP-B-NAME: portfolioChoices.portfolioName set by choices.html */
+  const name = CFG.portfolioName || "My Portfolio";
+  document.getElementById('pf-name').textContent = name;
+
+  /* Histogram title */
+  const bg = CFG.background || 'OEX';
+  document.getElementById('histo-title-row').textContent =
+    name.split('(')[0].trim() + ' — Personal Portfolio Histogram · ' + bg + ' Background';
+
+  /* Community button state
+     CONNECT POINT CP-C: driven by portfolioChoices.sharing */
+  const btn = document.getElementById('community-btn');
+  if (CFG.sharing === true) {
+    btn.classList.remove('inactive');
+    btn.classList.add('active-community');
+  } else {
+    btn.classList.remove('active-community');
+    btn.classList.add('inactive');
+  }
+
+  /* Build toggle data from live choices */
+  buildPfData();
+  renderPtTable();
+
+  /* Build histogram */
+  buildHistogram();
+
+  /* Build dynamic card sections */
+  buildSectorCards();
+  buildStockCards();
+}
+
+/* ════════════════════════════════════════════════════════════
+   PORTFOLIO DATA — built from localStorage choices
+   CONNECT POINT CP-A: portfolioIssues and researchIndexes
+   from portfolioChoices; IR values from pfHistoData or fallback
+   ════════════════════════════════════════════════════════════ */
+function buildPfData() {
+  /* Try to get current IR readings from pfHistoData */
+  let pfHistoAllData = [];
+  try {
+    const ph = JSON.parse(localStorage.getItem('pfHistoData') || '{}');
+    pfHistoAllData = ph.allData || [];
+  } catch(e) {}
+
+  function getIr(sym, fallback90, fallback10) {
+    const found = pfHistoAllData.find(d => d.sym === sym);
+    return { ir_90: found ? found.ir : fallback90, ir_10: fallback10 };
+  }
+
+  const issues  = CFG.portfolioIssues  || FALLBACK_ISSUES;
+  const indexes = CFG.researchIndexes  || FALLBACK_INDEXES;
+
+  /* Fallback IR values for sample display */
+  const SAMPLE_IR = {
+    'AAPL':{r90:42,r10:18},'MSFT':{r90:28,r10:-5},'NVDA':{r90:-31,r10:-45},
+    'AMZN':{r90:15,r10:22},'GOOGL':{r90:8,r10:-12},'META':{r90:-18,r10:-28},
+    'TSLA':{r90:62,r10:44},'JPM':{r90:-8,r10:5},'JNJ':{r90:35,r10:19},
+    'XOM':{r90:-42,r10:-55},'SPY':{r90:-12,r10:-8},'QQQ':{r90:-25,r10:-31},
+    'IWM':{r90:22,r10:15},'GLD':{r90:55,r10:38},'TLT':{r90:71,r10:52},
+    'VNQ':{r90:-35,r10:-48},
+  };
+  function fallbackIr(sym){ return SAMPLE_IR[sym] || {r90:0,r10:0}; }
+
+  PF_DATA = [
+    ...issues.map(sym => {
+      const fb = fallbackIr(sym);
+      const live = getIr(sym, fb.r90, fb.r10);
+      return { sym, name: symName(sym), ir_90: live.ir_90, ir_10: live.ir_10, type:'issue' };
+    }),
+    ...indexes.map(sym => {
+      const fb = fallbackIr(sym);
+      return { sym, name: symName(sym), ir_90: fb.r90, ir_10: fb.r10, type:'index' };
+    }),
+    { sym:'PFI', name:'Portfolio Index', ir_90:14, ir_10:-2, type:'assess' },
+  ];
+}
+
+/* ════════════════════════════════════════════════════════════
+   PERSONAL TOGGLE
+   ════════════════════════════════════════════════════════════ */
+let ptPeriod = '90', ptSortDir = 1;
+
+function handlePtToggle(btn) {
+  btn.closest('.pt-btns').querySelectorAll('.pt-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  ptPeriod = btn.dataset.period;
+  renderPtTable();
+}
+function handlePtSort() {
+  ptSortDir *= -1;
+  const arr = document.getElementById('pt-arr');
+  if (arr) arr.textContent = ptSortDir===1?'↓':'↑';
+  renderPtTable();
+}
+function renderPtTable() {
+  const iF = ptPeriod==='90'?'ir_90':'ir_10';
+  const rows = [...PF_DATA].sort((a,b)=>(b[iF]-a[iF])*ptSortDir);
+  document.getElementById('pt-tbody').innerHTML = rows.map(r => {
+    const ir=r[iF], z=irToZone(ir);
+    const cls = r.type==='assess'?'row-assess':r.type==='index'?'row-index':'row-issue';
+    return `<tr class="${cls}">
+      <td class="col-sym" onclick="navTo('symbol/${r.sym}.html','symbolWindow')">${r.sym}</td>
+      <td class="col-ir"><span class="${irCls(ir)}">${irFmt(ir)}</span></td>
+      <td class="col-zn">${zoneBadge(z)}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ════════════════════════════════════════════════════════════
+   HISTOGRAM
+   CONNECT POINT CP-A: issues list comes from CFG.portfolioIssues
+   Background index list: OEX_BG (static) — swap for NDX_BG
+   when background = 'NDX' (database push, wiring pass)
+   ════════════════════════════════════════════════════════════ */
+const OEX_BG = [
+  {sym:'MMM',ir:12},{sym:'AXP',ir:-8},{sym:'AMGN',ir:45},{sym:'BA',ir:-62},
+  {sym:'CAT',ir:-18},{sym:'CVX',ir:-28},{sym:'CSCO',ir:15},{sym:'KO',ir:38},
+  {sym:'GS',ir:-22},{sym:'HD',ir:-12},{sym:'HON',ir:8},{sym:'IBM',ir:52},
+  {sym:'INTC',ir:78},{sym:'MCD',ir:-5},{sym:'MRK',ir:42},{sym:'NKE',ir:-35},
+  {sym:'PG',ir:18},{sym:'TRV',ir:-15},{sym:'UNH',ir:-42},{sym:'VZ',ir:65},
+  {sym:'V',ir:-28},{sym:'WMT',ir:22},{sym:'DIS',ir:58},{sym:'DOW',ir:-45},
+  {sym:'WBA',ir:82},{sym:'RTX',ir:-8},{sym:'ABT',ir:28},{sym:'ACN',ir:-18},
+  {sym:'ALL',ir:12},{sym:'AIG',ir:-32},{sym:'AMT',ir:45},{sym:'ANTM',ir:-55},
+  {sym:'AON',ir:8},{sym:'APA',ir:-68},{sym:'APD',ir:22},{sym:'ARW',ir:-12},
+  {sym:'AVB',ir:35},{sym:'AVY',ir:-8},{sym:'BAC',ir:-18},{sym:'BAX',ir:42},
+  {sym:'BDX',ir:58},{sym:'BEN',ir:-25},{sym:'BK',ir:-38},{sym:'BMY',ir:15},
+  {sym:'BRK',ir:-12},{sym:'BSX',ir:28},{sym:'BWA',ir:-48},{sym:'C',ir:-22},
+  {sym:'CAG',ir:35},{sym:'CB',ir:-5},{sym:'CCI',ir:48},{sym:'CF',ir:-62},
+  {sym:'CFG',ir:-15},{sym:'CHD',ir:22},{sym:'CI',ir:-35},{sym:'CL',ir:8},
+  {sym:'CLX',ir:45},{sym:'CMA',ir:-28},{sym:'CME',ir:18},{sym:'CMI',ir:-42},
+  {sym:'CNP',ir:32},{sym:'COF',ir:-18},{sym:'COG',ir:62},{sym:'COO',ir:-8},
+  {sym:'COP',ir:-52},{sym:'CPB',ir:38},{sym:'CRL',ir:-22},{sym:'CRM',ir:15},
+  {sym:'CSX',ir:-35},{sym:'CTAS',ir:28},{sym:'CTL',ir:-65},{sym:'D',ir:42},
+  {sym:'DAL',ir:-18},{sym:'DE',ir:8},{sym:'DG',ir:35},{sym:'DGX',ir:-28},
+  {sym:'DHI',ir:52},{sym:'DHR',ir:-12},{sym:'DLR',ir:25},{sym:'DLTR',ir:-45},
+  {sym:'DOV',ir:18},{sym:'DRE',ir:38},{sym:'DRI',ir:-22},{sym:'DTE',ir:12},
+  {sym:'DUK',ir:48},{sym:'DVA',ir:-35},{sym:'DVN',ir:-58},{sym:'DXC',ir:72},
+  {sym:'EA',ir:-15},{sym:'ED',ir:32},{sym:'EFX',ir:-8},{sym:'EIX',ir:18},
+  {sym:'EL',ir:-42},{sym:'EMN',ir:25},{sym:'EMR',ir:-18},{sym:'EOG',ir:-52},
+  {sym:'EQIX',ir:38},{sym:'EQR',ir:-25},{sym:'ES',ir:15},{sym:'ESS',ir:-38},
+  {sym:'ETN',ir:22},{sym:'ETR',ir:-12},{sym:'EXPD',ir:35},{sym:'EXR',ir:-8},
+];
+
+const PORTFOLIO_ISSUES = new Set(CFG.portfolioIssues || FALLBACK_ISSUES);
+
+function buildHistogram() {
+  const svg = document.getElementById('pfHisto');
+  if (!svg) return;
+
+  const issues = CFG.portfolioIssues || FALLBACK_ISSUES;
+  const pfSyms = new Set(PF_DATA.map(r=>r.sym));
+
+  const allData = [
+    ...PF_DATA.map(r=>({ sym:r.sym, ir:r.ir_90, bold:true, type:r.type })),
+    ...OEX_BG.filter(r=>!pfSyms.has(r.sym)).map(r=>({ sym:r.sym, ir:r.ir, bold:false, type:'bg' })),
+  ];
+
+  const W=920, OW=28, BX=OW, BW=W-2*OW, ZW=BW/6, SP=BW/24;
+  const SH=13, SFS=9, BELL_A=168, BELL_FLOOR=16, BELL_SIG=ZW, BCX=BX+BW/2;
+
+  function getSlot(ir) {
+    if(ir>=91)return{z:0,s:0};if(ir>=83)return{z:0,s:1};if(ir>=75)return{z:0,s:2};if(ir>=67)return{z:0,s:3};
+    if(ir>=59)return{z:1,s:0};if(ir>=52)return{z:1,s:1};if(ir>=43)return{z:1,s:2};if(ir>=34)return{z:1,s:3};
+    if(ir>=26)return{z:2,s:0};if(ir>=18)return{z:2,s:1};if(ir>=9)return{z:2,s:2};if(ir>=1)return{z:2,s:3};
+    if(ir>=-8)return{z:3,s:0};if(ir>=-17)return{z:3,s:1};if(ir>=-25)return{z:3,s:2};if(ir>=-33)return{z:3,s:3};
+    if(ir>=-42)return{z:4,s:0};if(ir>=-51)return{z:4,s:1};if(ir>=-58)return{z:4,s:2};if(ir>=-66)return{z:4,s:3};
+    if(ir>=-74)return{z:5,s:0};if(ir>=-82)return{z:5,s:1};if(ir>=-90)return{z:5,s:2};return{z:5,s:3};
+  }
+
+  const oobWeak = allData.filter(d=>d.ir>=99), oobStr = allData.filter(d=>d.ir<=-99);
+  const slots = Array.from({length:24},()=>[]);
+  allData.filter(d=>d.ir>-99&&d.ir<99).forEach(d=>{const{z,s}=getSlot(d.ir);slots[z*4+s].push(d);});
+  slots.forEach(sl=>sl.sort((a,b)=>a.sym.localeCompare(b.sym)));
+
+  const maxStk=Math.max(1,...slots.map(s=>s.length));
+  let BY=205;
+  if(maxStk*SH+24>BY) BY=maxStk*SH+24;
+  const H=BY+63;
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+
+  let mk=`<defs>
+    <filter id="hG"><feGaussianBlur stdDeviation="2.8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="hS"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="hW"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>`;
+
+  mk+=`<rect x="0" y="0" width="${OW}" height="${BY}" fill="${ZCL[0]}" fill-opacity="0.07"/>`;
+  mk+=`<rect x="${W-OW}" y="0" width="${OW}" height="${BY}" fill="${ZCL[5]}" fill-opacity="0.07"/>`;
+  for(let z=0;z<6;z++) mk+=`<rect x="${BX+z*ZW}" y="0" width="${ZW}" height="${BY}" fill="${ZCL[z]}" fill-opacity="0.07"/>`;
+  for(let z=1;z<=5;z++) mk+=`<line x1="${BX+z*ZW}" y1="0" x2="${BX+z*ZW}" y2="${BY}" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>`;
+  mk+=`<line x1="${BX}" y1="0" x2="${BX}" y2="${BY}" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>`;
+  mk+=`<line x1="${W-OW}" y1="0" x2="${W-OW}" y2="${BY}" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>`;
+  for(let i=1;i<24;i++){if(i%4===0)continue;const lx=BX+i*SP;mk+=`<line x1="${lx}" y1="8" x2="${lx}" y2="${BY}" stroke="rgba(255,255,255,0.055)" stroke-width="0.5" stroke-dasharray="3,6"/>`;}
+  mk+=`<line x1="0" y1="${BY}" x2="${W}" y2="${BY}" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>`;
+
+  let pH='',pM='',pL='';
+  for(let px=BX;px<=BX+BW;px+=2){
+    const dx=px-BCX,by=BY-(BELL_A*Math.exp(-dx*dx/(2*BELL_SIG*BELL_SIG))+BELL_FLOOR);
+    const cmd=px===BX?'M':'L',pt=`${cmd}${px},${by.toFixed(1)} `;
+    pH+=pt;pM+=pt;pL+=pt;
+  }
+  mk+=`<path d="${pH}" fill="none" stroke="rgba(120,185,255,0.14)" stroke-width="8"/>`;
+  mk+=`<path d="${pM}" fill="none" stroke="rgba(155,210,255,0.72)" stroke-width="1.6" stroke-dasharray="8,4" filter="url(#hG)"/>`;
+  mk+=`<path d="${pL}" fill="none" stroke="rgba(205,235,255,0.38)" stroke-width="0.8" stroke-dasharray="8,4"/>`;
+
+  for(let gi=0;gi<24;gi++){
+    const z=Math.floor(gi/4),scx=BX+(gi+0.5)*SP;
+    slots[gi].forEach((d,idx)=>{
+      const sy=BY-(idx+0.5)*SH;
+      const isStockIssue = d.type==='issue';
+      const fill   = isStockIssue?'#ffffff':ZCL[z];
+      const filter = isStockIssue?'url(#hW)':'url(#hS)';
+      const fw     = d.bold?'bold':'normal';
+      const tip    = `${d.sym}  |  90-IR: ${irFmt(d.ir)}  |  Zone ${irToZone(d.ir)}`;
+      mk+=`<text x="${scx}" y="${sy}" text-anchor="middle" font-family="'Courier New',monospace" font-size="${SFS}" font-weight="${fw}" fill="${fill}" filter="${filter}" cursor="pointer" data-tip="${tip}">${d.sym.slice(0,3)}</text>`;
+    });
+  }
+
+  const RANGES=['+99 to +67','+66 to +34','+33 to +1','−1 to −33','−34 to −66','−67 to −99'];
+  const LABELS=['Zone 1','Zone 2','Zone 3','Zone 4','Zone 5','Zone 6'];
+  for(let z=0;z<6;z++){
+    const cx=BX+z*ZW+ZW/2;
+    mk+=`<text x="${cx}" y="${BY+18}" text-anchor="middle" font-family="'Courier New',monospace" font-size="8.5" fill="rgba(255,255,255,0.48)">${RANGES[z]}</text>`;
+    mk+=`<text x="${cx}" y="${BY+31}" text-anchor="middle" font-family="'Trebuchet MS',sans-serif" font-size="10.5" font-weight="bold" fill="${ZCL[z]}">${LABELS[z]}</text>`;
+  }
+  [{x:OW/2,col:ZCL[0],mid:'Weak',n:oobWeak.length},{x:W-OW/2,col:ZCL[5],mid:'Str',n:oobStr.length}].forEach(o=>{
+    mk+=`<text x="${o.x}" y="11" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${o.col}" opacity="0.8">OOB</text>`;
+    mk+=`<text x="${o.x}" y="20" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${o.col}" opacity="0.8">${o.mid}</text>`;
+    mk+=`<text x="${o.x}" y="29" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${o.col}" opacity="0.65">[${o.n}]</text>`;
+  });
+  mk+=`<text x="${BX+8}" y="${H-5}" font-family="'Trebuchet MS',sans-serif" font-size="7.5" fill="rgba(0,212,160,0.40)">← Weak / Oversold</text>`;
+  mk+=`<text x="${BX+BW-8}" y="${H-5}" text-anchor="end" font-family="'Trebuchet MS',sans-serif" font-size="7.5" fill="rgba(232,53,53,0.40)">Overbought / Strong →</text>`;
+
+  svg.innerHTML = mk;
+
+  /* Save to localStorage for front.html and community.html
+     CONNECT POINT CP-E: pfHistoData feeds front page histogram */
+  try {
+    localStorage.setItem('pfHistoData', JSON.stringify({
+      allData: allData.map(d=>({sym:d.sym,ir:d.ir,bold:d.bold,type:d.type})),
+      title: 'Personal Portfolio Histogram',
+      pfName: document.getElementById('pf-name').textContent.trim(),
+      timestamp: new Date().toISOString()
+    }));
+  } catch(e){ console.warn('pfHistoData save failed:',e); }
+
+  const tip = document.getElementById('histo-tip');
+  svg.addEventListener('mousemove',e=>{
+    const dt=e.target.getAttribute('data-tip');
+    if(dt){tip.textContent=dt;tip.style.display='block';tip.style.left=(e.clientX+14)+'px';tip.style.top=(e.clientY-26)+'px';}
+    else{tip.style.display='none';}
+  });
+  svg.addEventListener('mouseleave',()=>{tip.style.display='none';});
+}
+
+/* ════════════════════════════════════════════════════════════
+   COMBO CHARTS
+   ════════════════════════════════════════════════════════════ */
+Chart.defaults.color='#5a7a9a'; Chart.defaults.borderColor='rgba(255,255,255,0.06)';
+
+function genDates30(){
+  const out=[],cur=new Date();let n=0;
+  while(n<30){if(cur.getDay()!==0&&cur.getDay()!==6){out.unshift(cur.toLocaleDateString('en-US',{month:'numeric',day:'numeric'}));n++;}cur.setDate(cur.getDate()-1);}
+  return out;
+}
+const D30=genDates30();
+
+/* Generate plausible placeholder zone history ending at the current zone
+   CONNECT POINT: replaced by actual zone history from database push */
+function placeholderZone30(ir) {
+  const z = irToZone(ir);
+  const adj = z < 6 ? z+1 : z-1;
+  return Array.from({length:30},(_,i)=> i%3===0 ? adj : z);
+}
+
+function buildCombo(id,z90,z10){
+  const ctx=document.getElementById(id);
+  if(!ctx) return;
+  new Chart(ctx,{type:'bar',data:{labels:D30,datasets:[
+    {type:'bar',label:'90-Day Zone',data:z90,backgroundColor:z90.map(z=>ZCL[z-1]+'99'),borderColor:z90.map(z=>ZCL[z-1]),borderWidth:1,order:2},
+    {type:'line',label:'10-Day Zone',data:z10,borderColor:'#c9a227',pointBackgroundColor:'#c9a227',pointRadius:2,pointHoverRadius:3,borderWidth:1.6,fill:false,tension:0.3,order:1}
+  ]},options:{
+    responsive:true,maintainAspectRatio:false,
+    layout:{padding:{left:2,right:3,top:2,bottom:0}},
+    plugins:{legend:{display:true,position:'top',labels:{color:'#5a7a9a',font:{family:"'Courier New',monospace",size:8},boxWidth:10,padding:5}}},
+    scales:{
+      y:{min:0.3,max:6.5,
+        title:{display:true,text:'Zone',color:'#5a7a9a',font:{family:"'Courier New',monospace",size:8},padding:{bottom:2}},
+        ticks:{stepSize:1,callback:v=>(v>=1&&v<=6)?String(Math.round(v)):'',
+          color:c=>{const v=Math.round(c.tick.value);return(v>=1&&v<=6)?ZCL[v-1]:'#5a7a9a';},
+          font:{family:"'Courier New',monospace",size:8},padding:2},
+        grid:{color:ctx=>(ctx.tick.value===3||ctx.tick.value===4)?'rgba(255,255,255,0.12)':'rgba(255,255,255,0.05)',
+          lineWidth:ctx=>(ctx.tick.value===3||ctx.tick.value===4)?1.2:0.6},
+        border:{color:'#243c58'}},
+      x:{ticks:{maxRotation:45,autoSkip:true,maxTicksLimit:8,color:'#5a7a9a',font:{family:"'Courier New',monospace",size:7}},
+        grid:{color:'rgba(255,255,255,0.03)'},border:{color:'#243c58'}}
+    }
+  }});
+}
+
+/* ════════════════════════════════════════════════════════════
+   SECTOR CARDS — dynamically generated from researchIndexes
+   No Buy/Sell — research only. Clickable → symbol page.
+   CONNECT POINT CP-SECT: IR values and zone data from database push
+   ════════════════════════════════════════════════════════════ */
+function buildSectorCards() {
+  const indexes = CFG.researchIndexes || FALLBACK_INDEXES;
+  const section = document.getElementById('sector-section');
+  const SAMPLE_IR = {
+    'SPY':{r90:-12,r10:-8},'QQQ':{r90:-25,r10:-31},'IWM':{r90:22,r10:15},
+    'GLD':{r90:55,r10:38},'TLT':{r90:71,r10:52},'VNQ':{r90:-35,r10:-48},
+  };
+
+  let html='', chartQ=[];
+  const pairs = [];
+  for(let i=0;i<6;i+=2) pairs.push([indexes[i]||null, indexes[i+1]||null]);
+
+  pairs.forEach(([symA,symB])=>{
+    html+=`<div class="chart-grid-2">`;
+    [symA,symB].forEach(sym=>{
+      if(!sym){ html+=`<div class="card-empty"><div class="card-empty-msg">Empty sector slot</div><button class="card-empty-link" onclick="navTo('choices.html','choicesPage')">Add in Portfolio Choices →</button></div>`; return; }
+      const ir = SAMPLE_IR[sym] || {r90:0,r10:0};
+      const cid = `chart-${sym.toLowerCase().replace(/[^a-z0-9]/g,'')}`;
+      chartQ.push({id:cid, z90:placeholderZone30(ir.r90), z10:placeholderZone30(ir.r10)});
+      const ir90cls = irCls(ir.r90), ir10cls = irCls(ir.r10);
+      html+=`<div class="chart-card" onclick="navTo('symbol/${sym}.html','symbolWindow')">
+        <div class="cc-head">${symName(sym)} (${sym})</div>
+        <div class="cc-sub">90-Day Zone · 10-Day Zone · 30 Days</div>
+        <div class="cc-cv"><canvas id="${cid}"></canvas></div>
+        <div class="cc-key">Key: bar — 90-day IR &nbsp;·&nbsp; line — 10-day IR</div>
+        <div class="cc-ir">
+          <span><span class="ir-lbl">90-day IR:</span> <span class="${ir90cls}">${irFmt(ir.r90)}</span></span>
+          <span><span class="ir-lbl">10-day IR:</span> <span class="${ir10cls}">${irFmt(ir.r10)}</span></span>
+        </div>
+      </div>`;
+    });
+    html+=`</div>`;
+  });
+
+  section.innerHTML = html;
+  chartQ.forEach(c=>buildCombo(c.id,c.z90,c.z10));
+}
+
+/* ════════════════════════════════════════════════════════════
+   STOCK CARDS — dynamically generated from portfolioIssues
+   Shows Buy/Sell state from portfolioTracker.
+   Research state: Buy green, Sell dim.
+   Tracking state: Buy dim "Active", Sell active red.
+   Empty slot: placeholder with link to Choices.
+   CONNECT POINT CP-STOCK: price/IR from database push
+   ════════════════════════════════════════════════════════════ */
+function buildStockCards() {
+  const issues = CFG.portfolioIssues || FALLBACK_ISSUES;
+  const section = document.getElementById('stock-section');
+  const SAMPLE_IR = {
+    'AAPL':{r90:42,r10:18,buyP:172.40,currP:189.44},
+    'MSFT':{r90:28,r10:-5, buyP:358.20,currP:378.92},
+    'NVDA':{r90:-31,r10:-45,buyP:920.00,currP:875.33},
+    'AMZN':{r90:15,r10:22, buyP:168.50,currP:181.75},
+    'GOOGL':{r90:8,r10:-12,buyP:158.80,currP:165.22},
+    'META':{r90:-18,r10:-28,buyP:510.30,currP:484.10},
+    'TSLA':{r90:62,r10:44, buyP:220.50,currP:177.58},
+    'JPM':{r90:-8,r10:5,  buyP:188.70,currP:198.22},
+    'JNJ':{r90:35,r10:19, buyP:146.80,currP:152.34},
+    'XOM':{r90:-42,r10:-55,buyP:104.20,currP:111.87},
+  };
+
+  let html='', chartQ=[];
+
+  for(let i=0;i<10;i+=2){
+    const isLast = (i===8);
+    html+=`<div class="chart-grid-2${isLast?' style="margin-bottom:20px"':''} ">`;
+
+    for(let j=i;j<i+2;j++){
+      const slotNum = j+1;
+      const sym = issues[j]||null;
+
+      if(!sym){
+        html+=`<div class="card-empty">
+          <div class="card-empty-num">#${slotNum}</div>
+          <div class="card-empty-msg">Empty portfolio slot</div>
+          <button class="card-empty-link" onclick="navTo('choices.html','choicesPage')">Add a symbol in Portfolio Choices →</button>
+        </div>`;
+      } else {
+        const ir = SAMPLE_IR[sym] || {r90:0,r10:0,buyP:null,currP:null};
+        const tracked = TRACKER.find(t=>t.sym===sym);
+        const cid = `chart-${sym.toLowerCase().replace(/[^a-z0-9]/g,'')}`;
+        chartQ.push({id:cid, z90:placeholderZone30(ir.r90), z10:placeholderZone30(ir.r10)});
+
+        const ir90cls=irCls(ir.r90), ir10cls=irCls(ir.r10);
+        const pl = ir.currP && ir.buyP ? ir.currP-ir.buyP : null;
+        const plStr = pl!==null ? (pl>=0?`+$${pl.toFixed(2)}`:`−$${Math.abs(pl).toFixed(2)}`) : '—';
+        const plCls = pl===null?'zer':pl>=0?'pos':'neg';
+        const priceRow = ir.buyP
+          ? `<div class="cc-price"><span class="cc-price-range">$${ir.buyP.toFixed(2)} → $${ir.currP.toFixed(2)}</span><span class="cc-pl ${plCls}">${plStr}</span></div>`
+          : `<div class="cc-price"><span class="cc-price-range">Price data pending</span></div>`;
+
+        /* Buy/Sell button state — set by updateCardState after injection */
+        html+=`<div class="chart-card has-num" id="card-${sym}" onclick="navTo('symbol/${sym}.html','symbolWindow')">
+          <div class="card-num">#${slotNum}</div>
+          <div class="cc-head">${symName(sym)} (${sym})</div>
+          <div class="cc-sub">90-Day Zone · 10-Day Zone · 30 Days</div>
+          <div class="cc-cv"><canvas id="${cid}"></canvas></div>
+          <div class="cc-key">Key: bar — 90-day IR &nbsp;·&nbsp; line — 10-day IR</div>
+          <div class="cc-ir">
+            <span><span class="ir-lbl">90-day IR:</span> <span class="${ir90cls}">${irFmt(ir.r90)}</span></span>
+            <span><span class="ir-lbl">10-day IR:</span> <span class="${ir10cls}">${irFmt(ir.r10)}</span></span>
+          </div>
+          ${priceRow}
+          <div class="cc-btns">
+            <button class="buy-btn" id="buy-${sym}" onclick="event.stopPropagation();buyIssue('${sym}')">Buy</button>
+            <button class="sell-btn" id="sell-${sym}" onclick="event.stopPropagation();sellIssue('${sym}')">Sell</button>
+          </div>
+        </div>`;
+      }
+    }
+    html+=`</div>`;
+  }
+
+  section.innerHTML = html;
+  chartQ.forEach(c=>buildCombo(c.id,c.z90,c.z10));
+
+  /* Apply correct button state for each symbol */
+  (CFG.portfolioIssues||FALLBACK_ISSUES).forEach(sym=>{
+    if(sym) updateCardState(sym, TRACKER.find(t=>t.sym===sym)?'tracking':'research');
+  });
+}
+
+/* ════════════════════════════════════════════════════════════
+   CARD STATE — toggles Buy/Sell button appearance
+   ════════════════════════════════════════════════════════════ */
+function updateCardState(sym, state) {
+  const buyBtn  = document.getElementById(`buy-${sym}`);
+  const sellBtn = document.getElementById(`sell-${sym}`);
+  if (!buyBtn || !sellBtn) return;
+
+  if (state === 'tracking') {
+    buyBtn.textContent = 'Active';
+    buyBtn.classList.add('tracking');
+    buyBtn.onclick = (e) => { e.stopPropagation(); };  // disabled
+    sellBtn.classList.add('tracking');
+    sellBtn.onclick = (e) => { e.stopPropagation(); sellIssue(sym); };
+  } else {
+    buyBtn.textContent = 'Buy';
+    buyBtn.classList.remove('tracking');
+    buyBtn.onclick = (e) => { e.stopPropagation(); buyIssue(sym); };
+    sellBtn.classList.remove('tracking');
+    sellBtn.onclick = (e) => { e.stopPropagation(); sellIssue(sym); };
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   BUY FLOW
+   Writes position record to portfolioTracker.
+   CONNECT POINT CP-BUY-PRICE: buy price comes from database
+   closing price push (stored at 4:30 PM EST daily).
+   Buy IR_90 read from PF_DATA which reads from pfHistoData.
+   ════════════════════════════════════════════════════════════ */
+function buyIssue(sym) {
+  if (TRACKER.find(t=>t.sym===sym)) {
+    alert(`${sym} is already active in your Portfolio Tracker.`);
+    return;
+  }
+
+  const pfItem  = PF_DATA.find(d=>d.sym===sym);
+  const ir90    = pfItem ? pfItem.ir_90 : 0;
+  const ir10    = pfItem ? pfItem.ir_10 : 0;
+  const today   = new Date().toISOString().split('T')[0];
+
+  const newPosition = {
+    sym,
+    name:    symName(sym),
+    buyDate: today,
+    buyIr90: ir90,
+    buyIr10: ir10,
+    /* CONNECT POINT CP-BUY-PRICE: buyPrice set by database push at close */
+    buyPrice: null,
+    active: true,
+    addedAt: new Date().toISOString()
+  };
+
+  TRACKER.push(newPosition);
+  saveTracker(TRACKER);
+
+  updateCardState(sym, 'tracking');
+  alert(`${sym} added to your Portfolio Tracker.\n\nBuy price and IR data will be recorded at today's closing price after 4:30 PM EST.`);
+}
+
+/* ════════════════════════════════════════════════════════════
+   SELL FLOW
+   Step 1: Confirmation dialog showing position summary.
+   Step 2: Move position to portfolioHistory.
+   Step 3: Mark position inactive in portfolioTracker.
+   Step 4: Return card to research state.
+   Issue REMAINS on portfolio page for continued research.
+   CONNECT POINT CP-SELL-PRICE: sell price from database closing price.
+   ════════════════════════════════════════════════════════════ */
+function sellIssue(sym) {
+  const position = TRACKER.find(t=>t.sym===sym);
+
+  if (!position) {
+    /* Not in tracker — research only, no confirmation needed */
+    alert(`${sym} is not currently in your Portfolio Tracker.\n\nIt remains here for research. Click Buy when you are ready to open a position.`);
+    return;
+  }
+
+  /* Build confirmation message */
+  const buyDateFmt = new Date(position.buyDate).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  const days = Math.floor((new Date()-new Date(position.buyDate))/(1000*60*60*24));
+  const pfItem = PF_DATA.find(d=>d.sym===sym);
+  const currIr90 = pfItem ? pfItem.ir_90 : 0;
+  const currIr10 = pfItem ? pfItem.ir_10 : 0;
+
+  const msg = [
+    `Close position: ${sym} — ${symName(sym)}`,
+    ``,
+    `Entry date:  ${buyDateFmt}`,
+    `Days held:   ${days}`,
+    `Buy 90 IR:   ${irFmt(position.buyIr90)}  →  Current: ${irFmt(currIr90)}`,
+    ``,
+    `Confirm Sell?`,
+    ``,
+    `${sym} will remain on your Portfolio page for research.`,
+    `You can re-enter by clicking Buy when the timing is right.`
+  ].join('\n');
+
+  if (!confirm(msg)) return;
+
+  /* Archive to history */
+  const resultIr90 = currIr90 - position.buyIr90;
+  const resultIr10 = currIr10 - (position.buyIr10||0);
+
+  const closedPosition = {
+    sym,
+    name:       symName(sym),
+    buyDate:    position.buyDate,
+    sellDate:   new Date().toISOString().split('T')[0],
+    daysHeld:   days,
+    buyIr90:    position.buyIr90,
+    sellIr90:   currIr90,
+    resultIr90,
+    buyIr10:    position.buyIr10||0,
+    sellIr10:   currIr10,
+    resultIr10,
+    /* CONNECT POINT CP-SELL-PRICE: prices from database */
+    buyPrice:   position.buyPrice,
+    sellPrice:  null,
+    profitLoss: null,
+    archivedAt: new Date().toISOString()
+  };
+
+  try {
+    const history = JSON.parse(localStorage.getItem('portfolioHistory')||'[]');
+    history.push(closedPosition);
+    localStorage.setItem('portfolioHistory',JSON.stringify(history));
+  } catch(e){ console.warn('portfolioHistory save failed:',e); }
+
+  /* Remove from active tracker */
+  TRACKER = TRACKER.filter(t=>t.sym!==sym);
+  const allTracker = JSON.parse(localStorage.getItem('portfolioTracker')||'[]');
+  const updated = allTracker.map(t=>t.sym===sym&&t.active ? {...t,active:false,soldAt:new Date().toISOString()} : t);
+  try{ localStorage.setItem('portfolioTracker',JSON.stringify(updated)); }catch(e){}
+
+  /* Return card to research state */
+  updateCardState(sym, 'research');
+}
+
+/* ════════════════════════════════════════════════════════════
+   NAVIGATION & COMMUNITY BUTTON
+   ════════════════════════════════════════════════════════════ */
+function navTo(url,winName){
+  if(window.innerWidth<768){location.href=url;}else{window.open(url,winName);}
+}
+
+function communityClick(){
+  if(CFG.sharing===true){
+    navTo('community.html','communityPage');
+  } else {
+    alert('Portfolio Community is not yet active.\n\nVisit your Portfolio Choices page and choose Share in Step 5 to join the community and activate this button.');
+  }
+}
+
+function handleSearch(val){ console.log('Search:',val); }
+
+/* ════════════════════════════════════════════════════════════
+   STORAGEEVENT — cross-tab sync
+   When choices.html or tracker.html writes to portfolioChoices
+   or portfolioTracker, this page refreshes affected elements.
+   ════════════════════════════════════════════════════════════ */
+window.addEventListener('storage', e => {
+  if (e.key === 'portfolioChoices') {
+    loadState();
+    buildPfData();
+    const name = CFG.portfolioName || "My Portfolio";
+    document.getElementById('pf-name').textContent = name;
+    const btn = document.getElementById('community-btn');
+    if (CFG.sharing===true) { btn.classList.remove('inactive'); btn.classList.add('active-community'); }
+    else                    { btn.classList.remove('active-community'); btn.classList.add('inactive'); }
+    renderPtTable();
+    buildSectorCards();
+    buildStockCards();
+    buildHistogram();
+  }
+  if (e.key === 'portfolioTracker') {
+    loadState();
+    (CFG.portfolioIssues||FALLBACK_ISSUES).forEach(sym=>{
+      if(sym) updateCardState(sym, TRACKER.find(t=>t.sym===sym)?'tracking':'research');
+    });
+  }
+});
+
+/* ── INIT ── */
+initPage();
+</script>
+</body>
+</html>

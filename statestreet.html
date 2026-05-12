@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>State Street ETFs — Sponsor Page</title>
+<style>
+:root {
+  --bg:#08111e; --panel:#0d1829; --panel-alt:#0a1420;
+  --border:#1a2d44; --border-lite:#243c58;
+  --text:#b8cce0; --text-dim:#5a7a9a; --text-bright:#ddeeff;
+  --accent:#2a7abf; --accent-glow:#3090d8;
+  --z1:#00cc55; --z2:#88cc44; --z3:#7a9aaa;
+  --z4:#aa9a7a; --z5:#ddcc00; --z6:#e83535;
+  --font-mono:'Courier New',Courier,monospace;
+  --font-ui:'Trebuchet MS',Tahoma,Geneva,sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-ui);font-size:13px;min-height:100vh}
+
+.header-bar{background:var(--panel);border-bottom:1px solid var(--border);padding:8px 16px;display:flex;align-items:center;gap:10px}
+.btn-nav{background:#1a2d44;color:var(--text-bright);border:1px solid var(--border-lite);padding:5px 14px;font-family:var(--font-ui);font-size:12px;cursor:pointer;letter-spacing:.05em;text-transform:uppercase;transition:background .15s,border-color .15s}
+.btn-nav:hover{background:#243c58;border-color:var(--accent);color:#fff}
+.search-box{background:#060f1a;border:1px solid var(--border-lite);color:var(--text-bright);padding:5px 10px;font-family:var(--font-mono);font-size:12px;width:180px;outline:none}
+.search-box:focus{border-color:var(--accent)}
+.search-box::placeholder{color:var(--text-dim)}
+
+.sponsor-nav{background:var(--panel-alt);border-bottom:1px solid var(--border);padding:5px 16px;text-align:right;font-size:11px}
+.sponsor-nav a{color:var(--accent-glow);text-decoration:none;margin-left:12px;letter-spacing:.03em}
+.sponsor-nav a:hover{color:#fff;text-decoration:underline}
+.sponsor-nav a.active{color:#fff;font-weight:bold}
+
+.page-title-block{padding:14px 16px 0;text-align:center}
+.page-title{font-size:20px;font-weight:bold;color:var(--text-bright);letter-spacing:.04em;text-transform:uppercase}
+
+.desc-block{margin:10px 16px 6px;background:var(--panel);border:1px solid var(--border);padding:10px 14px}
+.desc-text{color:var(--text);line-height:1.55;font-size:12px}
+.desc-text.collapsed{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.desc-toggle{background:none;border:none;color:var(--accent-glow);font-size:11px;cursor:pointer;margin-top:4px;padding:0;letter-spacing:.04em}
+.desc-toggle:hover{color:#fff}
+
+.main-body{display:flex;height:calc(100vh - 125px);overflow:hidden}
+
+.sidebar{width:285px;min-width:285px;border-right:2px solid var(--border-lite);display:flex;flex-direction:column;overflow:hidden;background:var(--panel-alt)}
+.sidebar-header{padding:8px 10px 6px;border-bottom:1px solid var(--border);flex-shrink:0}
+.sidebar-title{font-weight:bold;font-size:12px;color:var(--text-bright);text-align:center;display:block;margin-bottom:5px}
+.toggle-btns{display:flex;gap:4px;justify-content:center}
+.toggle-btn{background:#1a2d44;color:var(--text-dim);border:1px solid var(--border);padding:3px 10px;font-size:11px;cursor:pointer;font-family:var(--font-ui);transition:all .15s}
+.toggle-btn.active{background:var(--accent);color:#fff;border-color:var(--accent-glow)}
+.toggle-btn:hover:not(.active){border-color:var(--accent);color:var(--text-bright)}
+.sidebar-scroll{overflow-y:auto;flex:1}
+.sidebar-scroll::-webkit-scrollbar{width:4px}
+.sidebar-scroll::-webkit-scrollbar-track{background:var(--bg)}
+.sidebar-scroll::-webkit-scrollbar-thumb{background:var(--border-lite)}
+
+.right-content{flex:1;overflow-y:auto;padding:10px 14px}
+.right-content::-webkit-scrollbar{width:5px}
+.right-content::-webkit-scrollbar-track{background:var(--bg)}
+.right-content::-webkit-scrollbar-thumb{background:var(--border-lite)}
+
+.ir-table{width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:11px}
+.ir-table th{background:#0d1829;color:var(--text-dim);padding:4px 6px;text-align:left;border-bottom:1px solid var(--border);position:sticky;top:0;font-size:10px;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.ir-table th.sortable{cursor:pointer;user-select:none}
+.ir-table th.sortable:hover{color:var(--text-bright)}
+.ir-table th.sort-active{color:var(--accent-glow)}
+.sort-arrow{font-size:10px;margin-left:3px;opacity:0.5}
+.sort-arrow.active{opacity:1;color:var(--accent-glow)}
+.ir-table td{padding:3px 6px;border-bottom:1px solid #0e1a28;white-space:nowrap}
+.ir-table tr:hover td{background:#111e30}
+.col-symbol{color:var(--text-bright);font-weight:bold}
+.zone-badge{display:inline-block;padding:1px 5px;font-size:10px;font-weight:bold;border-radius:2px;color:#000}
+
+.histo-wrap{margin-bottom:14px}
+.section-title{font-weight:bold;font-size:13px;color:var(--text-bright);text-align:center;margin-bottom:6px;letter-spacing:.03em}
+.histo-svg-box{background:var(--panel);border:1px solid var(--border);overflow:hidden}
+
+/* ── Two-level boxed title with explanation (ElementStateSt.6) ── */
+.boxed-title-block {
+  border:1px solid var(--border-lite);
+  text-align:center;
+  padding:8px 20px 10px;
+  margin:14px 0 10px;
+  background:var(--panel);
+}
+.boxed-title-line1 {
+  font-weight:bold;
+  font-size:13px;
+  color:var(--text-bright);
+  letter-spacing:.03em;
+  display:block;
+}
+.boxed-title-line2 {
+  font-weight:bold;
+  font-size:13px;
+  color:var(--text-bright);
+  letter-spacing:.03em;
+  display:block;
+  margin-bottom:6px;
+}
+.boxed-title-explanation {
+  font-style:italic;
+  font-size:11px;
+  color:var(--text-dim);
+  line-height:1.45;
+  border-top:1px solid var(--border);
+  padding-top:6px;
+  margin-top:2px;
+}
+
+/* Standard single-line boxed title for other sponsors */
+.boxed-title{border:1px solid var(--border-lite);text-align:center;padding:6px 20px;font-weight:bold;font-size:13px;color:var(--text-bright);margin:14px 0 10px;background:var(--panel);letter-spacing:.03em}
+
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.toggle-wrap{background:var(--panel);border:1px solid var(--border)}
+.toggle-header{background:var(--panel-alt);border-bottom:1px solid var(--border);padding:6px 10px;display:flex;align-items:center;justify-content:space-between}
+.toggle-title{font-weight:bold;font-size:12px;color:var(--text-bright)}
+.scroll-table{max-height:340px;overflow-y:auto}
+.scroll-table::-webkit-scrollbar{width:4px}
+.scroll-table::-webkit-scrollbar-track{background:var(--bg)}
+.scroll-table::-webkit-scrollbar-thumb{background:var(--border-lite)}
+
+#histo-tip{position:fixed;background:#0d1829;border:1px solid #3090d8;color:#ddeeff;font-family:'Courier New',monospace;font-size:11px;padding:5px 9px;pointer-events:none;display:none;z-index:999;white-space:nowrap;border-radius:2px;box-shadow:0 2px 12px rgba(0,0,0,0.6)}
+</style>
+</head>
+<body>
+
+<div id="histo-tip"></div>
+
+<div class="header-bar">
+  <button class="btn-nav" onclick="history.back()">◀ Back</button>
+  <input class="search-box" type="text" placeholder="Search ticker…" id="searchInput"
+    onkeydown="if(event.key==='Enter'){var q=this.value.trim().toUpperCase();if(q)alert('Search: '+q);}">
+  <button class="btn-nav" onclick="var q=document.getElementById('searchInput').value.trim().toUpperCase();if(q)alert('Search: '+q);">Search</button>
+</div>
+
+<div class="sponsor-nav">
+  <a href="ishares.html">iShares</a>
+  <a href="invesco.html">Invesco</a>
+  <a href="globx.html">Global X</a>
+  <a href="firsttrust.html">First Trust</a>
+  <a href="vanguard.html">Vanguard</a>
+  <a href="vaneck.html">Van Eck</a>
+  <a href="proshares.html">ProShares</a>
+  <a href="others.html">Others</a>
+  <a href="statestreet.html" class="active">State Street</a>
+</div>
+
+<div class="page-title-block">
+  <div class="page-title">State Street ETFs</div>
+</div>
+<div class="desc-block">
+  <div class="desc-text collapsed" id="descText">
+    State Street Investment Management, headquartered in Boston, Massachusetts, was founded in 1978 as the asset management division of State Street Corporation. The firm is the fourth-largest asset manager in the world, managing approximately $4.67 trillion in assets as of March 31, 2025. State Street Investment Management serves a spectrum of clients across more than 60 countries, from institutional and individual investors to plan sponsors and financial advisors. The firm rebranded from State Street Global Advisors to State Street Investment Management in 2025. As pioneers in indexing and ETF investing, State Street Investment Management has a decades-long track record of innovation in investment solutions. The firm launched the first U.S.-listed exchange-traded fund on January 22, 1993, in partnership with the American Stock Exchange. The firm also pioneered international ETF markets, launching the first ETFs in Hong Kong (November 11, 1999), Australia (August 24, 2001), and Singapore (April 11, 2002). SPDR (pronounced "spider") is a family of exchange-traded funds managed by State Street Investment Management. SPDR is an acronym for Standard & Poor's Depositary Receipts, the name of the first fund in the family, the SPDR S&P 500 ETF Trust (SPY). In December 1998, State Street introduced the Select Sector SPDR ETFs, creating the industry's first suite of sector-based ETFs. As of September 30, 2025, the Select Sector SPDR suite manages over $332 billion in net assets across all eleven S&P 500 sectors. The SPDR family encompasses a comprehensive range of index and actively managed ETFs covering domestic and international equities, fixed income, commodities, and alternatives. As of 2025, State Street manages approximately $1.8 trillion in ETF assets across 175 U.S. products. State Street Global Advisors Funds Distributors, LLC serves as distributor for SPDR ETFs. Information gathered from company website.
+  </div>
+  <button class="desc-toggle" id="descBtn" onclick="toggleDesc()">▼ Show More</button>
+</div>
+
+<div class="main-body">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <span class="sidebar-title">State Street ETFs</span>
+      <div class="toggle-btns">
+        <button class="toggle-btn active" data-group="all" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+        <button class="toggle-btn"        data-group="all" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+      </div>
+    </div>
+    <div class="sidebar-scroll">
+      <table class="ir-table">
+        <thead>
+          <tr>
+            <th>Tick</th><th>Name</th>
+            <th class="sortable sort-active" onclick="handleSortClick('all','ir')" id="all-th-ir" style="text-align:center">IR <span class="sort-arrow active" id="all-arr-ir">↓</span></th>
+            <th style="text-align:center">Zn</th>
+          </tr>
+        </thead>
+        <tbody id="all-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="right-content">
+
+    <!-- HISTOGRAM -->
+    <div class="histo-wrap">
+      <div class="section-title">State Street ETFs — 90-day Implied Risk Histogram</div>
+      <div class="histo-svg-box">
+        <svg id="mainHisto" viewBox="0 0 920 268" width="100%"
+             preserveAspectRatio="xMidYMid meet" style="display:block;"></svg>
+      </div>
+    </div>
+
+    <!-- TWO-LEVEL BOXED TITLE WITH EXPLANATION (ElementStateSt.6) -->
+    <div class="boxed-title-block">
+      <span class="boxed-title-line1">State Street ETFs</span>
+      <span class="boxed-title-line2">With Members and Without Members</span>
+      <div class="boxed-title-explanation">
+        Membership lists of some ETFs are difficult to obtain for various reasons. ETFs With Members have base pages that contain histograms and toggles, while the base pages for ETFs Without Members don't contain histograms or toggles.
+      </div>
+    </div>
+
+    <!-- TWO-COL TOGGLES -->
+    <div class="two-col">
+
+      <div class="toggle-wrap">
+        <div class="toggle-header">
+          <span class="toggle-title">State Street ETFs With Members</span>
+          <div class="toggle-btns">
+            <button class="toggle-btn active" data-group="with" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+            <button class="toggle-btn"        data-group="with" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+          </div>
+        </div>
+        <div class="scroll-table">
+          <table class="ir-table">
+            <thead>
+              <tr>
+                <th>Ticker</th><th>Name</th>
+                <th class="sortable sort-active" onclick="handleSortClick('with','ir')" id="with-th-ir" style="text-align:center">IR <span class="sort-arrow active" id="with-arr-ir">↓</span></th>
+                <th style="text-align:center">Zn</th>
+                <th class="sortable" onclick="handleSortClick('with','3mo')" id="with-th-3mo" style="text-align:center;padding-left:14px">3Mo Ago <span class="sort-arrow" id="with-arr-3mo">↕</span></th>
+              </tr>
+            </thead>
+            <tbody id="with-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="toggle-wrap">
+        <div class="toggle-header">
+          <span class="toggle-title">State Street ETFs Without Members</span>
+          <div class="toggle-btns">
+            <button class="toggle-btn active" data-group="without" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+            <button class="toggle-btn"        data-group="without" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+          </div>
+        </div>
+        <div class="scroll-table">
+          <table class="ir-table">
+            <thead>
+              <tr>
+                <th>Ticker</th><th>Name</th>
+                <th class="sortable sort-active" onclick="handleSortClick('without','ir')" id="without-th-ir" style="text-align:center">IR <span class="sort-arrow active" id="without-arr-ir">↓</span></th>
+                <th style="text-align:center">Zn</th>
+                <th class="sortable" onclick="handleSortClick('without','3mo')" id="without-th-3mo" style="text-align:center;padding-left:14px">3Mo Ago <span class="sort-arrow" id="without-arr-3mo">↕</span></th>
+              </tr>
+            </thead>
+            <tbody id="without-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// DATA — 82 unique ETFs
+// Notes: SPMB and SPIP each appeared twice in source list — one entry kept.
+// Distribution: Gold/commodities/EM oversold; tech/specialty sectors overbought.
+// ═══════════════════════════════════════════════════════════
+
+const WITHOUT_DATA = [
+  {t:'GLD',  name:'Gold Select Sector SPDR',               ir90: 92,ir10: 88,ir90_3mo: 68,ir10_3mo: 62},
+  {t:'HECO', name:'Galaxy Hedged Digital Asset ETF',        ir90: 88,ir10: 82,ir90_3mo: 62,ir10_3mo: 55},
+  {t:'FISR', name:'Fixed Income Sector Rotation ETF',       ir90: 65,ir10: 58,ir90_3mo: 42,ir10_3mo: 35},
+  {t:'XLSR', name:'US Sector Rotation ETF',                 ir90: 35,ir10: 28,ir90_3mo: 18,ir10_3mo: 10},
+  {t:'SPYG', name:'S&P 500 Growth ETF',                     ir90: 34,ir10: 28,ir90_3mo: 15,ir10_3mo:  8},
+  {t:'SPMD', name:'S&P 400 Mid Cap ETF',                    ir90: 30,ir10: 24,ir90_3mo: 12,ir10_3mo:  5},
+  {t:'SPGM', name:'MSCI Global Stock Market ETF',           ir90: 28,ir10: 22,ir90_3mo: 10,ir10_3mo:  2},
+  {t:'GXC',  name:'S&P China ETF',                          ir90: 67,ir10: 60,ir90_3mo: 42,ir10_3mo: 35},
+  {t:'GMF',  name:'S&P Emerging Asia Pacific ETF',          ir90: 67,ir10: 60,ir90_3mo: 42,ir10_3mo: 35},
+  {t:'SPEU', name:'Europe ETF',                             ir90: 55,ir10: 48,ir90_3mo: 32,ir10_3mo: 25},
+  {t:'FEZ',  name:'EURO STOXX 50 ETF',                      ir90: 60,ir10: 54,ir90_3mo: 38,ir10_3mo: 30},
+  {t:'SHE',  name:'MSCI USA Gender Diversity ETF',           ir90: 22,ir10: 16,ir90_3mo:  8,ir10_3mo:  2},
+  {t:'KOMP', name:'S&P Kensho New Economies ETF',            ir90: 45,ir10: 38,ir90_3mo: 22,ir10_3mo: 15},
+  {t:'MDYV', name:'S&P MidCap 400 Value ETF',               ir90: 18,ir10: 12,ir90_3mo:  5,ir10_3mo: -2},
+  {t:'SPSM', name:'S&P 600 Small Cap ETF',                  ir90:  8,ir10:  2,ir90_3mo: -5,ir10_3mo:-10},
+  {t:'SLYV', name:'S&P Small Cap 600 Value ETF',            ir90: 12,ir10:  6,ir90_3mo:  2,ir10_3mo: -4},
+  {t:'SLYG', name:'S&P Small Cap 600 Growth ETF',           ir90:  6,ir10:  0,ir90_3mo: -8,ir10_3mo:-14},
+  {t:'SGT',  name:'Global Dow ETF',                         ir90:  2,ir10: -4,ir90_3mo:-12,ir10_3mo:-18},
+  {t:'SPTB', name:'Treasury ETF',                           ir90:  1,ir10: -4,ir90_3mo:-15,ir10_3mo:-20},
+  {t:'MMK',  name:'Prime Money Market ETF',                 ir90:  3,ir10:  0,ir90_3mo:  8,ir10_3mo:  5},
+  {t:'SPTS', name:'Short Term Treasury ETF',                ir90: -3,ir10: -8,ir90_3mo:  8,ir10_3mo:  5},
+  {t:'SPSB', name:'Short Term Corporate Bond ETF',          ir90: -6,ir10:-10,ir90_3mo:  5,ir10_3mo:  2},
+  {t:'SPIP', name:'TIPS ETF',                               ir90:-12,ir10:-16,ir90_3mo:  5,ir10_3mo: -2},
+  {t:'SPBO', name:'Corporate Bond ETF',                     ir90:-16,ir10:-20,ir90_3mo: -5,ir10_3mo:-10},
+  {t:'SPAB', name:'Aggregate Bond ETF',                     ir90:-20,ir10:-24,ir90_3mo: -8,ir10_3mo:-14},
+  {t:'SPIB', name:'Intermediate Term Corporate Bond ETF',   ir90:-24,ir10:-28,ir90_3mo:-10,ir10_3mo:-16},
+  {t:'SPTI', name:'Intermediate Term Treasury ETF',         ir90:-26,ir10:-30,ir90_3mo:-12,ir10_3mo:-18},
+  {t:'SPMB', name:'Mortgage Backed Bond ETF',               ir90:-48,ir10:-52,ir90_3mo:-28,ir10_3mo:-35},
+  {t:'SPTL', name:'Long Term Treasury ETF',                 ir90:-50,ir10:-54,ir90_3mo:-32,ir10_3mo:-38},
+  {t:'SPLB', name:'Long Term Corporate Bond ETF',           ir90:-58,ir10:-62,ir90_3mo:-38,ir10_3mo:-45},
+  {t:'SPHY', name:'High Yield Bond ETF',                    ir90:-62,ir10:-66,ir90_3mo:-42,ir10_3mo:-48},
+  {t:'XLCI', name:'Comm Services Sector Premium Income ETF',ir90: -9,ir10:-14,ir90_3mo:  8,ir10_3mo:  2},
+  {t:'XLYI', name:'Cons Discretionary Sector Premium Inc ETF',ir90:-14,ir10:-18,ir90_3mo:  5,ir10_3mo: -2},
+  {t:'XLSI', name:'Cons Staples Sector Premium Income ETF', ir90:-38,ir10:-42,ir90_3mo:-18,ir10_3mo:-25},
+  {t:'XLEI', name:'Energy Sector Premium Income ETF',       ir90:-46,ir10:-50,ir90_3mo:-25,ir10_3mo:-32},
+  {t:'XLFI', name:'Financial Sector Premium Income ETF',    ir90:-18,ir10:-22,ir90_3mo: -5,ir10_3mo:-10},
+  {t:'XLVI', name:'Health Care Sector Premium Income ETF',  ir90:-22,ir10:-26,ir90_3mo: -8,ir10_3mo:-14},
+  {t:'XLII', name:'Industrial Sector Premium Income ETF',   ir90:-60,ir10:-64,ir90_3mo:-40,ir10_3mo:-48},
+  {t:'XLBI', name:'Materials Sector Premium Income ETF',    ir90:-52,ir10:-56,ir90_3mo:-32,ir10_3mo:-38},
+  {t:'XLRI', name:'Real Estate Sector Premium Income ETF',  ir90:-54,ir10:-58,ir90_3mo:-34,ir10_3mo:-40},
+  {t:'XLKI', name:'Technology Sector Premium Income ETF',   ir90:-72,ir10:-76,ir90_3mo:-52,ir10_3mo:-58},
+  {t:'XLUI', name:'Utilities Sector Premium Income ETF',    ir90:-64,ir10:-68,ir90_3mo:-44,ir10_3mo:-52},
+  {t:'SPTM', name:'S&P 1500 Composite Stock Market ETF',    ir90:-94,ir10:-96,ir90_3mo:-78,ir10_3mo:-85}
+];
+
+const WITH_DATA = [
+  {t:'DECO', name:'Galaxy Digital Asset Ecosystem ETF',     ir90: 85,ir10: 78,ir90_3mo: 62,ir10_3mo: 55},
+  {t:'XME',  name:'S&P Metals & Mining ETF',                ir90: 78,ir10: 71,ir90_3mo: 52,ir10_3mo: 45},
+  {t:'XLE',  name:'Energy Select Sector SPDR',              ir90: 75,ir10: 68,ir90_3mo: 50,ir10_3mo: 42},
+  {t:'XOP',  name:'S&P Oil & Gas Exploration & Prod ETF',   ir90: 72,ir10: 65,ir90_3mo: 48,ir10_3mo: 40},
+  {t:'CNRG', name:'S&P Kensho Clean Power ETF',             ir90: 70,ir10: 64,ir90_3mo: 46,ir10_3mo: 38},
+  {t:'XES',  name:'S&P Oil & Gas Equipment & Services ETF', ir90: 68,ir10: 61,ir90_3mo: 44,ir10_3mo: 36},
+  {t:'ROKT', name:'S&P Kensho Final Frontiers ETF',         ir90: 62,ir10: 55,ir90_3mo: 40,ir10_3mo: 32},
+  {t:'FITE', name:'S&P Kensho Future Security ETF',         ir90: 58,ir10: 51,ir90_3mo: 36,ir10_3mo: 28},
+  {t:'SIMS', name:'S&P Kensho Intelligent Structures ETF',  ir90: 52,ir10: 45,ir90_3mo: 30,ir10_3mo: 22},
+  {t:'HAIL', name:'S&P Kensho Smart Mobility ETF',          ir90: 48,ir10: 41,ir90_3mo: 26,ir10_3mo: 18},
+  {t:'XHB',  name:'S&P Homebuilders ETF',                   ir90: 42,ir10: 36,ir90_3mo: 22,ir10_3mo: 14},
+  {t:'XAR',  name:'S&P Aerospace & Defense ETF',            ir90: 38,ir10: 32,ir90_3mo: 20,ir10_3mo: 12},
+  {t:'KRE',  name:'S&P Regional Banking ETF',               ir90: 36,ir10: 30,ir90_3mo: 18,ir10_3mo: 10},
+  {t:'DIA',  name:'Dow Jones Industrial Average ETF Trust', ir90: 32,ir10: 26,ir90_3mo: 15,ir10_3mo:  8},
+  {t:'XRT',  name:'S&P Retail ETF',                         ir90: 25,ir10: 19,ir90_3mo: 10,ir10_3mo:  2},
+  {t:'XPH',  name:'S&P Pharmaceuticals ETF',                ir90: 16,ir10: 10,ir90_3mo:  5,ir10_3mo: -2},
+  {t:'XLRE', name:'Real Estate Select Sector SPDR',         ir90: 15,ir10:  9,ir90_3mo:  2,ir10_3mo: -5},
+  {t:'TEKX', name:'Galaxy Digital Transformative Tech ETF', ir90:-70,ir10:-74,ir90_3mo:-50,ir10_3mo:-56},
+  {t:'XLC',  name:'Communication Services Select Sector',   ir90:-28,ir10:-32,ir90_3mo:-12,ir10_3mo:-18},
+  {t:'XLP',  name:'Consumer Staples Select Sector SPDR',    ir90:-30,ir10:-34,ir90_3mo:-15,ir10_3mo:-22},
+  {t:'XLF',  name:'Financial Select Sector SPDR',           ir90:-32,ir10:-36,ir90_3mo:-18,ir10_3mo:-25},
+  {t:'XLB',  name:'Materials Select Sector SPDR',           ir90:-33,ir10:-37,ir90_3mo:-18,ir10_3mo:-25},
+  {t:'XLU',  name:'Utilities Select Sector SPDR',           ir90:  4,ir10: -2,ir90_3mo: -8,ir10_3mo:-14},
+  {t:'XLI',  name:'Industrials Select Sector SPDR',         ir90:-35,ir10:-39,ir90_3mo:-18,ir10_3mo:-25},
+  {t:'XLY',  name:'Consumer Discretionary Select Sector',   ir90:-42,ir10:-46,ir90_3mo:-22,ir10_3mo:-30},
+  {t:'XNTK', name:'NYSE Technology ETF',                    ir90:-44,ir10:-48,ir90_3mo:-28,ir10_3mo:-35},
+  {t:'XITL', name:'FactSet Innovative Technology ETF',      ir90:-76,ir10:-80,ir90_3mo:-56,ir10_3mo:-62},
+  {t:'XLV',  name:'Healthcare Select Sector SPDR',          ir90:-56,ir10:-60,ir90_3mo:-36,ir10_3mo:-42},
+  {t:'XNTK', name:'NYSE Technology ETF',                    ir90:-44,ir10:-48,ir90_3mo:-28,ir10_3mo:-35}, // handled below
+  {t:'XSD',  name:'S&P Semiconductor ETF',                  ir90:-68,ir10:-72,ir90_3mo:-48,ir10_3mo:-55},
+  {t:'XSW',  name:'S&P Software & Services ETF',            ir90:-74,ir10:-78,ir90_3mo:-55,ir10_3mo:-62},
+  {t:'KIE',  name:'S&P Insurance ETF',                      ir90:-78,ir10:-82,ir90_3mo:-58,ir10_3mo:-65},
+  {t:'XBI',  name:'S&P Biotech ETF',                        ir90:-80,ir10:-84,ir90_3mo:-60,ir10_3mo:-68},
+  {t:'KCE',  name:'S&P Capital Markets ETF',                ir90:-82,ir10:-86,ir90_3mo:-62,ir10_3mo:-70},
+  {t:'XHE',  name:'S&P Health Care Equipment ETF',          ir90:-84,ir10:-88,ir90_3mo:-64,ir10_3mo:-72},
+  {t:'KBE',  name:'S&P Bank ETF',                           ir90:-86,ir10:-90,ir90_3mo:-66,ir10_3mo:-74},
+  {t:'XHS',  name:'S&P Health Care Services ETF',           ir90:-88,ir10:-92,ir90_3mo:-68,ir10_3mo:-76},
+  {t:'XTL',  name:'S&P Telecom ETF',                        ir90:-90,ir10:-93,ir90_3mo:-72,ir10_3mo:-80},
+  {t:'XTN',  name:'S&P Transportation ETF',                 ir90:-92,ir10:-95,ir90_3mo:-75,ir10_3mo:-82},
+  {t:'XLK',  name:'Information Technology Select Sector',   ir90:-96,ir10:-98,ir90_3mo:-80,ir10_3mo:-88}
+];
+
+// Deduplicate WITH_DATA (XNTK appears twice due to copy error above)
+const _withSeen = new Set();
+const WITH_DATA_CLEAN = WITH_DATA.filter(d => {
+  if(_withSeen.has(d.t)){return false;} _withSeen.add(d.t); return true;
+});
+
+const ALL_DATA = [...WITHOUT_DATA, ...WITH_DATA_CLEAN];
+const WITH_TICKERS = WITH_DATA_CLEAN.map(d=>d.t);
+
+// ═══════════════════════════════════════════════════════════
+// HISTOGRAM — 82 ETFs across 6 zones
+// ═══════════════════════════════════════════════════════════
+const HISTO_ZONES = [
+  { label:'Zone 1', range:'+99 to +67', color:'#00cc55', bg:'rgba(0,204,85,0.07)',
+    slots:[
+      [{tr:'GLD',full:'GLD', name:'Gold Select Sector SPDR',ir90:92}],
+      [{tr:'HEC',full:'HECO',name:'Galaxy Hedged Digital Asset ETF',ir90:88},
+       {tr:'DEC',full:'DECO',name:'Galaxy Digital Asset Ecosystem ETF',ir90:85}],
+      [{tr:'XME',full:'XME', name:'S&P Metals & Mining ETF',ir90:78},
+       {tr:'XLE',full:'XLE', name:'Energy Select Sector SPDR',ir90:75}],
+      [{tr:'XOP',full:'XOP', name:'S&P Oil & Gas Exploration & Prod ETF',ir90:72},
+       {tr:'CNR',full:'CNRG',name:'S&P Kensho Clean Power ETF',ir90:70},
+       {tr:'XES',full:'XES', name:'S&P Oil & Gas Equipment & Services ETF',ir90:68},
+       {tr:'GXC',full:'GXC', name:'S&P China ETF',ir90:67},
+       {tr:'GMF',full:'GMF', name:'S&P Emerging Asia Pacific ETF',ir90:67}]
+    ]},
+  { label:'Zone 2', range:'+66 to +34', color:'#88cc44', bg:'rgba(136,204,68,0.07)',
+    slots:[
+      [{tr:'FIS',full:'FISR',name:'Fixed Income Sector Rotation ETF',ir90:65},
+       {tr:'ROK',full:'ROKT',name:'S&P Kensho Final Frontiers ETF',ir90:62}],
+      [{tr:'FEZ',full:'FEZ', name:'EURO STOXX 50 ETF',ir90:60},
+       {tr:'FIT',full:'FITE',name:'S&P Kensho Future Security ETF',ir90:58},
+       {tr:'SPE',full:'SPEU',name:'Europe ETF',ir90:55}],
+      [{tr:'SIM',full:'SIMS',name:'S&P Kensho Intelligent Structures ETF',ir90:52},
+       {tr:'HAI',full:'HAIL',name:'S&P Kensho Smart Mobility ETF',ir90:48},
+       {tr:'KOM',full:'KOMP',name:'S&P Kensho New Economies ETF',ir90:45}],
+      [{tr:'XHB',full:'XHB', name:'S&P Homebuilders ETF',ir90:42},
+       {tr:'XAR',full:'XAR', name:'S&P Aerospace & Defense ETF',ir90:38},
+       {tr:'KRE',full:'KRE', name:'S&P Regional Banking ETF',ir90:36},
+       {tr:'XLS',full:'XLSR',name:'US Sector Rotation ETF',ir90:35},
+       {tr:'PYG',full:'SPYG',name:'S&P 500 Growth ETF',ir90:34}]
+    ]},
+  { label:'Zone 3', range:'+33 to +1', color:'#7a9aaa', bg:'rgba(122,154,170,0.07)',
+    slots:[
+      [{tr:'DIA',full:'DIA', name:'Dow Jones Industrial Average ETF Trust',ir90:32},
+       {tr:'PMD',full:'SPMD',name:'S&P 400 Mid Cap ETF',ir90:30},
+       {tr:'PGM',full:'SPGM',name:'MSCI Global Stock Market ETF',ir90:28}],
+      [{tr:'XRT',full:'XRT', name:'S&P Retail ETF',ir90:25},
+       {tr:'SHE',full:'SHE', name:'MSCI USA Gender Diversity ETF',ir90:22},
+       {tr:'MDY',full:'MDYV',name:'S&P MidCap 400 Value ETF',ir90:18}],
+      [{tr:'XPH',full:'XPH', name:'S&P Pharmaceuticals ETF',ir90:16},
+       {tr:'XLR',full:'XLRE',name:'Real Estate Select Sector SPDR',ir90:15},
+       {tr:'SLV',full:'SLYV',name:'S&P Small Cap 600 Value ETF',ir90:12}],
+      [{tr:'PSM',full:'SPSM',name:'S&P 600 Small Cap ETF',ir90:8},
+       {tr:'SLG',full:'SLYG',name:'S&P Small Cap 600 Growth ETF',ir90:6},
+       {tr:'XLU',full:'XLU', name:'Utilities Select Sector SPDR',ir90:4},
+       {tr:'MMK',full:'MMK', name:'Prime Money Market ETF',ir90:3},
+       {tr:'SGT',full:'SGT', name:'Global Dow ETF',ir90:2},
+       {tr:'SPB',full:'SPTB',name:'Treasury ETF',ir90:1}]
+    ]},
+  { label:'Zone 4', range:'−1 to −33', color:'#aa9a7a', bg:'rgba(170,154,122,0.07)',
+    slots:[
+      [{tr:'PTS',full:'SPTS',name:'Short Term Treasury ETF',ir90:-3},
+       {tr:'PSB',full:'SPSB',name:'Short Term Corporate Bond ETF',ir90:-6}],
+      [{tr:'LCI',full:'XLCI',name:'Comm Services Sector Premium Income ETF',ir90:-9},
+       {tr:'PIP',full:'SPIP',name:'TIPS ETF',ir90:-12},
+       {tr:'LYI',full:'XLYI',name:'Cons Discretionary Sector Premium Inc ETF',ir90:-14},
+       {tr:'PBO',full:'SPBO',name:'Corporate Bond ETF',ir90:-16}],
+      [{tr:'LFI',full:'XLFI',name:'Financial Sector Premium Income ETF',ir90:-18},
+       {tr:'PAB',full:'SPAB',name:'Aggregate Bond ETF',ir90:-20},
+       {tr:'LVI',full:'XLVI',name:'Health Care Sector Premium Income ETF',ir90:-22},
+       {tr:'PIB',full:'SPIB',name:'Intermediate Term Corporate Bond ETF',ir90:-24}],
+      [{tr:'PTI',full:'SPTI',name:'Intermediate Term Treasury ETF',ir90:-26},
+       {tr:'XLC',full:'XLC', name:'Communication Services Select Sector',ir90:-28},
+       {tr:'XLP',full:'XLP', name:'Consumer Staples Select Sector SPDR',ir90:-30},
+       {tr:'XLF',full:'XLF', name:'Financial Select Sector SPDR',ir90:-32},
+       {tr:'XLB',full:'XLB', name:'Materials Select Sector SPDR',ir90:-33}]
+    ]},
+  { label:'Zone 5', range:'−34 to −66', color:'#ddcc00', bg:'rgba(221,204,0,0.07)',
+    slots:[
+      [{tr:'XLI',full:'XLI', name:'Industrials Select Sector SPDR',ir90:-35},
+       {tr:'LSI',full:'XLSI',name:'Cons Staples Sector Premium Income ETF',ir90:-38},
+       {tr:'XLY',full:'XLY', name:'Consumer Discretionary Select Sector',ir90:-42}],
+      [{tr:'NTK',full:'XNTK',name:'NYSE Technology ETF',ir90:-44},
+       {tr:'LEI',full:'XLEI',name:'Energy Sector Premium Income ETF',ir90:-46},
+       {tr:'PMB',full:'SPMB',name:'Mortgage Backed Bond ETF',ir90:-48},
+       {tr:'PTL',full:'SPTL',name:'Long Term Treasury ETF',ir90:-50}],
+      [{tr:'LBI',full:'XLBI',name:'Materials Sector Premium Income ETF',ir90:-52},
+       {tr:'LRI',full:'XLRI',name:'Real Estate Sector Premium Income ETF',ir90:-54},
+       {tr:'XLV',full:'XLV', name:'Healthcare Select Sector SPDR',ir90:-56},
+       {tr:'PLB',full:'SPLB',name:'Long Term Corporate Bond ETF',ir90:-58}],
+      [{tr:'LII',full:'XLII',name:'Industrial Sector Premium Income ETF',ir90:-60},
+       {tr:'PHY',full:'SPHY',name:'High Yield Bond ETF',ir90:-62},
+       {tr:'LUI',full:'XLUI',name:'Utilities Sector Premium Income ETF',ir90:-64}]
+    ]},
+  { label:'Zone 6', range:'−67 to −99', color:'#e83535', bg:'rgba(232,53,53,0.07)',
+    slots:[
+      [{tr:'XSD',full:'XSD', name:'S&P Semiconductor ETF',ir90:-68},
+       {tr:'TEK',full:'TEKX',name:'Galaxy Digital Transformative Tech ETF',ir90:-70},
+       {tr:'LKI',full:'XLKI',name:'Technology Sector Premium Income ETF',ir90:-72},
+       {tr:'XSW',full:'XSW', name:'S&P Software & Services ETF',ir90:-74}],
+      [{tr:'XIL',full:'XITL',name:'FactSet Innovative Technology ETF',ir90:-76},
+       {tr:'KIE',full:'KIE', name:'S&P Insurance ETF',ir90:-78},
+       {tr:'XBI',full:'XBI', name:'S&P Biotech ETF',ir90:-80},
+       {tr:'KCE',full:'KCE', name:'S&P Capital Markets ETF',ir90:-82}],
+      [{tr:'XHE',full:'XHE', name:'S&P Health Care Equipment ETF',ir90:-84},
+       {tr:'KBE',full:'KBE', name:'S&P Bank ETF',ir90:-86},
+       {tr:'XHS',full:'XHS', name:'S&P Health Care Services ETF',ir90:-88},
+       {tr:'XTL',full:'XTL', name:'S&P Telecom ETF',ir90:-90}],
+      [{tr:'XTN',full:'XTN', name:'S&P Transportation ETF',ir90:-92},
+       {tr:'STM',full:'SPTM',name:'S&P 1500 Composite Stock Market ETF',ir90:-94},
+       {tr:'XLK',full:'XLK', name:'Information Technology Select Sector',ir90:-96}]
+    ]}
+];
+
+// ═══════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════
+function irToZone(ir){
+  if(ir>=67)return 1; if(ir>=34)return 2; if(ir>=1)return 3;
+  if(ir>=-33)return 4; if(ir>=-66)return 5; return 6;
+}
+const ZC={1:'#00cc55',2:'#88cc44',3:'#7a9aaa',4:'#aa9a7a',5:'#ddcc00',6:'#e83535'};
+function zoneBadge(z){return`<span class="zone-badge" style="background:${ZC[z]};color:#000">Z${z}</span>`}
+function irColor(ir){return ir>0?'#00cc55':ir<0?'#e83535':'#b8cce0'}
+function fmtIR(ir){return(ir>0?'+':'')+ir}
+
+const sortState   = {all:{field:'ir',dir:1}, with:{field:'ir',dir:1}, without:{field:'ir',dir:1}};
+const periodState = {all:'90', with:'90', without:'90'};
+
+function renderToggleTable(gid){
+  const map={all:ALL_DATA, with:WITH_DATA_CLEAN, without:WITHOUT_DATA};
+  const data=map[gid]; if(!data)return;
+  const period=periodState[gid];
+  const {field,dir}=sortState[gid];
+  const irField=period==='90'?'ir90':'ir10';
+  const moField=period==='90'?'ir90_3mo':'ir10_3mo';
+  const sortField=field==='ir'?irField:moField;
+  const sorted=[...data].sort((a,b)=>dir*(b[sortField]-a[sortField]));
+  const tbody=document.getElementById(`${gid}-tbody`); if(!tbody)return;
+  const hasThreeMo=(gid!=='all');
+  tbody.innerHTML=sorted.map(d=>{
+    const ir=d[irField], mo=d[moField], z=irToZone(ir);
+    const nm=d.name.length>22?d.name.slice(0,22)+'…':d.name;
+    const moCell=hasThreeMo
+      ?`<td style="color:${irColor(mo)};font-size:10px;text-align:center;padding-left:14px;font-family:'Courier New',monospace">${fmtIR(mo)}</td>`:'';
+    return`<tr>
+      <td class="col-symbol">${d.t}</td>
+      <td style="color:var(--text-dim);font-size:10px" title="${d.name}">${nm}</td>
+      <td style="color:${irColor(ir)};text-align:center;font-family:'Courier New',monospace;font-size:11px">${fmtIR(ir)}</td>
+      <td style="text-align:center">${zoneBadge(z)}</td>
+      ${moCell}
+    </tr>`;
+  }).join('');
+  updateSortArrows(gid);
+}
+
+function updateSortArrows(gid){
+  const {field,dir}=sortState[gid];
+  const sym=dir===1?'↓':'↑';
+  ['ir','3mo'].forEach(f=>{
+    const th=document.getElementById(`${gid}-th-${f}`);
+    const ar=document.getElementById(`${gid}-arr-${f}`);
+    if(!th||!ar)return;
+    if(field===f){th.classList.add('sort-active');ar.classList.add('active');ar.textContent=sym;}
+    else{th.classList.remove('sort-active');ar.classList.remove('active');ar.textContent='↕';}
+  });
+}
+
+function handlePeriodToggle(btn){
+  const{group,period}=btn.dataset;
+  btn.closest('.toggle-btns').querySelectorAll('.toggle-btn')
+     .forEach(b=>b.classList.toggle('active',b===btn));
+  periodState[group]=period;
+  renderToggleTable(group);
+}
+
+function handleSortClick(gid,field){
+  const st=sortState[gid];
+  if(st.field===field){st.dir*=-1;} else{st.field=field;st.dir=1;}
+  renderToggleTable(gid);
+}
+
+function toggleDesc(){
+  const t=document.getElementById('descText'),b=document.getElementById('descBtn');
+  if(t.classList.contains('collapsed')){t.classList.remove('collapsed');b.textContent='▲ Show Less';}
+  else{t.classList.add('collapsed');b.textContent='▼ Show More';}
+}
+
+// ═══════════════════════════════════════
+// HISTOGRAM
+// ═══════════════════════════════════════
+function buildHistogram(){
+  const W=920,OW=28,BX=OW,BW=W-2*OW,ZW=BW/6;
+  const SLOT_PITCH=BW/24;
+  let BY=205; const SH=13,SFS=9;
+  const BELL_A=168,BELL_FLOOR=16,BELL_SIG=ZW,BCX=BX+BW/2;
+  // Dynamic height: grow SVG upward if tallest stack would clip
+  const _maxStk=Math.max(1,...HISTO_ZONES.flatMap(z=>z.slots.map(s=>s.length)));
+  if(_maxStk*SH+20>BY)BY=_maxStk*SH+20;
+  const H=BY+63;
+  document.getElementById('mainHisto').setAttribute('viewBox',`0 0 ${W} ${H}`);
+  const LY_RANGE=BY+18,LY_ZONE=BY+31;
+
+  let s='';
+  s+=`<defs>
+    <filter id="glow"><feGaussianBlur stdDeviation="2.8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="softglow"><feGaussianBlur stdDeviation="1.5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>`;
+
+  s+=`<rect x="0" y="0" width="${OW}" height="${H}" fill="rgba(0,0,0,0.3)"/>`;
+  s+=`<rect x="${BX+BW}" y="0" width="${OW}" height="${H}" fill="rgba(0,0,0,0.3)"/>`;
+  for(let z=0;z<6;z++)
+    s+=`<rect x="${(BX+z*ZW).toFixed(1)}" y="0" width="${ZW.toFixed(1)}" height="${BY}" fill="${HISTO_ZONES[z].bg}"/>`;
+  for(let z=0;z<=6;z++){
+    const x=(BX+z*ZW).toFixed(1),op=(z===0||z===6)?'0.45':'0.22',sw=(z===0||z===6)?1.5:1;
+    s+=`<line x1="${x}" y1="0" x2="${x}" y2="${BY}" stroke="rgba(255,255,255,${op})" stroke-width="${sw}"/>`;
+  }
+  for(let i=1;i<24;i++){
+    const x=(BX+i*SLOT_PITCH).toFixed(1);
+    s+=`<line x1="${x}" y1="8" x2="${x}" y2="${BY}" stroke="rgba(255,255,255,0.055)" stroke-width="0.5" stroke-dasharray="3,6"/>`;
+  }
+  s+=`<line x1="0" y1="${BY}" x2="${W}" y2="${BY}" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>`;
+
+  let cp='';
+  for(let px=BX;px<=BX+BW;px+=2){
+    const dx=px-BCX,fy=BY-(BELL_A*Math.exp(-(dx*dx)/(2*BELL_SIG*BELL_SIG))+BELL_FLOOR);
+    cp+=(px===BX?`M${px.toFixed(1)},${fy.toFixed(1)}`:`L${px.toFixed(1)},${fy.toFixed(1)}`);
+  }
+  s+=`<path d="${cp}" fill="none" stroke="rgba(120,185,255,0.14)" stroke-width="8"/>`;
+  s+=`<path d="${cp}" fill="none" stroke="rgba(155,210,255,0.72)" stroke-width="1.6" stroke-dasharray="8,4" filter="url(#glow)"/>`;
+  s+=`<path d="${cp}" fill="none" stroke="rgba(205,235,255,0.38)" stroke-width="0.8" stroke-dasharray="8,4"/>`;
+
+  for(let z=0;z<6;z++){
+    const zone=HISTO_ZONES[z],color=zone.color;
+    for(let sl=0;sl<4;sl++){
+      const syms=zone.slots[sl]; if(!syms||!syms.length)continue;
+      const i=z*4+sl,scx=(BX+(i+0.5)*SLOT_PITCH).toFixed(1),n=syms.length;
+      [...syms].sort((a,b)=>a.tr.localeCompare(b.tr)).forEach((sym,i2)=>{
+        const sy=(BY-(n-i2)*SH+SH*0.78).toFixed(1);
+        const sign=sym.ir90>0?'+':'';
+        const tip=`${sym.full} — ${sym.name}  |  90-IR: ${sign}${sym.ir90}  |  ${zone.label}`;
+        s+=`<text x="${scx}" y="${sy}" text-anchor="middle"
+          font-family="'Courier New',monospace" font-size="${SFS}" font-weight="bold"
+          fill="${color}" cursor="pointer" class="hsym" data-tip="${tip}"
+          filter="url(#softglow)">${sym.tr}</text>`;
+      });
+    }
+  }
+
+  for(let z=0;z<6;z++){
+    const zone=HISTO_ZONES[z],zx=BX+z*ZW,zcx=(zx+ZW/2).toFixed(1);
+    s+=`<text x="${zcx}" y="${LY_RANGE}" text-anchor="middle" font-family="'Courier New',monospace" font-size="8.5" fill="rgba(255,255,255,0.48)">${zone.range}</text>`;
+    s+=`<text x="${zcx}" y="${LY_ZONE}" text-anchor="middle" font-family="'Trebuchet MS',sans-serif" font-size="10.5" font-weight="bold" fill="${zone.color}">${zone.label}</text>`;
+  }
+
+  const OL=OW/2,OR=BX+BW+OW/2;
+  s+=`<text x="${OL}" y="20" text-anchor="middle" font-family="'Trebuchet MS',sans-serif" font-size="8.5" font-weight="bold" fill="#00cc55">OOB</text>`;
+  s+=`<text x="${OL}" y="32" text-anchor="middle" font-family="'Trebuchet MS',sans-serif" font-size="8" fill="#00cc55" opacity="0.7">Weak</text>`;
+  s+=`<text x="${OL}" y="${BY-8}" text-anchor="middle" font-family="'Courier New',monospace" font-size="12" font-weight="bold" fill="#00cc55">[0]</text>`;
+  s+=`<text x="${OL}" y="${LY_RANGE}" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="rgba(0,204,85,0.45)">≥+99</text>`;
+  s+=`<text x="${OR}" y="20" text-anchor="middle" font-family="'Trebuchet MS',sans-serif" font-size="8.5" font-weight="bold" fill="#e83535">OOB</text>`;
+  s+=`<text x="${OR}" y="32" text-anchor="middle" font-family="'Trebuchet MS',sans-serif" font-size="8" fill="#e83535" opacity="0.7">Strong</text>`;
+  s+=`<text x="${OR}" y="${BY-8}" text-anchor="middle" font-family="'Courier New',monospace" font-size="12" font-weight="bold" fill="#e83535">[0]</text>`;
+  s+=`<text x="${OR}" y="${LY_RANGE}" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="rgba(232,53,53,0.45)">≤−99</text>`;
+  s+=`<text x="${BX+8}" y="${H-5}" font-family="'Trebuchet MS',sans-serif" font-size="7.5" fill="rgba(0,204,85,0.4)">← Weak / Oversold</text>`;
+  s+=`<text x="${BX+BW-8}" y="${H-5}" text-anchor="end" font-family="'Trebuchet MS',sans-serif" font-size="7.5" fill="rgba(232,53,53,0.4)">Overbought / Strong →</text>`;
+
+  document.getElementById('mainHisto').innerHTML=s;
+  document.querySelectorAll('.hsym').forEach(el=>{
+    el.addEventListener('mouseenter',e=>{
+      const tip=document.getElementById('histo-tip');
+      tip.textContent=el.dataset.tip;tip.style.display='block';
+      tip.style.left=(e.clientX+14)+'px';tip.style.top=(e.clientY-8)+'px';
+    });
+    el.addEventListener('mousemove',e=>{
+      const tip=document.getElementById('histo-tip');
+      tip.style.left=(e.clientX+14)+'px';tip.style.top=(e.clientY-8)+'px';
+    });
+    el.addEventListener('mouseleave',()=>document.getElementById('histo-tip').style.display='none');
+  });
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  renderToggleTable('all');
+  renderToggleTable('with');
+  renderToggleTable('without');
+  buildHistogram();
+});
+</script>
+</body>
+</html>

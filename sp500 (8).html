@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>S&P 500 — Market · Sector · Stock · Strategy (pg. 26)</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:#08111e;color:#ddeeff;font-family:'Rajdhani',sans-serif;overflow-x:hidden;min-height:100vh}
+:root{--bg:#08111e;--panel:#0d1829;--alt:#0a1420;--b1:#1a2d44;--b2:#243c58;--ac:#3090d8;--tb:#ddeeff;--td:#5a7a9a;--gold:#c9a227}
+.top-nav{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:var(--alt);border-bottom:1px solid var(--b1);height:44px;position:sticky;top:0;z-index:80}
+.nav-left{display:flex;align-items:center;gap:6px}
+.nav-btn{background:var(--panel);border:1px solid var(--b2);color:#8ab0cc;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;padding:4px 14px;cursor:pointer;border-radius:2px;letter-spacing:.04em;transition:all .15s}
+.nav-btn:hover{border-color:var(--ac);color:var(--tb)}
+.nav-btn.back{border-color:var(--ac);color:var(--ac)}
+.nav-btn.back:hover{background:#162a3e;color:var(--tb)}
+.search-box{background:var(--panel);border:1px solid var(--b2);color:var(--tb);font-family:'Rajdhani',sans-serif;font-size:12px;padding:4px 14px;border-radius:2px;outline:none;width:190px;letter-spacing:.04em}
+.search-box::placeholder{color:#3a5a7a}
+.search-box:focus{border-color:var(--ac)}
+.pg-title{text-align:center;padding:18px 14px 12px;border-bottom:1px solid var(--b1)}
+.pg-t1{font-size:24px;font-weight:700;color:var(--tb);letter-spacing:.04em}
+.pg-t2{font-size:16px;font-weight:700;color:var(--gold);letter-spacing:.14em;text-transform:uppercase;margin-top:3px}
+.pg-desc{font-size:13px;font-style:italic;color:var(--td);margin-top:7px}
+.sp-section{margin:20px 14px 28px}
+.sp-sec-hdr{text-align:center;margin-bottom:10px}
+.sec-title-box{display:inline-block;border:1px solid var(--ac);padding:8px 28px 6px;border-radius:2px;background:rgba(48,144,216,0.04)}
+.sec-title{font-size:15px;font-weight:700;color:var(--tb);letter-spacing:.03em}
+.sec-desc{font-size:12px;font-style:italic;color:var(--td);margin-top:5px}
+.sp-body{display:flex;align-items:stretch;border:1px solid var(--b1);background:var(--panel)}
+.sp-lh{width:285px;min-width:285px;border-right:2px solid var(--b2);background:var(--alt);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.lh-hdr{padding:8px 10px 7px;border-bottom:1px solid var(--b1);flex-shrink:0}
+.lh-title-row{display:flex;align-items:center;justify-content:center;gap:8px}
+.lh-title{font-size:12px;font-weight:700;color:var(--tb);letter-spacing:.02em}
+.ws-arrow{background:none;border:1px solid var(--b2);color:var(--ac);font-size:14px;line-height:1.4;padding:0 6px;cursor:pointer;border-radius:2px;transition:all .15s;font-family:monospace}
+.ws-arrow:hover{border-color:var(--ac);background:rgba(48,144,216,0.1)}
+.lh-btns{display:flex;justify-content:center;gap:4px;margin-top:6px}
+.lh-btn{background:var(--b1);border:1px solid var(--b1);color:var(--td);font-size:10px;font-family:'Rajdhani',sans-serif;font-weight:600;padding:2px 10px;cursor:pointer;border-radius:2px;transition:all .15s}
+.lh-btn.active{background:#2a7abf;border-color:var(--ac);color:#fff}
+.lh-scroll{overflow-y:auto;flex:1}
+.lh-scroll::-webkit-scrollbar{width:4px}
+.lh-scroll::-webkit-scrollbar-track{background:var(--bg)}
+.lh-scroll::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
+.lh-table{width:100%;border-collapse:collapse;font-family:'Courier New',monospace;font-size:11px}
+.lh-table th{background:var(--alt);color:var(--td);padding:4px 6px;border-bottom:1px solid var(--b1);position:sticky;top:0;font-size:10px;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;z-index:1}
+.lh-table th.sortable{cursor:pointer;user-select:none}
+.lh-table th.sortable:hover{color:var(--tb)}
+.lh-table th.sort-active{color:var(--ac)}
+.sort-arrow{font-size:10px;margin-left:3px;opacity:.5}
+.sort-arrow.active{opacity:1;color:var(--ac)}
+.lh-table td{padding:3px 6px;border-bottom:1px solid #0e1a28;white-space:nowrap}
+.lh-table tr:hover td{background:#111e30}
+.ck{color:var(--tb);font-weight:bold}.cn{color:var(--td);font-size:10px}.ci{text-align:center}.cz{text-align:center}
+.pos{color:#88cc44}.neg{color:#e83535}.zer{color:#b8cce0}
+.zb{display:inline-block;padding:1px 5px;font-size:10px;font-weight:bold;border-radius:2px;color:#000}
+.sp-right{flex:1;overflow:hidden;padding:10px 14px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.hl{font-size:12px;font-weight:700;color:var(--tb);text-align:center;margin-bottom:5px;letter-spacing:.03em}
+.hsb{background:var(--panel);border:1px solid var(--b1);overflow:hidden}
+.two-rt{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.rt-wrap{background:var(--panel);border:1px solid var(--b1);overflow:hidden}
+.rt-hdr{background:var(--alt);border-bottom:1px solid var(--b1);padding:5px 10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:4px}
+.rt-title{font-weight:700;font-size:11px;color:var(--tb)}
+.rt-btns{display:flex}
+.rt-btn{background:var(--b1);border:1px solid var(--b1);color:var(--td);font-size:11px;font-family:'Rajdhani',sans-serif;font-weight:600;padding:3px 10px;cursor:pointer;transition:all .15s}
+.rt-btn.active{background:#2a7abf;border-color:var(--ac);color:#fff}
+.rt-btn:hover:not(.active){border-color:var(--ac);color:var(--tb)}
+.rt-scroll{max-height:240px;overflow-y:auto}
+.rt-scroll::-webkit-scrollbar{width:4px}
+.rt-scroll::-webkit-scrollbar-track{background:var(--bg)}
+.rt-scroll::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
+.ir-table{width:100%;border-collapse:collapse;font-family:'Courier New',monospace;font-size:11px}
+.ir-table th{background:var(--panel);color:var(--td);padding:4px 6px;text-align:left;border-bottom:1px solid var(--b1);position:sticky;top:0;font-size:10px;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;z-index:1}
+.ir-table th.sortable{cursor:pointer;user-select:none}
+.ir-table th.sortable:hover{color:var(--tb)}
+.ir-table th.sort-active{color:var(--ac)}
+.ir-table td{padding:3px 6px;border-bottom:1px solid #0e1a28;white-space:nowrap}
+.ir-table tr:hover td{background:#111e30}
+.chart-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.chart-wrap{background:var(--panel);border:1px solid var(--b1);padding:8px 12px 10px}
+.chart-head{font-size:12px;font-weight:700;color:var(--tb);text-align:center;letter-spacing:.03em;margin-bottom:2px}
+.chart-sub{font-size:10px;color:var(--td);text-align:center;margin-bottom:8px;font-style:italic}
+.chart-cv{position:relative;height:220px}
+.gate-note{background:#110f04;border:1px solid var(--gold);color:var(--gold);font-size:11px;font-family:'Courier New',monospace;padding:6px 14px;border-radius:2px;margin-bottom:10px;letter-spacing:.03em;text-align:center}
+#histo-tip{position:fixed;background:var(--panel);border:1px solid var(--ac);color:var(--tb);font-family:'Courier New',monospace;font-size:11px;padding:5px 9px;border-radius:2px;box-shadow:0 2px 12px rgba(0,0,0,.7);white-space:nowrap;z-index:999;pointer-events:none;display:none}
+</style>
+</head>
+<body>
+
+<nav class="top-nav">
+  <div class="nav-left">
+    <button class="nav-btn back" onclick="history.back()">← BACK</button>
+    <button class="nav-btn" onclick="window.open('/spx','_blank')">SPX</button>
+    <button class="nav-btn" onclick="window.open('/sp400','_blank')">S&amp;P Midcap 400</button>
+    <button class="nav-btn" onclick="window.open('/sp600','_blank')">S&amp;P Small Cap 600</button>
+  </div>
+  <input class="search-box" type="text" placeholder="⌕  SEARCH">
+</nav>
+
+<div class="pg-title">
+  <div class="pg-t1">S&amp;P 500 (SPX)</div>
+  <div class="pg-t2">Market · Sector · Stock · Strategy</div>
+  <div class="pg-desc">Watch the SPX and its components rotate through the six Zones.</div>
+</div>
+
+<!-- ══════ SECTION 1: MARKET ══════════════════════════════════ -->
+<div class="sp-section">
+  <div class="sp-sec-hdr">
+    <div class="sec-title-box">
+      <div class="sec-title">S&amp;P 500 (SPX) Market Analysis</div>
+      <div class="sec-desc">Follow market action by comparing the Implied Risk ratings of the major S&amp;P indexes and their Growth and Value factor indexes</div>
+    </div>
+  </div>
+  <div class="sp-body">
+    <div class="sp-lh">
+      <div class="lh-hdr">
+        <div class="lh-title-row"><span class="lh-title">Market and Factor</span></div>
+        <div style="text-align:center;font-size:10px;color:var(--td);margin-top:2px;letter-spacing:.04em;text-transform:uppercase">ETF / Indexes</div>
+        <div class="lh-btns">
+          <button class="lh-btn active" data-grp="mkt" data-period="90" onclick="handleLHPeriod(this)">90 IR</button>
+          <button class="lh-btn"        data-grp="mkt" data-period="10" onclick="handleLHPeriod(this)">10 IR</button>
+        </div>
+      </div>
+      <div class="lh-scroll">
+        <table class="lh-table">
+          <thead><tr>
+            <th>Tick</th><th>Name</th>
+            <th class="sortable sort-active" id="mkt-lh-th" onclick="handleLHSort('mkt')" style="text-align:center">IR <span class="sort-arrow active" id="mkt-lh-arr">↓</span></th>
+            <th style="text-align:center">Zn</th>
+          </tr></thead>
+          <tbody id="mkt-lh-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="sp-right">
+      <div>
+        <div class="hl">Market and Factor ETFs/Indexes — 90-Day Implied Risk Histogram</div>
+        <div class="hsb"><svg id="histo-mkt" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block"></svg></div>
+      </div>
+      <div class="chart-pair">
+        <div class="chart-wrap">
+          <div class="chart-head">S&amp;P 500 Pure Growth ETF (RFG)</div>
+          <div class="chart-sub">90-Day Zone · 10-Day Zone · 30 Days</div>
+          <div class="chart-cv"><canvas id="chart-rfg"></canvas></div>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-head">S&amp;P 500 Pure Value ETF (RPV)</div>
+          <div class="chart-sub">90-Day Zone · 10-Day Zone · 30 Days</div>
+          <div class="chart-cv"><canvas id="chart-rpv"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ SECTION 2: SECTOR ══════════════════════════════════ -->
+<div class="sp-section">
+  <div class="sp-sec-hdr">
+    <div class="sec-title-box">
+      <div class="sec-title">S&amp;P 500 (SPX) Sector Analysis</div>
+      <div class="sec-desc">Follow SPX sector action by comparing the Implied Risk rating of the SPX to the action of the S&amp;P Sector ETFs and Indexes</div>
+    </div>
+  </div>
+  <div class="sp-body">
+    <div class="sp-lh">
+      <div class="lh-hdr">
+        <div class="lh-title-row"><span class="lh-title">S&amp;P Sector ETFs</span></div>
+        <div class="lh-btns">
+          <button class="lh-btn active" data-grp="sec" data-period="90" onclick="handleLHPeriod(this)">90 IR</button>
+          <button class="lh-btn"        data-grp="sec" data-period="10" onclick="handleLHPeriod(this)">10 IR</button>
+        </div>
+      </div>
+      <div class="lh-scroll">
+        <table class="lh-table">
+          <thead><tr>
+            <th>Tick</th><th>Name</th>
+            <th class="sortable sort-active" id="sec-lh-th" onclick="handleLHSort('sec')" style="text-align:center">IR <span class="sort-arrow active" id="sec-lh-arr">↓</span></th>
+            <th style="text-align:center">Zn</th>
+          </tr></thead>
+          <tbody id="sec-lh-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="sp-right">
+      <div>
+        <div class="hl">S&amp;P Sector ETFs — 90-Day Implied Risk Histogram</div>
+        <div class="hsb"><svg id="histo-sec" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block"></svg></div>
+      </div>
+      <div class="two-rt">
+        <div class="rt-wrap">
+          <div class="rt-hdr">
+            <span class="rt-title">Select Sector + Commodities</span>
+            <div class="rt-btns">
+              <button class="rt-btn active" data-grp="sec-a" data-period="90" onclick="handleRTPeriod(this)">90 IR</button>
+              <button class="rt-btn"        data-grp="sec-a" data-period="10" onclick="handleRTPeriod(this)">10 IR</button>
+            </div>
+          </div>
+          <div class="rt-scroll">
+            <table class="ir-table">
+              <thead><tr>
+                <th>Ticker</th><th>Name</th>
+                <th class="sortable sort-active" id="sec-a-rt-th-ir"  onclick="handleRTSort('sec-a','ir')"  style="text-align:center">IR <span class="sort-arrow active" id="sec-a-rt-arr-ir">↓</span></th>
+                <th style="text-align:center">Zn</th>
+                <th class="sortable" id="sec-a-rt-th-3mo" onclick="handleRTSort('sec-a','3mo')" style="text-align:center;padding-left:14px">3Mo Ago <span class="sort-arrow" id="sec-a-rt-arr-3mo">↕</span></th>
+              </tr></thead>
+              <tbody id="sec-a-rt-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="rt-wrap">
+          <div class="rt-hdr">
+            <span class="rt-title">S&amp;P Specialty ETFs</span>
+            <div class="rt-btns">
+              <button class="rt-btn active" data-grp="sec-b" data-period="90" onclick="handleRTPeriod(this)">90 IR</button>
+              <button class="rt-btn"        data-grp="sec-b" data-period="10" onclick="handleRTPeriod(this)">10 IR</button>
+            </div>
+          </div>
+          <div class="rt-scroll">
+            <table class="ir-table">
+              <thead><tr>
+                <th>Ticker</th><th>Name</th>
+                <th class="sortable sort-active" id="sec-b-rt-th-ir"  onclick="handleRTSort('sec-b','ir')"  style="text-align:center">IR <span class="sort-arrow active" id="sec-b-rt-arr-ir">↓</span></th>
+                <th style="text-align:center">Zn</th>
+                <th class="sortable" id="sec-b-rt-th-3mo" onclick="handleRTSort('sec-b','3mo')" style="text-align:center;padding-left:14px">3Mo Ago <span class="sort-arrow" id="sec-b-rt-arr-3mo">↕</span></th>
+              </tr></thead>
+              <tbody id="sec-b-rt-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ SECTION 3: STOCK ═══════════════════════════════════ -->
+<div class="sp-section">
+  <div class="sp-sec-hdr">
+    <div class="sec-title-box">
+      <div class="sec-title">S&amp;P 500 (SPX) Stock Analysis</div>
+      <div class="sec-desc">Follow SPX issue movement by comparing the Implied Risk rating of the SPX to the action of the 500 issues that compose the index</div>
+    </div>
+  </div>
+  <div class="sp-body">
+    <div class="sp-lh">
+      <div class="lh-hdr">
+        <div class="lh-title-row">
+          <span class="lh-title">SPX Member Issues</span>
+          <button class="ws-arrow" id="stk-ws-btn" onclick="handleStockArrow()">↓</button>
+        </div>
+        <div class="lh-btns">
+          <button class="lh-btn active" data-period="90" onclick="handleStockPeriod(this)">90 IR</button>
+          <button class="lh-btn"        data-period="10" onclick="handleStockPeriod(this)">10 IR</button>
+        </div>
+      </div>
+      <div class="lh-scroll">
+        <table class="lh-table">
+          <thead><tr>
+            <th>Tick</th><th>Name</th>
+            <th style="text-align:center">IR</th>
+            <th style="text-align:center">Zn</th>
+          </tr></thead>
+          <tbody id="stk-lh-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="sp-right">
+      <div>
+        <div class="hl">S&amp;P 500 — 500-Issue Density Distribution</div>
+        <div class="hsb"><svg id="histo-stk" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block"></svg></div>
+      </div>
+      <div class="chart-pair">
+        <div class="chart-wrap">
+          <div class="chart-head">S&amp;P 500 ETF (SPY)</div>
+          <div class="chart-sub">90-Day Zone · 10-Day Zone · 30 Days</div>
+          <div class="chart-cv"><canvas id="chart-spy"></canvas></div>
+        </div>
+        <div class="chart-wrap">
+          <div class="chart-head">S&amp;P 500 Equal Weight ETF (RSP)</div>
+          <div class="chart-sub">90-Day Zone · 10-Day Zone · 30 Days</div>
+          <div class="chart-cv"><canvas id="chart-rsp"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ SECTION 4: STRATEGY ════════════════════════════════ -->
+<div class="sp-section">
+  <div class="sp-sec-hdr">
+    <div class="sec-title-box">
+      <div class="sec-title">S&amp;P 500 (SPX) Option Strategies</div>
+      <div class="sec-desc">Follow SPX option index action by comparing the Implied Risk rating of the SPX to the activity of the SPX Option Strategy Indexes</div>
+    </div>
+  </div>
+  <div class="gate-note">⚠ PRODUCTION NOTE — This section is gated for Options Tier subscribers only. Content rendered fully for development and review.</div>
+  <div class="sp-body">
+    <div class="sp-lh">
+      <div class="lh-hdr">
+        <div class="lh-title-row"><span class="lh-title">Option Strategy Indexes</span></div>
+        <div class="lh-btns">
+          <button class="lh-btn active" data-grp="strat" data-period="90" onclick="handleLHPeriod(this)">90 IR</button>
+          <button class="lh-btn"        data-grp="strat" data-period="10" onclick="handleLHPeriod(this)">10 IR</button>
+        </div>
+      </div>
+      <div class="lh-scroll">
+        <table class="lh-table">
+          <thead><tr>
+            <th>Tick</th><th>Name</th>
+            <th class="sortable sort-active" id="strat-lh-th" onclick="handleLHSort('strat')" style="text-align:center">IR <span class="sort-arrow active" id="strat-lh-arr">↓</span></th>
+            <th style="text-align:center">Zn</th>
+          </tr></thead>
+          <tbody id="strat-lh-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="sp-right">
+      <div>
+        <div class="hl">SPX Option Strategy Indexes — 90-Day Implied Risk Histogram</div>
+        <div class="hsb"><svg id="histo-strat" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block"></svg></div>
+      </div>
+      <div class="two-rt">
+        <div class="rt-wrap">
+          <div class="rt-hdr">
+            <span class="rt-title">Strategy Indexes</span>
+            <div class="rt-btns">
+              <button class="rt-btn active" data-grp="strat-a" data-period="90" onclick="handleRTPeriod(this)">90 IR</button>
+              <button class="rt-btn"        data-grp="strat-a" data-period="10" onclick="handleRTPeriod(this)">10 IR</button>
+            </div>
+          </div>
+          <div class="rt-scroll">
+            <table class="ir-table">
+              <thead><tr>
+                <th>Ticker</th><th>Name</th>
+                <th class="sortable sort-active" id="strat-a-rt-th-ir"  onclick="handleRTSort('strat-a','ir')"  style="text-align:center">IR <span class="sort-arrow active" id="strat-a-rt-arr-ir">↓</span></th>
+                <th style="text-align:center">Zn</th>
+                <th class="sortable" id="strat-a-rt-th-3mo" onclick="handleRTSort('strat-a','3mo')" style="text-align:center;padding-left:14px">3Mo Ago <span class="sort-arrow" id="strat-a-rt-arr-3mo">↕</span></th>
+              </tr></thead>
+              <tbody id="strat-a-rt-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="rt-wrap">
+          <div class="rt-hdr">
+            <span class="rt-title">Premium Income ETFs</span>
+            <div class="rt-btns">
+              <button class="rt-btn active" data-grp="strat-b" data-period="90" onclick="handleRTPeriod(this)">90 IR</button>
+              <button class="rt-btn"        data-grp="strat-b" data-period="10" onclick="handleRTPeriod(this)">10 IR</button>
+            </div>
+          </div>
+          <div class="rt-scroll">
+            <table class="ir-table">
+              <thead><tr>
+                <th>Ticker</th><th>Name</th>
+                <th class="sortable sort-active" id="strat-b-rt-th-ir"  onclick="handleRTSort('strat-b','ir')"  style="text-align:center">IR <span class="sort-arrow active" id="strat-b-rt-arr-ir">↓</span></th>
+                <th style="text-align:center">Zn</th>
+                <th class="sortable" id="strat-b-rt-th-3mo" onclick="handleRTSort('strat-b','3mo')" style="text-align:center;padding-left:14px">3Mo Ago <span class="sort-arrow" id="strat-b-rt-arr-3mo">↕</span></th>
+              </tr></thead>
+              <tbody id="strat-b-rt-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="histo-tip"></div>
+
+<script>
+// ── DATA ─────────────────────────────────────────────────────
+const mk=(sym,name,i9,i1,m9,m1)=>({sym,name,ir_90:i9,ir_10:i1,ir_90_3mo:m9,ir_10_3mo:m1});
+
+const DATA_MKT=[
+  mk('SPX', 'S&P 500',                              -22,-31, 45, 38),
+  mk('XOE', 'S&P 500 Equal Weight',                  18, 12, -8,-14),
+  mk('OEX', 'S&P 100',                              -18,-28, 42, 35),
+  mk('MID', 'S&P Midcap 400',                        35, 28,-22,-18),
+  mk('SML', 'S&P Smallcap 600',                      52, 44,-38,-30),
+  mk('RPV', 'S&P 500 Pure Value ETF',                28, 22,-15,-10),
+  mk('RPG', 'S&P 500 Pure Growth ETF',              -35,-42, 58, 50),
+  mk('XOEF','S&P 500 ex S&P 100 ETF',                14,  8, -5, -2),
+  mk('RZV', 'S&P SmallCap 600 Pure Value',           62, 55,-44,-38),
+  mk('RZG', 'S&P SmallCap 600 Pure Growth',          44, 36,-28,-22),
+  mk('RFV', 'S&P MidCap 400 Pure Value',             38, 30,-24,-18),
+  mk('RFG', 'S&P MidCap 400 Pure Growth',            -8,-15, 22, 18),
+  // ── Factor ETFs ──
+  mk('SPMO','S&P 500 Momentum ETF',                 -30,-38, 52, 46),
+  mk('SPHQ','S&P 500 Quality ETF',                  -25,-33, 48, 42),
+  mk('RWL', 'S&P 500 Revenue ETF',                   15, 10, -8, -4),
+  mk('SPHD','S&P 500 High Div/Low Vol ETF',          42, 35,-28,-22),
+  mk('XMMO','S&P Midcap Momentum ETF',              -15,-22, 30, 24),
+  mk('XMHQ','S&P Midcap Quality ETF',                 5,  0, -3,  2),
+  mk('RWK', 'S&P Midcap 400 Revenue ETF',            20, 14,-12, -8),
+  mk('XMLV','S&P Midcap Low Volatility ETF',          35, 28,-24,-18),
+  mk('EWMC','S&P Midcap 400 Equal Weight ETF',       22, 16,-14,-10),
+  mk('XSHD','S&P SmallCap High Div/Low Vol ETF',     58, 50,-42,-36),
+  mk('XSMO','S&P SmallCap Momentum ETF',             10,  5, -5, -2),
+  mk('XSHQ','S&P SmallCap Quality ETF',              25, 18,-16,-10),
+  mk('RWJ', 'S&P SmallCap 600 Revenue ETF',          42, 35,-28,-22),
+  mk('EQWL','S&P 100 Equal Weight ETF',              -5,-12, 18, 14),
+];
+
+const DATA_SEC=[
+  mk('SPX','S&P 500',-22,-31,45,38),
+  mk('XLC','Communication Services',-45,-52,62,55),mk('XLY','Consumer Discretionary',-38,-44,55,48),
+  mk('XLP','Consumer Staples',42,35,-28,-22),mk('XLE','Energy',68,60,-50,-42),
+  mk('XLF','Financial',8,2,-4,2),mk('XLV','Healthcare',55,48,-38,-32),
+  mk('XLI','Industrials',22,15,-12,-8),mk('XLK','Information Technology',-52,-60,68,62),
+  mk('XLB','Materials',35,28,-22,-16),mk('XLRE','Real Estate',72,65,-55,-48),
+  mk('XLU','Utilities',65,58,-48,-42),mk('GLD','Gold ETF',-75,-80,85,78),
+  mk('SLV','Silver ETF',-48,-55,65,58),
+  mk('XTN','S&P Transportation ETF',18,12,-8,-4),mk('XTL','S&P Telecom ETF',-15,-22,32,26),
+  mk('XSW','S&P Software & Services ETF',-42,-50,58,52),mk('XSD','S&P Semiconductor ETF',-62,-68,75,70),
+  mk('XRT','S&P Retail ETF',-8,-15,22,18),mk('KRE','S&P Regional Banking ETF',45,38,-32,-26),
+  mk('XPH','S&P Pharmaceuticals ETF',38,30,-25,-20),mk('XOP','S&P Oil & Gas E&P ETF',58,50,-42,-36),
+  mk('XES','S&P Oil & Gas Equip ETF',52,44,-38,-30),mk('XME','S&P Metals & Mining ETF',48,40,-35,-28),
+  mk('KIE','S&P Insurance ETF',-5,-12,18,14),mk('XHB','S&P Homebuilders ETF',28,22,-18,-12),
+  mk('XHS','S&P Health Care Services ETF',42,35,-28,-22),mk('XHE','S&P Health Care Equip ETF',35,28,-22,-16),
+  mk('KCE','S&P Capital Markets ETF',-18,-25,35,28),mk('XBI','S&P Biotech ETF',75,68,-58,-50),
+  mk('KBE','S&P Bank ETF',12,5,-6,-2),mk('XAR','S&P Aerospace & Defense ETF',-2,-8,15,10),
+];
+const DATA_SEC_A=DATA_SEC.slice(0,14);
+const DATA_SEC_B=DATA_SEC.slice(14);
+// SPX factor ETFs — added to sector histogram and LH toggle only
+const DATA_SEC_FACTOR=[
+  mk('SPMO','S&P 500 Momentum ETF',                 -30,-38, 52, 46),
+  mk('SPHQ','S&P 500 Quality ETF',                  -25,-33, 48, 42),
+  mk('RWL', 'S&P 500 Revenue ETF',                   15, 10, -8, -4),
+  mk('SPHD','S&P 500 High Div/Low Vol ETF',          42, 35,-28,-22),
+];
+const DATA_SEC_FULL=[...DATA_SEC,...DATA_SEC_FACTOR];
+
+const DATA_STRAT_HISTO=[
+  mk('SPX','S&P 500',-22,-31,45,38),
+  mk('BXMN','S&P 500 BuyWrite NTR Index',-28,-35,50,44),mk('BXM','S&P 500 BuyWrite Index',-24,-32,46,40),
+  mk('PUT','S&P 500 PutWrite Index',-18,-26,40,34),mk('XCLR','S&P 500 95-110 Collar Index',12,6,-10,-6),
+  mk('BFLY','S&P 500 Iron Butterfly Index',8,2,-6,-3),mk('RXM','S&P 500 Risk Reversal Index',-42,-50,60,54),
+  mk('SPRO','S&P 500 Buffer Protect Index',22,16,-14,-10),mk('XYLD','S&P 500 Covered Call ETF',-20,-28,42,36),
+  mk('IVVW','S&P 500 BuyWrite ETF',-25,-33,48,42),mk('PBP','S&P 500 Index BuyWrite ETF',-22,-30,45,38),
+  mk('PHDG','S&P 500 Downside Hedged ETF',35,28,-24,-18),mk('VIN','Near Term SPX IV',-55,-62,68,62),
+  mk('VIF','Far Term SPX IV',-48,-55,62,56),
+  mk('XLCI','SS Comm Svc Premium Income ETF',-38,-45,56,50),mk('XLYI','SS Cons Disc Premium Income ETF',-32,-40,52,46),
+  mk('XLSI','SS Cons Staples Premium Income ETF',38,31,-26,-20),mk('XLEI','SS Energy Premium Income ETF',62,55,-45,-38),
+  mk('XLFI','SS Financial Premium Income ETF',6,0,-3,2),mk('XLVI','SS Health Care Premium Income ETF',50,43,-35,-28),
+  mk('XLII','SS Industrial Premium Income ETF',18,12,-12,-8),mk('XLBI','SS Materials Premium Income ETF',42,35,-28,-22),
+  mk('XLRI','SS Real Estate Premium Income ETF',68,61,-50,-44),mk('XLKI','SS Technology Premium Income ETF',-48,-55,64,58),
+  mk('XLUI','SS Utilities Premium Income ETF',60,53,-44,-38),
+];
+const DATA_STRAT_TOGGLE=[
+  ...DATA_STRAT_HISTO,
+  mk('SXVY','VIX Short Term Futures ETF',-72,-78,80,74),
+  mk('VXMT','VIX Midterm Futures ETF',-65,-72,74,68),
+  mk('VIXY','ProShares VIX Short-Term ETF',-68,-75,77,71),
+];
+const DATA_STRAT_A=[...DATA_STRAT_HISTO.slice(0,14),...DATA_STRAT_TOGGLE.slice(-3)];
+const DATA_STRAT_B=DATA_STRAT_HISTO.slice(14);
+
+const STOCK_W90=[
+  {sym:'MRNA',name:'Moderna Inc',ir:96},{sym:'ALGN',name:'Align Technology',ir:91},
+  {sym:'ENPH',name:'Enphase Energy',ir:88},{sym:'SEDG',name:'SolarEdge Technologies',ir:85},
+  {sym:'BIIB',name:'Biogen Inc',ir:83},{sym:'WBA',name:'Walgreens Boots Alliance',ir:81},
+  {sym:'CVS',name:'CVS Health',ir:78},{sym:'ILMN',name:'Illumina Inc',ir:76},
+  {sym:'FMC',name:'FMC Corp',ir:73},{sym:'MTCH',name:'Match Group Inc',ir:71},
+  {sym:'PARA',name:'Paramount Global',ir:69},{sym:'WBD',name:'Warner Bros Discovery',ir:67},
+  {sym:'MPW',name:'Medical Properties Trust',ir:64},{sym:'DVN',name:'Devon Energy',ir:62},
+  {sym:'APA',name:'APA Corporation',ir:60},{sym:'CMA',name:'Comerica Inc',ir:58},
+  {sym:'ZION',name:'Zions Bancorporation',ir:56},{sym:'KEY',name:'KeyCorp',ir:54},
+  {sym:'RF',name:'Regions Financial',ir:52},{sym:'CFG',name:'Citizens Financial Grp',ir:50},
+  {sym:'MOS',name:'Mosaic Co',ir:48},{sym:'LKQ',name:'LKQ Corporation',ir:46},
+  {sym:'NWSA',name:'News Corp Class A',ir:44},{sym:'BEN',name:'Franklin Resources',ir:42},
+  {sym:'CTLT',name:'Catalent Inc',ir:40},{sym:'VTRS',name:'Viatris Inc',ir:38},
+  {sym:'CZR',name:'Caesars Entertainment',ir:36},{sym:'HST',name:'Host Hotels & Resorts',ir:34},
+  {sym:'NCLH',name:'Norwegian Cruise Line',ir:34},{sym:'CCL',name:'Carnival Corporation',ir:34},
+];
+const STOCK_S90=[
+  {sym:'NVDA',name:'NVIDIA Corporation',ir:-94},{sym:'META',name:'Meta Platforms Inc',ir:-90},
+  {sym:'GOOG',name:'Alphabet Inc Class C',ir:-86},{sym:'MSFT',name:'Microsoft Corporation',ir:-83},
+  {sym:'AMZN',name:'Amazon.com Inc',ir:-80},{sym:'AAPL',name:'Apple Inc',ir:-77},
+  {sym:'AVGO',name:'Broadcom Inc',ir:-74},{sym:'NFLX',name:'Netflix Inc',ir:-71},
+  {sym:'NOW',name:'ServiceNow Inc',ir:-68},{sym:'PANW',name:'Palo Alto Networks',ir:-65},
+  {sym:'ANET',name:'Arista Networks',ir:-63},{sym:'GEV',name:'GE Vernova',ir:-61},
+  {sym:'VST',name:'Vistra Corp',ir:-59},{sym:'CEG',name:'Constellation Energy',ir:-57},
+  {sym:'LLY',name:'Eli Lilly & Co',ir:-55},{sym:'UNH',name:'UnitedHealth Group',ir:-53},
+  {sym:'LMT',name:'Lockheed Martin',ir:-51},{sym:'NOC',name:'Northrop Grumman',ir:-49},
+  {sym:'GD',name:'General Dynamics',ir:-47},{sym:'RTX',name:'RTX Corporation',ir:-45},
+  {sym:'JPM',name:'JPMorgan Chase',ir:-43},{sym:'GS',name:'Goldman Sachs Group',ir:-41},
+  {sym:'AXP',name:'American Express',ir:-39},{sym:'BLK',name:'BlackRock Inc',ir:-37},
+  {sym:'CB',name:'Chubb Limited',ir:-35},{sym:'PGR',name:'Progressive Corporation',ir:-33},
+  {sym:'WMT',name:'Walmart Inc',ir:-33},{sym:'COST',name:'Costco Wholesale',ir:-33},
+  {sym:'MRK',name:'Merck & Co',ir:-33},{sym:'JNJ',name:'Johnson & Johnson',ir:-33},
+];
+const STOCK_W10=STOCK_W90.map((r,i)=>({...r,ir:Math.min(99,r.ir+(i%3===0?4:i%3===1?-3:2))}));
+const STOCK_S10=STOCK_S90.map((r,i)=>({...r,ir:Math.max(-99,r.ir+(i%3===0?-5:i%3===1?3:-2))}));
+const STOCK_SETS={'90':{w:STOCK_W90,s:STOCK_S90},'10':{w:STOCK_W10,s:STOCK_S10}};
+const DENSITY_COUNTS=[8,12,17,20,26,34,41,44,46,49,44,38,31,22,15,10,8,6,5,4,3,2,2,1];
+
+function genDates30(){
+  const d=[];let cur=new Date(2026,3,24),n=0;
+  while(n<30){if(cur.getDay()!==0&&cur.getDay()!==6){d.unshift(cur.toLocaleDateString('en-US',{month:'numeric',day:'numeric'}));n++;}cur.setDate(cur.getDate()-1);}
+  return d;
+}
+const DATES30=genDates30();
+const SPY_Z90=[3,3,3,3,4,4,3,3,4,4,4,4,4,4,4,4,5,4,4,4,4,4,4,4,4,4,4,4,4,4];
+const SPY_Z10=[3,3,4,4,3,3,3,4,5,5,4,4,4,5,5,5,5,4,4,4,5,5,4,4,4,5,5,4,4,5];
+const RSP_Z90=[3,3,3,3,3,3,3,3,3,4,4,4,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3];
+const RSP_Z10=[3,3,3,4,4,3,3,3,4,4,5,4,3,3,3,3,2,3,3,3,3,3,2,3,3,3,3,3,3,2];
+// RFG (MidCap 400 Pure Growth) — currently Zone 4/5 territory, slight recovery arc
+const RFG_Z90=[2,2,2,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4];
+const RFG_Z10=[2,3,2,3,3,2,3,3,4,4,4,3,3,4,4,4,5,4,4,4,4,5,4,4,4,5,5,4,4,4];
+// RPV (S&P 500 Pure Value) — positive IR, Zone 2/3 territory, value rotation
+const RPV_Z90=[4,4,4,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2];
+const RPV_Z10=[4,4,3,3,3,4,3,3,3,2,2,3,3,3,2,2,2,3,3,2,2,2,1,2,2,2,2,2,3,2];
+
+// ── UTILITIES ────────────────────────────────────────────────
+const ZCL=['#00cc55','#88cc44','#7a9aaa','#aa9a7a','#ddcc00','#e83535'];
+function irToZone(ir){return ir>=67?1:ir>=34?2:ir>=1?3:ir>=-33?4:ir>=-66?5:6;}
+function zoneBadge(z){return `<span class="zb" style="background:${ZCL[z-1]}">${z}</span>`;}
+function irFmt(v){return(v>0?'+':'')+v;}
+function irCls(v){return v>0?'pos':v<0?'neg':'zer';}
+function getGlobalSlot(ir){
+  if(ir>=67){const s=ir>=91?0:ir>=83?1:ir>=75?2:3;return s;}
+  if(ir>=34){const s=ir>=59?0:ir>=52?1:ir>=43?2:3;return 4+s;}
+  if(ir>=1){const s=ir>=26?0:ir>=18?1:ir>=9?2:3;return 8+s;}
+  if(ir>=-33){const s=ir>=-8?0:ir>=-17?1:ir>=-25?2:3;return 12+s;}
+  if(ir>=-66){const s=ir>=-42?0:ir>=-51?1:ir>=-58?2:3;return 16+s;}
+  const s=ir>=-74?0:ir>=-82?1:ir>=-90?2:3;return 20+s;
+}
+
+// ── LH TOGGLE ────────────────────────────────────────────────
+const lhSort={},lhPer={};
+const LH_DATA={mkt:DATA_MKT,sec:DATA_SEC_FULL,strat:DATA_STRAT_TOGGLE};
+function handleLHPeriod(btn){
+  const g=btn.dataset.grp;
+  btn.closest('.lh-btns').querySelectorAll('.lh-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');lhPer[g]=btn.dataset.period;renderLH(g);
+}
+function handleLHSort(g){lhSort[g]={dir:-(lhSort[g]?.dir||1)};renderLH(g);}
+function renderLH(g){
+  if(!lhSort[g])lhSort[g]={dir:1};if(!lhPer[g])lhPer[g]='90';
+  const iF=lhPer[g]==='90'?'ir_90':'ir_10',dir=lhSort[g].dir;
+  const rows=[...LH_DATA[g]].sort((a,b)=>(b[iF]-a[iF])*dir);
+  const tbody=document.getElementById(`${g}-lh-tbody`);if(!tbody)return;
+  tbody.innerHTML=rows.map(r=>{
+    const ir=r[iF],z=irToZone(ir),nm=r.name.length>22?r.name.slice(0,22)+'…':r.name;
+    return `<tr><td class="ck">${r.sym}</td><td class="cn">${nm}</td><td class="ci"><span class="${irCls(ir)}">${irFmt(ir)}</span></td><td class="cz">${zoneBadge(z)}</td></tr>`;
+  }).join('');
+  const arr=document.getElementById(`${g}-lh-arr`),th=document.getElementById(`${g}-lh-th`);
+  if(arr){arr.textContent=dir===1?'↓':'↑';arr.classList.add('active');}
+  if(th)th.classList.add('sort-active');
+}
+
+// ── STOCK LH ─────────────────────────────────────────────────
+let stkMode='weakest',stkPer='90';
+function handleStockArrow(){
+  stkMode=stkMode==='weakest'?'strongest':'weakest';
+  document.getElementById('stk-ws-btn').textContent=stkMode==='weakest'?'↓':'↑';
+  renderStockLH();
+}
+function handleStockPeriod(btn){
+  btn.closest('.lh-btns').querySelectorAll('.lh-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');stkPer=btn.dataset.period;renderStockLH();
+}
+function renderStockLH(){
+  const list=STOCK_SETS[stkPer][stkMode==='weakest'?'w':'s'];
+  const tbody=document.getElementById('stk-lh-tbody');if(!tbody)return;
+  tbody.innerHTML=list.map(r=>{
+    const z=irToZone(r.ir),nm=r.name.length>22?r.name.slice(0,22)+'…':r.name;
+    return `<tr><td class="ck">${r.sym}</td><td class="cn">${nm}</td><td class="ci"><span class="${irCls(r.ir)}">${irFmt(r.ir)}</span></td><td class="cz">${zoneBadge(z)}</td></tr>`;
+  }).join('');
+}
+
+// ── REGULAR TOGGLE ───────────────────────────────────────────
+const rtSort={},rtPer={},RT_DATA={};
+function handleRTPeriod(btn){
+  const g=btn.dataset.grp;
+  btn.closest('.rt-btns').querySelectorAll('.rt-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');rtPer[g]=btn.dataset.period;renderRT(g);
+}
+function handleRTSort(g,field){
+  const s=rtSort[g]||{field:'ir',dir:1};
+  rtSort[g]=s.field===field?{field,dir:s.dir*-1}:{field,dir:1};renderRT(g);
+}
+function renderRT(g){
+  if(!rtSort[g])rtSort[g]={field:'ir',dir:1};if(!rtPer[g])rtPer[g]='90';
+  const p=rtPer[g],iF=p==='90'?'ir_90':'ir_10',mF=p==='90'?'ir_90_3mo':'ir_10_3mo';
+  const {field,dir}=rtSort[g],sF=field==='ir'?iF:mF;
+  const rows=[...RT_DATA[g]].sort((a,b)=>(b[sF]-a[sF])*dir);
+  const tbody=document.getElementById(`${g}-rt-tbody`);if(!tbody)return;
+  tbody.innerHTML=rows.map(r=>{
+    const ir=r[iF],mo=r[mF],z=irToZone(ir),nm=r.name.length>22?r.name.slice(0,22)+'…':r.name;
+    return `<tr><td class="ck">${r.sym}</td><td style="color:#5a7a9a;font-size:10px">${nm}</td><td class="ci"><span class="${irCls(ir)}">${irFmt(ir)}</span></td><td class="cz">${zoneBadge(z)}</td><td style="text-align:center;font-size:10px;padding-left:14px"><span class="${irCls(mo)}">${irFmt(mo)}</span></td></tr>`;
+  }).join('');
+  updateRTArrows(g);
+}
+function updateRTArrows(g){
+  const {field,dir}=rtSort[g];
+  ['ir','3mo'].forEach(f=>{
+    const th=document.getElementById(`${g}-rt-th-${f}`),arr=document.getElementById(`${g}-rt-arr-${f}`);
+    if(!th||!arr)return;
+    const on=f===field;
+    if(on){th.classList.add('sort-active');arr.classList.add('active');arr.textContent=dir===1?'↓':'↑';}
+    else{th.classList.remove('sort-active');arr.classList.remove('active');arr.textContent='↕';}
+  });
+}
+
+// ── HISTOGRAM BUILDER ────────────────────────────────────────
+function buildHistogram(svgId,members){
+  const svg=document.getElementById(svgId);if(!svg)return;
+  const W=920,OW=28,BX=OW,BW=W-2*OW,ZW=BW/6,SP=BW/24,SH=13;
+  const BA=168,BF=16,BS=ZW,BCX=BX+BW/2;
+  const slots=Array.from({length:24},()=>[]),oobL=[],oobR=[];
+  members.forEach(m=>{
+    if(m.ir_90>=99){oobL.push(m);return;}
+    if(m.ir_90<=-99){oobR.push(m);return;}
+    slots[getGlobalSlot(m.ir_90)].push(m.sym);
+  });
+  slots.forEach(s=>s.sort());
+  let BY=205;
+  const mx=Math.max(1,...slots.map(s=>s.length));
+  if(mx*SH+20>BY)BY=mx*SH+20;
+  const H=BY+63,LR=BY+18,LZ=BY+31;
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  let s=`<defs>
+    <filter id="gl-${svgId}"><feGaussianBlur stdDeviation="2.8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="sg-${svgId}"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>`;
+  s+=`<rect x="0" y="0" width="${OW}" height="${BY}" fill="rgba(0,204,85,0.07)"/>`;
+  s+=`<rect x="${W-OW}" y="0" width="${OW}" height="${BY}" fill="rgba(232,53,53,0.07)"/>`;
+  ZCL.forEach((c,i)=>{s+=`<rect x="${BX+i*ZW}" y="0" width="${ZW}" height="${BY}" fill="${c}" fill-opacity="0.07"/>`;});
+  for(let i=1;i<6;i++)s+=`<line x1="${BX+i*ZW}" y1="0" x2="${BX+i*ZW}" y2="${BY}" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>`;
+  s+=`<line x1="${BX}" y1="0" x2="${BX}" y2="${BY}" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>`;
+  s+=`<line x1="${BX+BW}" y1="0" x2="${BX+BW}" y2="${BY}" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>`;
+  for(let i=1;i<24;i++){if(i%4===0)continue;const x=BX+i*SP;s+=`<line x1="${x}" y1="8" x2="${x}" y2="${BY}" stroke="rgba(255,255,255,0.055)" stroke-width="0.5" stroke-dasharray="3,6"/>`;}
+  s+=`<line x1="0" y1="${BY}" x2="${W}" y2="${BY}" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>`;
+  const bD=()=>{let d='';for(let px=BX;px<=BX+BW;px+=2){const dx=px-BCX,y=BY-(BA*Math.exp(-dx*dx/(2*BS*BS))+BF);d+=(px===BX?'M':'L')+px.toFixed(1)+','+y.toFixed(1)+' ';}return d;};
+  const bd=bD();
+  s+=`<path d="${bd}" stroke="rgba(120,185,255,0.14)" stroke-width="8" fill="none"/>`;
+  s+=`<path d="${bd}" stroke="rgba(155,210,255,0.72)" stroke-width="1.6" stroke-dasharray="8,4" fill="none" filter="url(#gl-${svgId})"/>`;
+  s+=`<path d="${bd}" stroke="rgba(205,235,255,0.38)" stroke-width="0.8" stroke-dasharray="8,4" fill="none"/>`;
+  slots.forEach((syms,gi)=>{
+    const color=ZCL[Math.floor(gi/4)],scx=BX+(gi+0.5)*SP;
+    syms.forEach((sym,ri)=>{
+      const y=BY-(ri+1)*SH+SH*0.75,m=members.find(x=>x.sym===sym);
+      const tip=m?`${m.sym} — ${m.name}  |  90-IR: ${irFmt(m.ir_90)}  |  Zone ${irToZone(m.ir_90)}`:sym;
+      const isSPX=sym==='SPX';
+      const fill=isSPX?'white':color,fw=isSPX?'900':'bold',fs=isSPX?10:9;
+      const filt=isSPX?`filter="url(#gl-${svgId})"`:`filter="url(#sg-${svgId})"`;
+      s+=`<text x="${scx}" y="${y}" text-anchor="middle" font-family="Courier New,monospace" font-size="${fs}" font-weight="${fw}" fill="${fill}" ${filt} cursor="pointer" data-tip="${tip}">${sym.slice(0,3)}</text>`;
+    });
+  });
+  const RN=['+99 to +67','+66 to +34','+33 to +1','-1 to -33','-34 to -66','-67 to -99'];
+  const LB=['Zone 1','Zone 2','Zone 3','Zone 4','Zone 5','Zone 6'];
+  ZCL.forEach((c,i)=>{const zx=BX+i*ZW+ZW/2;
+    s+=`<text x="${zx}" y="${LR}" text-anchor="middle" font-family="Courier New,monospace" font-size="8.5" fill="rgba(255,255,255,0.48)">${RN[i]}</text>`;
+    s+=`<text x="${zx}" y="${LZ}" text-anchor="middle" font-family="Trebuchet MS,sans-serif" font-size="10.5" font-weight="bold" fill="${c}">${LB[i]}</text>`;
+  });
+  [['OOB','Weak',`[${oobL.length}]`,'≥+99','#00cc55',OW/2],['OOB','Str',`[${oobR.length}]`,'≤-99','#e83535',W-OW/2]].forEach(([a,b,c,d,col,x])=>{
+    [a,b,c,d].forEach((t,i)=>{s+=`<text x="${x}" y="${20+i*12}" text-anchor="middle" font-family="Courier New,monospace" font-size="7.5" fill="${col}">${t}</text>`;});
+  });
+  s+=`<text x="${BX+8}" y="${H-5}" font-family="Trebuchet MS,sans-serif" font-size="7.5" fill="rgba(0,212,160,0.40)">← Weak / Oversold</text>`;
+  s+=`<text x="${BX+BW-8}" y="${H-5}" text-anchor="end" font-family="Trebuchet MS,sans-serif" font-size="7.5" fill="rgba(232,53,53,0.40)">Overbought / Strong →</text>`;
+  svg.innerHTML=s;
+  const tip=document.getElementById('histo-tip');
+  svg.querySelectorAll('[data-tip]').forEach(el=>{
+    el.addEventListener('mousemove',e=>{tip.textContent=el.dataset.tip;tip.style.display='block';tip.style.left=(e.clientX+14)+'px';tip.style.top=(e.clientY-8)+'px';});
+    el.addEventListener('mouseleave',()=>{tip.style.display='none';});
+  });
+}
+
+// ── DENSITY HISTOGRAM ────────────────────────────────────────
+function buildDensityHistogram(svgId,sc){
+  const svg=document.getElementById(svgId);if(!svg)return;
+  const W=920,OW=28,BX=OW,BW=W-2*OW,ZW=BW/6,SP=BW/24;
+  const BA=168,BF=16,BS=ZW,BCX=BX+BW/2,BY=200,H=BY+63,MB=168;
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  const mx=Math.max(...sc);
+  let s=`<defs><filter id="gl-${svgId}"><feGaussianBlur stdDeviation="2.8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
+  s+=`<rect x="0" y="0" width="${OW}" height="${BY}" fill="rgba(0,204,85,0.07)"/>`;
+  s+=`<rect x="${W-OW}" y="0" width="${OW}" height="${BY}" fill="rgba(232,53,53,0.07)"/>`;
+  ZCL.forEach((c,i)=>{s+=`<rect x="${BX+i*ZW}" y="0" width="${ZW}" height="${BY}" fill="${c}" fill-opacity="0.07"/>`;});
+  sc.forEach((cnt,gi)=>{
+    const color=ZCL[Math.floor(gi/4)],bx=BX+gi*SP+1,bw=SP-2,bh=cnt/mx*MB,by=BY-bh;
+    s+=`<rect x="${bx}" y="${by}" width="${bw}" height="${bh}" fill="${color}" fill-opacity="0.6" rx="1"/>`;
+    s+=`<rect x="${bx}" y="${by}" width="${bw}" height="1.5" fill="${color}" fill-opacity="0.95"/>`;
+    if(cnt>=6)s+=`<text x="${bx+bw/2}" y="${by-3}" text-anchor="middle" font-family="Courier New,monospace" font-size="7.5" fill="${color}" fill-opacity="0.85">${cnt}</text>`;
+  });
+  for(let i=1;i<6;i++)s+=`<line x1="${BX+i*ZW}" y1="0" x2="${BX+i*ZW}" y2="${BY}" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>`;
+  s+=`<line x1="${BX}" y1="0" x2="${BX}" y2="${BY}" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>`;
+  s+=`<line x1="${BX+BW}" y1="0" x2="${BX+BW}" y2="${BY}" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>`;
+  for(let i=1;i<24;i++){if(i%4===0)continue;const x=BX+i*SP;s+=`<line x1="${x}" y1="0" x2="${x}" y2="${BY}" stroke="rgba(255,255,255,0.04)" stroke-width="0.5" stroke-dasharray="3,6"/>`;}
+  s+=`<line x1="0" y1="${BY}" x2="${W}" y2="${BY}" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>`;
+  const bD=()=>{let d='';for(let px=BX;px<=BX+BW;px+=2){const dx=px-BCX,y=BY-(BA*Math.exp(-dx*dx/(2*BS*BS))+BF);d+=(px===BX?'M':'L')+px.toFixed(1)+','+y.toFixed(1)+' ';}return d;};
+  const bd=bD();
+  s+=`<path d="${bd}" stroke="rgba(120,185,255,0.14)" stroke-width="8" fill="none"/>`;
+  s+=`<path d="${bd}" stroke="rgba(155,210,255,0.72)" stroke-width="1.6" stroke-dasharray="8,4" fill="none" filter="url(#gl-${svgId})"/>`;
+  s+=`<path d="${bd}" stroke="rgba(205,235,255,0.38)" stroke-width="0.8" stroke-dasharray="8,4" fill="none"/>`;
+  // SPX position marker — white polygon diamond (ir_90=-22 → Zone 4 Slot 3 → global index 14)
+  {const mx_=BX+(14+0.5)*SP,dy_=14;
+  s+=`<polygon points="${mx_},${BY-dy_-7} ${mx_+6},${BY-dy_} ${mx_},${BY-dy_+7} ${mx_-6},${BY-dy_}" fill="#ffffff" stroke="rgba(255,255,255,0.4)" stroke-width="0.8" opacity="0.92"/>`;
+  s+=`<text x="${mx_}" y="${BY-dy_-12}" text-anchor="middle" font-family="Courier New,monospace" font-size="8.5" font-weight="bold" fill="#ffffff">SPX</text>`;}
+  const RN=['+99 to +67','+66 to +34','+33 to +1','-1 to -33','-34 to -66','-67 to -99'],LB=['Zone 1','Zone 2','Zone 3','Zone 4','Zone 5','Zone 6'];
+  ZCL.forEach((c,i)=>{
+    const zx=BX+i*ZW+ZW/2,tot=sc.slice(i*4,(i+1)*4).reduce((a,b)=>a+b,0);
+    s+=`<text x="${zx}" y="${BY+7}" text-anchor="middle" font-family="Courier New,monospace" font-size="9.5" font-weight="bold" fill="${c}">${tot}</text>`;
+    s+=`<text x="${zx}" y="${BY+18}" text-anchor="middle" font-family="Courier New,monospace" font-size="8.5" fill="rgba(255,255,255,0.48)">${RN[i]}</text>`;
+    s+=`<text x="${zx}" y="${BY+31}" text-anchor="middle" font-family="Trebuchet MS,sans-serif" font-size="10.5" font-weight="bold" fill="${c}">${LB[i]}</text>`;
+  });
+  [['OOB','Weak','[5]','≥+99','#00cc55',OW/2],['OOB','Str','[7]','≤-99','#e83535',W-OW/2]].forEach(([a,b,c,d,col,x])=>{
+    [a,b,c,d].forEach((t,i)=>{s+=`<text x="${x}" y="${20+i*12}" text-anchor="middle" font-family="Courier New,monospace" font-size="7.5" fill="${col}">${t}</text>`;});
+  });
+  s+=`<text x="${BX+8}" y="${H-5}" font-family="Trebuchet MS,sans-serif" font-size="7.5" fill="rgba(0,212,160,0.40)">← Weak / Oversold</text>`;
+  s+=`<text x="${BX+BW-8}" y="${H-5}" text-anchor="end" font-family="Trebuchet MS,sans-serif" font-size="7.5" fill="rgba(232,53,53,0.40)">Overbought / Strong →</text>`;
+  svg.innerHTML=s;
+}
+
+// ── COMBO ZONE CHARTS ────────────────────────────────────────
+Chart.defaults.color='#5a7a9a';
+Chart.defaults.borderColor='rgba(255,255,255,0.06)';
+function buildZoneChart(canvasId,z90,z10,dates){
+  const ctx=document.getElementById(canvasId);if(!ctx)return;
+  new Chart(ctx,{
+    type:'bar',
+    data:{labels:dates,datasets:[
+      {type:'bar',label:'90-Day Zone',data:z90,backgroundColor:z90.map(z=>ZCL[z-1]+'99'),borderColor:z90.map(z=>ZCL[z-1]),borderWidth:1,order:2},
+      {type:'line',label:'10-Day Zone',data:z10,borderColor:'#c9a227',pointBackgroundColor:'#c9a227',pointRadius:2.5,pointHoverRadius:4,borderWidth:1.8,fill:false,tension:0.3,order:1}
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      layout:{padding:{left:2,right:4,top:4,bottom:2}},
+      plugins:{legend:{display:true,position:'top',labels:{color:'#5a7a9a',font:{family:"'Courier New',monospace",size:9},boxWidth:12,padding:8}}},
+      scales:{
+        y:{
+          min:0.3,max:6.5,
+          title:{
+            display:true,
+            text:'Zone',
+            color:'#5a7a9a',
+            font:{family:"'Courier New',monospace",size:9},
+            padding:{bottom:4}
+          },
+          ticks:{
+            stepSize:1,
+            callback:(v)=>(v>=1&&v<=6)?String(Math.round(v)):'',
+            color:(c)=>{
+              const v=Math.round(c.tick.value);
+              return (v>=1&&v<=6)?ZCL[v-1]:'#5a7a9a';
+            },
+            font:{family:"'Courier New',monospace",size:9},
+            padding:3
+          },
+          grid:{
+            color:ctx=>ctx.tick.value===3||ctx.tick.value===4?'rgba(255,255,255,0.12)':'rgba(255,255,255,0.05)',
+            lineWidth:ctx=>ctx.tick.value===3||ctx.tick.value===4?1.2:0.6
+          },
+          border:{color:'#243c58'}
+        },
+        x:{
+          ticks:{maxRotation:45,autoSkip:true,maxTicksLimit:10,color:'#5a7a9a',font:{family:"'Courier New',monospace",size:8}},
+          grid:{color:'rgba(255,255,255,0.03)'},border:{color:'#243c58'}
+        }
+      }
+    }
+  });
+}
+
+// ── INIT ─────────────────────────────────────────────────────
+['mkt','sec','strat'].forEach(g=>{lhSort[g]={dir:1};lhPer[g]='90';renderLH(g);});
+renderStockLH();
+RT_DATA['sec-a']=DATA_SEC_A;RT_DATA['sec-b']=DATA_SEC_B;
+RT_DATA['strat-a']=DATA_STRAT_A;RT_DATA['strat-b']=DATA_STRAT_B;
+['sec-a','sec-b','strat-a','strat-b'].forEach(g=>{rtSort[g]={field:'ir',dir:1};rtPer[g]='90';renderRT(g);});
+buildHistogram('histo-mkt',DATA_MKT);
+buildHistogram('histo-sec',DATA_SEC_FULL);
+buildHistogram('histo-strat',DATA_STRAT_HISTO);
+buildDensityHistogram('histo-stk',DENSITY_COUNTS);
+buildZoneChart('chart-spy',SPY_Z90,SPY_Z10,DATES30);
+buildZoneChart('chart-rsp',RSP_Z90,RSP_Z10,DATES30);
+buildZoneChart('chart-rfg',RFG_Z90,RFG_Z10,DATES30);
+buildZoneChart('chart-rpv',RPV_Z90,RPV_Z10,DATES30);
+</script>
+</body>
+</html>

@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Financial Select Sector SPDR (XLF) — Top Down Trading</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:#1a1a2e; --panel:#1f1f3a; --panel-alt:#161628;
+  --border:#2a2a4a; --border-lite:#363660;
+  --text:#ddeeff; --dim:#6a7a9a; --accent:#3090d8; --gold:#c9a227;
+  --z1:#00cc55; --z2:#88cc44; --z3:#7a9aaa; --z4:#aa9a7a; --z5:#ddcc00; --z6:#e83535;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;overflow:hidden;}
+
+.top-nav{height:44px;background:var(--panel-alt);border-bottom:2px solid var(--border-lite);display:flex;align-items:center;padding:0 12px;gap:10px;position:sticky;top:0;z-index:100;flex-shrink:0;}
+.nav-back{background:var(--panel);border:1px solid var(--border-lite);color:var(--dim);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:5px 14px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.nav-back:hover{border-color:var(--accent);color:var(--text);}
+.nav-spacer{flex:1;}
+.alert-badge{padding:4px 12px;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;border-radius:2px;display:none;}
+.alert-buy{background:rgba(0,204,85,0.12);border:1px solid var(--z1);color:var(--z1);display:inline-block;}
+.alert-sell{background:rgba(232,53,53,0.12);border:1px solid var(--z6);color:var(--z6);display:inline-block;}
+.search-box{background:var(--panel);border:1px solid var(--border-lite);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:12px;padding:5px 10px;outline:none;width:160px;transition:border-color .15s;}
+.search-box::placeholder{color:var(--dim);}
+.search-box:focus{border-color:var(--accent);}
+
+.shell{display:flex;height:calc(100vh - 44px);overflow:hidden;}
+
+/* SIDEBAR */
+.sidebar{width:285px;min-width:285px;border-right:2px solid var(--border-lite);display:flex;flex-direction:column;background:var(--panel-alt);flex-shrink:0;overflow:hidden;}
+.sb-head{padding:8px 10px 0;border-bottom:1px solid var(--border);flex-shrink:0;}
+.sb-title{text-align:center;font-weight:700;font-size:12px;color:var(--text);margin-bottom:5px;}
+.period-btns{display:flex;justify-content:center;gap:4px;margin-bottom:8px;}
+.p-btn{background:#22224a;border:1px solid #22224a;color:var(--dim);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600;padding:3px 10px;cursor:pointer;transition:all .15s;}
+.p-btn.active{background:#2a7abf;border-color:#3090d8;color:#fff;}
+.p-btn:hover:not(.active){border-color:#3090d8;color:var(--text);}
+
+/* Info row — companion left, sponsor right */
+.info-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
+.companion-label,.sponsor-label{font-size:10px;color:var(--dim);letter-spacing:.04em;text-transform:uppercase;margin-bottom:2px;}
+.companion-block a,.sponsor-block a{display:block;color:var(--accent);text-decoration:none;font-weight:700;font-size:12px;font-family:'Rajdhani',sans-serif;line-height:1.6;}
+.companion-block a:hover,.sponsor-block a:hover{color:var(--text);}
+.sponsor-block{text-align:right;}
+
+.sb-scroll{overflow-y:auto;flex:1;}
+.sb-scroll::-webkit-scrollbar{width:4px;}
+.sb-scroll::-webkit-scrollbar-track{background:#14142a;}
+.sb-scroll::-webkit-scrollbar-thumb{background:#363660;border-radius:2px;}
+
+/* LH Table — 5 columns */
+.lh-table{width:100%;border-collapse:collapse;font-family:'Courier New',monospace;font-size:10px;}
+.lh-table th{background:var(--panel-alt);color:var(--dim);padding:3px 4px;border-bottom:1px solid var(--border);position:sticky;top:0;font-size:9px;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;}
+.lh-table th.sortable{cursor:pointer;user-select:none;}
+.lh-table th.sortable:hover{color:var(--text);}
+.lh-table th.lh-sort-active{color:var(--accent);}
+.lh-table td{padding:2px 4px;border-bottom:1px solid #1a1a34;white-space:nowrap;}
+.lh-table tr:hover td{background:#20203c;}
+.lh-tick{color:var(--text);font-weight:bold;cursor:pointer;}
+.lh-tick:hover{color:var(--accent);}
+.lh-name{color:var(--dim);font-size:9px;max-width:72px;overflow:hidden;text-overflow:ellipsis;}
+.lh-ir,.lh-zn,.lh-3mo{text-align:center;}
+.sort-arrow{font-size:9px;margin-left:2px;opacity:.5;}
+.sort-arrow.active{opacity:1;color:var(--accent);}
+.zone-badge{display:inline-block;padding:1px 4px;font-size:9px;font-weight:bold;border-radius:2px;color:#000;}
+.pos{color:#88cc44;} .neg{color:#e83535;} .zer{color:#b8cce0;}
+
+/* RIGHT CONTENT */
+.right-content{flex:1;overflow-y:auto;padding:10px 14px;}
+.right-content::-webkit-scrollbar{width:6px;}
+.right-content::-webkit-scrollbar-track{background:#14142a;}
+.right-content::-webkit-scrollbar-thumb{background:#363660;border-radius:3px;}
+
+.histo-wrap{margin-bottom:0;}
+.histo-title{font-weight:700;font-size:13px;color:var(--text);text-align:center;margin-bottom:4px;letter-spacing:.03em;}
+.histo-desc{font-size:13px;color:var(--dim);text-align:center;line-height:1.5;margin-bottom:6px;padding:0 16px;font-style:italic;}
+.histo-range-label{text-align:center;font-size:10px;font-weight:600;color:var(--dim);letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px;}
+.histo-range-values{text-align:center;font-size:13px;font-weight:700;margin-bottom:6px;}
+.r-low{color:var(--z1);} .r-sep{color:var(--dim);margin:0 8px;} .r-high{color:var(--z6);}
+.histo-svg-box{background:var(--panel);border:1px solid var(--border);overflow:hidden;}
+
+.comment-box{background:var(--panel);border:1px solid var(--border);padding:10px 14px;margin-bottom:8px;}
+.comment-date{font-size:11px;color:var(--dim);font-family:'Courier New',monospace;margin-bottom:5px;}
+.comment-text{font-size:15px;font-style:italic;color:var(--dim);line-height:1.55;}
+
+/* Stats — centered */
+.stats-row{display:flex;gap:32px;justify-content:center;background:var(--panel);border:1px solid var(--border);padding:7px 14px;margin-bottom:10px;font-family:'Courier New',monospace;font-size:12px;color:var(--text);}
+.stat-label{color:var(--dim);margin-right:4px;}
+
+.section-heading{font-size:14px;font-weight:700;color:var(--gold);text-align:center;letter-spacing:.05em;text-transform:uppercase;margin:16px 0 10px;border-top:1px solid var(--border-lite);padding-top:12px;}
+.chart-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.chart-wrap{background:var(--panel);border:1px solid var(--border);padding:8px 12px 10px;}
+.chart-head{font-size:12px;font-weight:700;color:var(--text);text-align:center;letter-spacing:.03em;margin-bottom:2px;}
+.chart-sub{font-size:10px;color:var(--dim);text-align:center;margin-bottom:8px;font-style:italic;}
+.chart-cv{position:relative;height:220px;}
+
+.cc-block{text-align:center;margin-bottom:10px;}
+.cc-title{font-size:14px;font-weight:700;color:var(--text);letter-spacing:.04em;margin-bottom:3px;}
+.cc-name a{color:var(--accent);text-decoration:none;font-size:13px;font-weight:600;}
+.cc-name a:hover{color:var(--text);}
+
+.ref-section{background:var(--panel);border:1px solid var(--border);padding:12px 16px;margin-bottom:14px;}
+.ref-label{font-size:10px;font-weight:700;color:var(--dim);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;}
+.ref-text{font-size:13px;color:var(--dim);line-height:1.65;}
+
+#histo-tip{position:fixed;background:#1f1f3a;border:1px solid #3090d8;color:#ddeeff;font-family:'Courier New',monospace;font-size:11px;padding:5px 9px;border-radius:2px;box-shadow:0 2px 12px rgba(0,0,0,.7);white-space:nowrap;z-index:999;pointer-events:none;display:none;}
+</style>
+</head>
+<body>
+<div id="histo-tip"></div>
+
+<nav class="top-nav">
+  <button class="nav-back" onclick="navTo('sector.html','sectorPage')">← Back</button>
+  <div class="nav-spacer"></div>
+  <span id="alert-badge" class="alert-badge"></span>
+  <div class="nav-spacer"></div>
+  <input class="search-box" type="text" placeholder="Search ticker or name…" oninput="filterLH(this.value)">
+</nav>
+
+<div class="shell">
+  <aside class="sidebar">
+    <div class="sb-head">
+      <div class="sb-title">XLF Members</div>
+      <div class="period-btns">
+        <button class="p-btn active" data-period="90" onclick="handlePeriod(this)">90 IR</button>
+        <button class="p-btn" data-period="10" onclick="handlePeriod(this)">10 IR</button>
+      </div>
+    </div>
+    <div class="sb-scroll">
+      <table class="lh-table">
+        <thead><tr>
+          <th style="text-align:left">Tick</th>
+          <th style="text-align:left">Name</th>
+          <th class="sortable lh-sort-active" id="lh-th-ir" onclick="handleLHSort('ir')" style="text-align:center">IR&nbsp;<span class="sort-arrow active" id="lh-arr-ir">↓</span></th>
+          <th style="text-align:center">Zn</th>
+          <th class="sortable" id="lh-th-3mo" onclick="handleLHSort('3mo')" style="text-align:center">3Mo&nbsp;<span class="sort-arrow" id="lh-arr-3mo">↕</span></th>
+        </tr></thead>
+        <tbody id="lh-tbody"></tbody>
+      </table>
+    </div>
+  </aside>
+
+  <div class="right-content">
+
+    <!-- Info row — companion left, sponsor right — matches ETF Without Members format -->
+    <div class="info-row">
+      <div class="companion-block">
+        <div class="companion-label">Companion Securities</div>
+        <a href="KRE.html" onclick="navTo('KRE.html','symbolWindow');return false;">KRE</a>
+      </div>
+      <div class="sponsor-block">
+        <div class="sponsor-label">Sponsor</div>
+        <a href="state_street.html" onclick="navTo('state_street.html','sectorPage');return false;">State Street</a>
+      </div>
+    </div>
+
+    <div class="histo-wrap">
+      <div class="histo-title">Financial Select Sector SPDR (XLF) — 90-Day Implied Risk Histogram</div>
+      <div class="histo-desc">The Financial Select Sector Index seeks to provide precise exposure to companies in the financial services; insurance; banks; capital markets; mortgage real estate investment trusts (REITs); and consumer finance.</div>
+      <div class="histo-range-label">Expected 90-Day Trading Range</div>
+      <div class="histo-range-values"><span class="r-low">$28</span><span class="r-sep">—</span><span class="r-high">$48</span></div>
+      <div class="histo-svg-box">
+        <svg id="mainHisto" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block"></svg>
+      </div>
+    </div>
+
+    <div class="comment-box">
+      <div class="comment-date">Posted May 3, 2026</div>
+      <div class="comment-text">The Financial Select Sector SPDR (XLF) holds Zone 4 at −14 on a 90-day basis, positioned modestly above the mean. The 10-day reading is −10. JPMorgan (JPM) and Goldman Sachs (GS) are anchored deep in Zone 6 at the overbought extreme. Offsetting that pressure, regional names Huntington Bancshares (HBAN) and Regions Financial (RF) sit in Zone 1, offering the ETF's strongest reversion-to-mean setups.</div>
+    </div>
+
+    <div class="stats-row">
+      <span><span class="stat-label">Close:</span>$38.72</span>
+      <span><span class="stat-label">Implied Volatility:</span>18.4%</span>
+    </div>
+
+    <div class="section-heading">Market Data</div>
+    <div class="chart-pair">
+      <div class="chart-wrap">
+        <div class="chart-head">XLF Implied Risk</div>
+        <div class="chart-sub">90-Day Zone · 10-Day Zone · 30 Days</div>
+        <div class="chart-cv"><canvas id="chart-xlf-zone"></canvas></div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-head">XLF Price / Mean</div>
+        <div class="chart-sub">Closing Price · 90-Day Mean · 30 Days</div>
+        <div class="chart-cv"><canvas id="chart-xlf-price"></canvas></div>
+      </div>
+    </div>
+
+    <div class="section-heading">Implied Risk Data</div>
+    <div class="cc-block">
+      <div class="cc-title">Compare and Contrast</div>
+      <div class="cc-name"><a href="KRE.html" onclick="navTo('KRE.html','symbolWindow');return false;">SPDR S&amp;P Regional Banking ETF (KRE)</a></div>
+    </div>
+    <div class="chart-pair">
+      <div class="chart-wrap">
+        <div class="chart-head">KRE Implied Risk</div>
+        <div class="chart-sub">90-Day Zone · 10-Day Zone · 30 Days</div>
+        <div class="chart-cv"><canvas id="chart-kre-zone"></canvas></div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-head">KRE Price / Mean</div>
+        <div class="chart-sub">Closing Price · 90-Day Mean · 30 Days</div>
+        <div class="chart-cv"><canvas id="chart-kre-price"></canvas></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function navTo(url,w){if(window.innerWidth<768)location.href=url;else window.open(url,w);}
+
+const ZCL=['#00cc55','#88cc44','#7a9aaa','#aa9a7a','#ddcc00','#e83535'];
+function irToZone(ir){if(ir>=67)return 1;if(ir>=34)return 2;if(ir>=1)return 3;if(ir>=-33)return 4;if(ir>=-66)return 5;return 6;}
+function zoneBadge(z){return `<span class="zone-badge" style="background:${ZCL[z-1]}">${z}</span>`;}
+function irFmt(v){return(v>0?'+':'')+v;}
+function irCls(v){return v>0?'pos':v<0?'neg':'zer';}
+function trunc(s,n){return s.length>n?s.slice(0,n)+'…':s;}
+
+const MEMBERS=[
+  // Zone 1
+  {sym:'HBAN',name:'Huntington Bancshares',ir90:+78,ir10:+72,mo3:-42},
+  {sym:'RF',  name:'Regions Financial',    ir90:+72,ir10:+65,mo3:-38},
+  {sym:'KEY', name:'KeyCorp',              ir90:+69,ir10:+62,mo3:-35},
+  {sym:'FITB',name:'Fifth Third Bancorp',  ir90:+68,ir10:+70,mo3:-32},
+  // Zone 2
+  {sym:'MTB', name:'M&T Bank Corp',        ir90:+62,ir10:+55,mo3:-28},
+  {sym:'TFC', name:'Truist Financial',     ir90:+58,ir10:+52,mo3:-24},
+  {sym:'USB', name:'US Bancorp',           ir90:+55,ir10:+48,mo3:-20},
+  {sym:'CFG', name:'Citizens Financial',   ir90:+52,ir10:+45,mo3:-18},
+  {sym:'PYPL',name:'PayPal Holdings',      ir90:+48,ir10:+52,mo3:-14},
+  {sym:'HOOD',name:'Robinhood Markets',    ir90:+45,ir10:+40,mo3:-10},
+  {sym:'SYF', name:'Synchrony Financial',  ir90:+42,ir10:+38,mo3: -8},
+  {sym:'AFL', name:'Aflac Inc',            ir90:+38,ir10:+35,mo3: -5},
+  {sym:'PFG', name:'Principal Financial',  ir90:+36,ir10:+32,mo3: -2},
+  {sym:'FIS', name:'Fidelity Natl Info',   ir90:+35,ir10:+30,mo3: -1},
+  {sym:'GL',  name:'Globe Life Inc',       ir90:+34,ir10:+28,mo3: +2},
+  // Zone 3
+  {sym:'MET', name:'MetLife Inc',          ir90:+28,ir10:+24,mo3: +5},
+  {sym:'AIG', name:'American Intl Grp',    ir90:+25,ir10:+22,mo3: +8},
+  {sym:'PRU', name:'Prudential Financial', ir90:+22,ir10:+18,mo3:+12},
+  {sym:'HIG', name:'Hartford Financial',   ir90:+18,ir10:+15,mo3:+15},
+  {sym:'IBKR',name:'Interactive Brokers',  ir90:+16,ir10:+20,mo3:+18},
+  {sym:'EG',  name:'Everest Group',        ir90:+15,ir10:+12,mo3:+20},
+  {sym:'L',   name:'Loews Corp',           ir90:+14,ir10:+10,mo3:+22},
+  {sym:'JKHY',name:'Jack Henry & Assoc',   ir90:+12,ir10: +8,mo3:+24},
+  {sym:'WRB', name:'WR Berkley Corp',      ir90:+10,ir10: +6,mo3:+26},
+  {sym:'XYZ', name:'Block Inc',            ir90: +8,ir10:+12,mo3:+28},
+  {sym:'CINF',name:'Cincinnati Financial', ir90: +8,ir10: +5,mo3:+28},
+  {sym:'BRO', name:'Brown & Brown Inc',    ir90: +6,ir10: +4,mo3:+30},
+  {sym:'AIZ', name:'Assurant Inc',         ir90: +5,ir10: +3,mo3:+32},
+  {sym:'IVZ', name:'Invesco Ltd',          ir90: +4,ir10: +2,mo3:+33},
+  {sym:'BEN', name:'Franklin Resources',   ir90: +3,ir10: +1,mo3:+34},
+  {sym:'FDS', name:'FactSet Research',     ir90: +2,ir10: +4,mo3:+35},
+  {sym:'ERIE',name:'Erie Indemnity Co',    ir90: +1,ir10: +3,mo3:+36},
+  // Zone 4 — XLF itself is white
+  {sym:'XLF', name:'Finl Select SPDR',     ir90:-14,ir10:-10,mo3:+22,isETF:true},
+  {sym:'AXP', name:'American Express',     ir90: -5,ir10: -8,mo3:+30},
+  {sym:'COIN',name:'Coinbase Global',      ir90: -8,ir10:-12,mo3:+32},
+  {sym:'NDAQ',name:'Nasdaq Inc',           ir90:-10,ir10: -8,mo3:+28},
+  {sym:'CME', name:'CME Group Inc',        ir90:-12,ir10:-10,mo3:+25},
+  {sym:'CBOE',name:'Cboe Global Markets',  ir90:-15,ir10:-12,mo3:+22},
+  {sym:'GPN', name:'Global Payments',      ir90:-16,ir10:-14,mo3:+20},
+  {sym:'CPAY',name:'Corpay Inc',           ir90:-18,ir10:-16,mo3:+18},
+  {sym:'FISV',name:'Fiserv Inc',           ir90:-20,ir10:-18,mo3:+16},
+  {sym:'ICE', name:'Intercont Exchange',   ir90:-22,ir10:-20,mo3:+14},
+  {sym:'SCHW',name:'Charles Schwab',       ir90:-24,ir10:-22,mo3:+12},
+  {sym:'BK',  name:'Bank of New York',     ir90:-25,ir10:-22,mo3:+10},
+  {sym:'NTRS',name:'Northern Trust',       ir90:-26,ir10:-24,mo3: +8},
+  {sym:'MRSH',name:'Marsh & McLennan',     ir90:-28,ir10:-25,mo3: +6},
+  {sym:'AON', name:'Aon PLC',              ir90:-30,ir10:-28,mo3: +4},
+  {sym:'WTW', name:'Willis Towers Watson', ir90:-31,ir10:-28,mo3: +2},
+  {sym:'AJG', name:'Arthur J Gallagher',   ir90:-32,ir10:-30,mo3: +1},
+  // Zone 5
+  {sym:'PNC', name:'PNC Financial',        ir90:-35,ir10:-32,mo3: -5},
+  {sym:'TRV', name:'Travelers Cos',        ir90:-36,ir10:-34,mo3: -8},
+  {sym:'CB',  name:'Chubb Ltd',            ir90:-38,ir10:-36,mo3:-12},
+  {sym:'ALL', name:'Allstate Corp',        ir90:-40,ir10:-38,mo3:-16},
+  {sym:'PGR', name:'Progressive Corp',     ir90:-42,ir10:-40,mo3:-20},
+  {sym:'AMP', name:'Ameriprise Financial', ir90:-46,ir10:-44,mo3:-24},
+  {sym:'RJF', name:'Raymond James Finl',   ir90:-48,ir10:-45,mo3:-28},
+  {sym:'STT', name:'State Street Corp',    ir90:-52,ir10:-50,mo3:-32},
+  {sym:'MCO', name:"Moody's Corp",         ir90:-55,ir10:-52,mo3:-36},
+  {sym:'TROW',name:'T Rowe Price Group',   ir90:-56,ir10:-54,mo3:-38},
+  {sym:'MSCI',name:'MSCI Inc',             ir90:-58,ir10:-55,mo3:-40},
+  {sym:'ARES',name:'Ares Management',      ir90:-61,ir10:-58,mo3:-44},
+  {sym:'APO', name:'Apollo Global Mgmt',   ir90:-64,ir10:-62,mo3:-48},
+  {sym:'KKR', name:'KKR & Co Inc',         ir90:-65,ir10:-62,mo3:-50},
+  // Zone 6
+  {sym:'BX',  name:'Blackstone Inc',       ir90:-68,ir10:-70,mo3:-52},
+  {sym:'SPGI',name:'S&P Global Inc',       ir90:-70,ir10:-68,mo3:-55},
+  {sym:'BLK', name:'BlackRock Inc',        ir90:-72,ir10:-70,mo3:-58},
+  {sym:'MS',  name:'Morgan Stanley',       ir90:-74,ir10:-72,mo3:-60},
+  {sym:'COF', name:'Capital One Finl',     ir90:-76,ir10:-74,mo3:-62},
+  {sym:'V',   name:'Visa Inc',             ir90:-78,ir10:-76,mo3:-65},
+  {sym:'MA',  name:'Mastercard Inc',       ir90:-80,ir10:-78,mo3:-68},
+  {sym:'C',   name:'Citigroup Inc',        ir90:-82,ir10:-80,mo3:-70},
+  {sym:'WFC', name:'Wells Fargo',          ir90:-84,ir10:-82,mo3:-72},
+  {sym:'BAC', name:'Bank of America',      ir90:-86,ir10:-84,mo3:-74},
+  {sym:'GS',  name:'Goldman Sachs',        ir90:-88,ir10:-86,mo3:-76},
+  {sym:'BRKB',name:'Berkshire Hathaway B', ir90:-90,ir10:-88,mo3:-78},
+  {sym:'JPM', name:'JPMorgan Chase',       ir90:-92,ir10:-90,mo3:-80},
+];
+
+(function(){const ir=-14;const b=document.getElementById('alert-badge');if(Math.abs(ir)>=67){b.textContent=ir>0?'⚡ Trading Alert — Buy Zone':'⚡ Trading Alert — Sell Zone';b.className='alert-badge '+(ir>0?'alert-buy':'alert-sell');}})();
+
+let lhPeriod='90',lhSortField='ir',lhSortDir=1,lhFilter='';
+function handlePeriod(btn){document.querySelectorAll('.p-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');lhPeriod=btn.dataset.period;renderLH();}
+function handleLHSort(f){if(lhSortField===f)lhSortDir*=-1;else{lhSortField=f;lhSortDir=1;}renderLH();}
+function filterLH(v){lhFilter=v.toLowerCase();renderLH();}
+
+function renderLH(){
+  const irF=lhPeriod==='90'?'ir90':'ir10', sF=lhSortField==='ir'?irF:'mo3';
+  ['ir','3mo'].forEach(f=>{
+    const th=document.getElementById(`lh-th-${f}`),arr=document.getElementById(`lh-arr-${f}`);
+    const on=(f==='ir'&&lhSortField==='ir')||(f==='3mo'&&lhSortField==='3mo');
+    if(!th||!arr)return;
+    if(on){th.classList.add('lh-sort-active');arr.classList.add('active');arr.textContent=lhSortDir===1?'↓':'↑';}
+    else{th.classList.remove('lh-sort-active');arr.classList.remove('active');arr.textContent='↕';}
+  });
+  const data=[...MEMBERS].filter(m=>!lhFilter||m.sym.toLowerCase().includes(lhFilter)||m.name.toLowerCase().includes(lhFilter)).sort((a,b)=>(b[sF]-a[sF])*lhSortDir);
+  document.getElementById('lh-tbody').innerHTML=data.map(m=>{
+    const ir=m[irF],z=irToZone(ir),ts=m.isETF?'style="color:#ffffff;font-weight:bold;"':'';
+    return `<tr><td class="lh-tick" ${ts} onclick="navTo('${m.sym}.html','symbolWindow')">${m.sym}</td><td class="lh-name">${trunc(m.name,14)}</td><td class="lh-ir"><span class="${irCls(ir)}">${irFmt(ir)}</span></td><td class="lh-zn">${zoneBadge(z)}</td><td class="lh-3mo"><span class="${irCls(m.mo3)}">${irFmt(m.mo3)}</span></td></tr>`;
+  }).join('');
+}
+
+function getSlotInfo(ir){
+  if(ir>=91)return{z:0,s:0};if(ir>=83)return{z:0,s:1};if(ir>=75)return{z:0,s:2};if(ir>=67)return{z:0,s:3};
+  if(ir>=59)return{z:1,s:0};if(ir>=52)return{z:1,s:1};if(ir>=43)return{z:1,s:2};if(ir>=34)return{z:1,s:3};
+  if(ir>=26)return{z:2,s:0};if(ir>=18)return{z:2,s:1};if(ir>=9)return{z:2,s:2};if(ir>=1)return{z:2,s:3};
+  if(ir>=-8)return{z:3,s:0};if(ir>=-17)return{z:3,s:1};if(ir>=-25)return{z:3,s:2};if(ir>=-33)return{z:3,s:3};
+  if(ir>=-42)return{z:4,s:0};if(ir>=-51)return{z:4,s:1};if(ir>=-58)return{z:4,s:2};if(ir>=-66)return{z:4,s:3};
+  if(ir>=-74)return{z:5,s:0};if(ir>=-82)return{z:5,s:1};if(ir>=-90)return{z:5,s:2};return{z:5,s:3};
+}
+
+function buildHistogram(){
+  const W=920,OW=28,BX=OW,BW=864,ZW=144,SLOT_PITCH=BW/24,SH=13;
+  const BELL_A=168,BELL_FLOOR=16,BELL_SIG=ZW,BCX=BX+BW/2;
+  const slots=Array.from({length:24},()=>[]);
+  MEMBERS.forEach(m=>{const{z,s}=getSlotInfo(m.ir90);slots[z*4+s].push(m);});
+  slots.forEach(sl=>sl.sort((a,b)=>a.sym.localeCompare(b.sym)));
+  let BY=205;
+  const maxStk=Math.max(1,...slots.map(sl=>sl.length));
+  if(maxStk*SH+20>BY)BY=maxStk*SH+20;
+  const H=BY+70;
+  const svg=document.getElementById('mainHisto');
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  let s=`<defs><filter id="glow"><feGaussianBlur stdDeviation="2.8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter><filter id="softglow"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>`;
+  s+=`<rect x="0" y="0" width="${OW}" height="${BY}" fill="rgba(0,204,85,0.06)"/>`;
+  s+=`<rect x="${BX+BW}" y="0" width="${OW}" height="${BY}" fill="rgba(232,53,53,0.06)"/>`;
+  s+=`<text x="${OW/2}" y="13" text-anchor="middle" font-family="Courier New,monospace" font-size="7" fill="#00cc55">OOB</text><text x="${OW/2}" y="23" text-anchor="middle" font-family="Courier New,monospace" font-size="7" fill="#00cc55">Weak</text><text x="${OW/2}" y="33" text-anchor="middle" font-family="Courier New,monospace" font-size="7" fill="#00cc55">[0]</text><text x="${OW/2}" y="42" text-anchor="middle" font-family="Courier New,monospace" font-size="6" fill="rgba(0,204,85,0.5)">≥+99</text>`;
+  s+=`<text x="${W-OW/2}" y="13" text-anchor="middle" font-family="Courier New,monospace" font-size="7" fill="#e83535">OOB</text><text x="${W-OW/2}" y="23" text-anchor="middle" font-family="Courier New,monospace" font-size="7" fill="#e83535">Str</text><text x="${W-OW/2}" y="33" text-anchor="middle" font-family="Courier New,monospace" font-size="7" fill="#e83535">[0]</text><text x="${W-OW/2}" y="42" text-anchor="middle" font-family="Courier New,monospace" font-size="6" fill="rgba(232,53,53,0.5)">≤−99</text>`;
+  for(let zi=0;zi<6;zi++)s+=`<rect x="${BX+zi*ZW}" y="0" width="${ZW}" height="${BY}" fill="${ZCL[zi]}" fill-opacity="0.07"/>`;
+  s+=`<line x1="${BX}" y1="0" x2="${BX}" y2="${BY}" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>`;
+  s+=`<line x1="${BX+BW}" y1="0" x2="${BX+BW}" y2="${BY}" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>`;
+  for(let zi=1;zi<6;zi++){const dx=BX+zi*ZW;s+=`<line x1="${dx}" y1="0" x2="${dx}" y2="${BY}" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>`;}
+  for(let i=1;i<24;i++){if(i%4===0)continue;const dx=BX+i*SLOT_PITCH;s+=`<line x1="${dx}" y1="8" x2="${dx}" y2="${BY}" stroke="rgba(255,255,255,0.055)" stroke-width="0.5" stroke-dasharray="3,6"/>`;}
+  s+=`<line x1="0" x2="${W}" y1="${BY}" y2="${BY}" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>`;
+  function bellY(px){const dx=px-BCX;return BY-(BELL_A*Math.exp(-dx*dx/(2*BELL_SIG*BELL_SIG))+BELL_FLOOR);}
+  let pts=[];for(let px=BX;px<=BX+BW;px+=2)pts.push(`${px},${bellY(px).toFixed(1)}`);
+  const pd='M '+pts.join(' L ');
+  s+=`<path d="${pd}" fill="none" stroke="rgba(120,185,255,0.14)" stroke-width="8"/>`;
+  s+=`<path d="${pd}" fill="none" stroke="rgba(155,210,255,0.72)" stroke-width="1.6" stroke-dasharray="8,4" filter="url(#glow)"/>`;
+  s+=`<path d="${pd}" fill="none" stroke="rgba(205,235,255,0.38)" stroke-width="0.8" stroke-dasharray="8,4"/>`;
+  slots.forEach((sl,gi)=>{
+    const scx=BX+(gi+0.5)*SLOT_PITCH,zi=Math.floor(gi/4);
+    sl.forEach((m,idx)=>{
+      const sy=BY-(idx+0.5)*SH-2,fill=m.isETF?'#ffffff':ZCL[zi];
+      const tip=`${m.sym} — ${m.name}  |  90-IR: ${irFmt(m.ir90)}  |  Zone ${irToZone(m.ir90)}`;
+      s+=`<text x="${scx}" y="${sy}" text-anchor="middle" font-family="Courier New,monospace" font-size="9" font-weight="bold" fill="${fill}" filter="url(#softglow)" cursor="pointer" data-tip="${tip}">${m.sym.slice(0,3)}</text>`;
+    });
+  });
+  const ranges=['+99 to +67','+66 to +34','+33 to +1','−1 to −33','−34 to −66','−67 to −99'];
+  for(let zi=0;zi<6;zi++){const cx=BX+zi*ZW+ZW/2;s+=`<text x="${cx}" y="${BY+18}" text-anchor="middle" font-family="Courier New,monospace" font-size="8.5" fill="rgba(255,255,255,0.48)">${ranges[zi]}</text><text x="${cx}" y="${BY+31}" text-anchor="middle" font-family="Trebuchet MS,sans-serif" font-size="10.5" font-weight="bold" fill="${ZCL[zi]}">Zone ${zi+1}</text>`;}
+  // Trading range values — row below Zone bold labels, left=low green, right=high red
+  s+=`<text x="${BX+6}" y="${BY+47}" font-family="Courier New,monospace" font-size="13" font-weight="bold" fill="#00cc55">$28</text>`;
+  s+=`<text x="${BX+BW-6}" y="${BY+47}" text-anchor="end" font-family="Courier New,monospace" font-size="13" font-weight="bold" fill="#e83535">$48</text>`;
+  s+=`<text x="${BX+4}" y="${H-5}" font-family="Trebuchet MS,sans-serif" font-size="7.5" fill="rgba(0,212,160,0.40)">← Weak / Oversold</text>`;
+  s+=`<text x="${BX+BW-4}" y="${H-5}" text-anchor="end" font-family="Trebuchet MS,sans-serif" font-size="7.5" fill="rgba(232,53,53,0.40)">Overbought / Strong →</text>`;
+  svg.innerHTML=s;
+  const tip=document.getElementById('histo-tip');
+  svg.addEventListener('mousemove',e=>{const t=e.target.getAttribute('data-tip');if(t){tip.textContent=t;tip.style.display='block';tip.style.left=(e.clientX+14)+'px';tip.style.top=(e.clientY-8)+'px';}else tip.style.display='none';});
+  svg.addEventListener('mouseleave',()=>{tip.style.display='none';});
+}
+
+function genDates30(){const d=[];let cur=new Date(),n=0;while(n<30){if(cur.getDay()!==0&&cur.getDay()!==6){d.unshift(cur.toLocaleDateString('en-US',{month:'numeric',day:'numeric'}));n++;}cur.setDate(cur.getDate()-1);}return d;}
+const DATES30=genDates30();
+Chart.defaults.color='#6a7a9a';Chart.defaults.borderColor='rgba(255,255,255,0.06)';
+
+function buildZoneChart(id,z90,z10){
+  const ctx=document.getElementById(id);if(!ctx)return;
+  new Chart(ctx,{type:'bar',data:{labels:DATES30,datasets:[{type:'bar',label:'90-Day Zone',data:z90,backgroundColor:z90.map(z=>ZCL[z-1]+'99'),borderColor:z90.map(z=>ZCL[z-1]),borderWidth:1,order:2},{type:'line',label:'10-Day Zone',data:z10,borderColor:'#c9a227',pointBackgroundColor:'#c9a227',pointRadius:2.5,pointHoverRadius:4,borderWidth:1.8,fill:false,tension:0.3,order:1}]},
+  options:{responsive:true,maintainAspectRatio:false,layout:{padding:{left:2,right:4,top:4,bottom:2}},plugins:{legend:{display:true,position:'top',labels:{color:'#6a7a9a',font:{family:"'Courier New',monospace",size:9},boxWidth:12,padding:8}}},
+  scales:{y:{min:0.3,max:6.5,title:{display:true,text:'Zone',color:'#6a7a9a',font:{family:"'Courier New',monospace",size:9},padding:{bottom:4}},ticks:{stepSize:1,callback:v=>(v>=1&&v<=6)?String(Math.round(v)):'',color:c=>{const v=Math.round(c.tick.value);return(v>=1&&v<=6)?ZCL[v-1]:'#6a7a9a';},font:{family:"'Courier New',monospace",size:9},padding:3},grid:{color:ctx=>(ctx.tick.value===3||ctx.tick.value===4)?'rgba(255,255,255,0.12)':'rgba(255,255,255,0.05)',lineWidth:ctx=>(ctx.tick.value===3||ctx.tick.value===4)?1.2:0.6},border:{color:'#363660'}},x:{ticks:{maxRotation:45,autoSkip:true,maxTicksLimit:10,color:'#6a7a9a',font:{family:"'Courier New',monospace",size:8}},grid:{color:'rgba(255,255,255,0.03)'},border:{color:'#363660'}}}}});
+}
+
+function buildPriceChart(id,prices,means){
+  const ctx=document.getElementById(id);if(!ctx)return;
+  new Chart(ctx,{type:'line',data:{labels:DATES30,datasets:[{label:'Close',data:prices,borderColor:'#ddeeff',backgroundColor:'rgba(221,238,255,0.04)',borderWidth:1.6,pointRadius:0,pointHoverRadius:3,fill:false,tension:0.3},{label:'Mean',data:means,borderColor:'#c9a227',backgroundColor:'transparent',borderWidth:1.4,borderDash:[5,3],pointRadius:0,pointHoverRadius:0,fill:false,tension:0.3}]},
+  options:{responsive:true,maintainAspectRatio:false,layout:{padding:{left:2,right:4,top:4,bottom:2}},plugins:{legend:{display:true,position:'top',labels:{color:'#6a7a9a',font:{family:"'Courier New',monospace",size:9},boxWidth:12,padding:8}}},
+  scales:{y:{ticks:{color:'#6a7a9a',font:{family:"'Courier New',monospace",size:9}},grid:{color:'rgba(255,255,255,0.05)'},border:{color:'#363660'}},x:{ticks:{maxRotation:45,autoSkip:true,maxTicksLimit:10,color:'#6a7a9a',font:{family:"'Courier New',monospace",size:8}},grid:{color:'rgba(255,255,255,0.03)'},border:{color:'#363660'}}}}});
+}
+
+const XLF_Z90=[3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,4,4,4,4,4];
+const XLF_Z10=[4,4,3,4,4,4,5,4,4,3,4,4,5,4,4,4,4,5,5,4,4,4,4,5,5,4,4,4,4,4];
+const XLF_PRICES=[39.8,40.1,39.6,40.3,40.6,40.1,40.8,41.0,40.4,41.2,40.8,41.4,40.9,41.6,40.8,41.3,40.6,41.0,40.4,40.8,40.2,40.6,39.9,40.2,39.6,40.0,39.4,39.8,39.1,38.72];
+const XLF_MEANS=[40.1,40.1,40.1,40.1,40.1,40.1,40.1,40.1,40.1,40.1,40.1,40.1,40.1,40.1,40.1,40.1,40.1,40.1,40.1,40.1,40.1,40.1,40.1,40.1,40.1,40.1,40.1,40.1,40.1,40.1];
+const KRE_Z90=[3,3,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,6,5];
+const KRE_Z10=[4,4,4,5,5,5,5,5,4,5,5,5,5,6,5,5,5,5,6,5,5,5,5,5,6,5,5,5,6,6];
+const KRE_PRICES=[56.2,56.8,55.9,57.2,57.8,57.0,58.1,58.6,57.8,59.0,58.3,59.4,58.8,60.0,59.2,60.3,59.6,60.8,60.0,61.2,60.4,61.5,60.8,62.0,61.2,62.4,61.6,62.8,62.0,61.8];
+const KRE_MEANS=[52.0,52.2,52.4,52.6,52.8,53.0,53.2,53.4,53.5,53.6,53.8,53.9,54.0,54.1,54.2,54.3,54.4,54.5,54.5,54.6,54.6,54.7,54.7,54.8,54.8,54.8,54.9,54.9,54.9,54.9];
+
+renderLH();buildHistogram();
+buildZoneChart('chart-xlf-zone',XLF_Z90,XLF_Z10);buildPriceChart('chart-xlf-price',XLF_PRICES,XLF_MEANS);
+buildZoneChart('chart-kre-zone',KRE_Z90,KRE_Z10);buildPriceChart('chart-kre-price',KRE_PRICES,KRE_MEANS);
+</script>
+</body>
+</html>

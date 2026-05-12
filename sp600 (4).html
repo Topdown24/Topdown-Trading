@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>S&P SmallCap 600 (SML) — Top Down Trading</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#08111e;--panel:#0d1829;--panel-alt:#0a1420;
+  --border:#1a2d44;--border-lite:#243c58;
+  --text:#ddeeff;--dim:#5a7a9a;--accent:#3090d8;--gold:#c9a227;
+  --z1:#00cc55;--z2:#88cc44;--z3:#7a9aaa;--z4:#aa9a7a;--z5:#ddcc00;--z6:#e83535;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;overflow:hidden}
+
+/* ── TOP NAV ── */
+.top-nav{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:var(--panel-alt);border-bottom:1px solid var(--border);height:44px;position:sticky;top:0;z-index:80;flex-shrink:0}
+.nav-left{display:flex;align-items:center;gap:6px}
+.nav-back{background:var(--panel);border:1px solid var(--accent);color:var(--accent);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;padding:4px 14px;cursor:pointer;border-radius:2px;letter-spacing:.04em;transition:all .15s}
+.nav-back:hover{background:#162a3e;color:var(--text)}
+.nav-btn{background:var(--panel);border:1px solid var(--border-lite);color:#8ab0cc;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;padding:4px 14px;cursor:pointer;border-radius:2px;letter-spacing:.04em;transition:all .15s}
+.nav-btn:hover{border-color:var(--accent);color:var(--text)}
+.search-box{background:var(--panel);border:1px solid var(--border-lite);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:12px;padding:4px 14px;border-radius:2px;outline:none;width:190px;letter-spacing:.04em}
+.search-box::placeholder{color:#3a5a7a}
+.search-box:focus{border-color:var(--accent)}
+
+/* ── PAGE TITLE ── */
+#page-title{text-align:center;padding:18px 14px 12px;flex-shrink:0;border-bottom:1px solid var(--border)}
+#page-title .pt-main{font-size:24px;font-weight:700;color:var(--text);letter-spacing:.04em}
+#page-title .pt-sub{font-size:16px;font-weight:700;color:var(--gold);letter-spacing:.14em;text-transform:uppercase;margin-top:3px}
+#page-title .pt-exp{font-size:13px;color:var(--dim);font-style:italic;margin-top:7px}
+
+/* ── OUTER SHELL ── */
+#shell{display:flex;flex-direction:column;height:calc(100vh - 44px);overflow:hidden}
+#content-scroll{flex:1;overflow-y:auto;overflow-x:hidden}
+#content-scroll::-webkit-scrollbar{width:5px}
+#content-scroll::-webkit-scrollbar-track{background:#08111e}
+#content-scroll::-webkit-scrollbar-thumb{background:#243c58;border-radius:2px}
+
+/* ── SECTION WRAPPER ── */
+.section-outer{display:flex;border-top:2px solid var(--border-lite);min-height:500px}
+
+/* ── LEFT HAND TOGGLE (SIDEBAR) ── */
+.lh-sidebar{width:285px;min-width:285px;flex-shrink:0;border-right:2px solid var(--border-lite);
+  background:var(--panel-alt);display:flex;flex-direction:column;overflow:hidden}
+.lh-header{padding:8px 10px 6px;border-bottom:1px solid var(--border);flex-shrink:0}
+.lh-title{text-align:center;font-weight:700;font-size:12px;color:var(--text);margin-bottom:5px}
+.lh-period-btns{display:flex;justify-content:center;gap:0}
+.lh-period-btn{background:var(--border);border:1px solid var(--border);color:var(--dim);
+  font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600;padding:3px 14px;cursor:pointer;transition:all .15s}
+.lh-period-btn:first-child{border-radius:2px 0 0 2px}
+.lh-period-btn:last-child{border-radius:0 2px 2px 0;border-left:none}
+.lh-period-btn.active{background:#2a7abf;border-color:var(--accent);color:#fff}
+.lh-scroll{flex:1;overflow-y:auto}
+.lh-scroll::-webkit-scrollbar{width:4px}
+.lh-scroll::-webkit-scrollbar-track{background:#08111e}
+.lh-scroll::-webkit-scrollbar-thumb{background:#243c58;border-radius:2px}
+.lh-table{width:100%;border-collapse:collapse;font-family:'Courier New',monospace;font-size:11px}
+.lh-table th{background:var(--panel-alt);color:var(--dim);padding:4px 6px;
+  border-bottom:1px solid var(--border);position:sticky;top:0;
+  font-size:10px;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.lh-table th.sortable{cursor:pointer;user-select:none}
+.lh-table th.sortable:hover{color:var(--text)}
+.lh-table th.sort-active{color:var(--accent)}
+.sort-arrow{font-size:10px;margin-left:3px;opacity:.5}
+.sort-arrow.active{opacity:1;color:var(--accent)}
+.lh-table td{padding:3px 6px;border-bottom:1px solid #0e1a28;white-space:nowrap}
+.lh-table tr:hover td{background:#111e30}
+.lh-table .col-sym{color:var(--text);font-weight:700}
+.lh-table .col-sym.northstar{color:#fff;text-shadow:0 0 6px rgba(255,255,255,0.7)}
+.lh-table .col-name{color:var(--dim);font-size:10px}
+.zone-badge{display:inline-block;padding:1px 5px;font-size:10px;font-weight:700;border-radius:2px;color:#000}
+.pos{color:#88cc44}.neg{color:#e83535}.zer{color:#b8cce0}
+
+/* ── RIGHT CONTENT ── */
+.right-content{flex:1;overflow-y:auto;padding:10px 14px}
+.right-content::-webkit-scrollbar{width:4px}
+.right-content::-webkit-scrollbar-track{background:#08111e}
+.right-content::-webkit-scrollbar-thumb{background:#243c58;border-radius:2px}
+
+/* ── SECTION TITLE BOX ── */
+.sec-title-box{text-align:center;margin-bottom:10px}
+.sec-title-inner{display:inline-block;border:1px solid var(--accent);padding:8px 28px 6px;border-radius:2px;background:rgba(48,144,216,0.04)}
+.sec-title-main{font-size:15px;font-weight:700;color:var(--text);letter-spacing:.03em}
+.sec-title-exp{font-size:12px;color:var(--dim);font-style:italic;margin-top:5px}
+
+/* ── HISTOGRAM ── */
+.histo-wrap{margin-bottom:14px}
+.histo-section-title{font-weight:700;font-size:13px;color:var(--text);text-align:center;
+  margin-bottom:6px;letter-spacing:.03em}
+.histo-svg-box{background:var(--panel);border:1px solid var(--border);overflow:hidden}
+#histo-tip{position:fixed;background:#0d1829;border:1px solid var(--accent);color:var(--text);
+  font-family:'Courier New',monospace;font-size:11px;padding:5px 9px;border-radius:2px;
+  box-shadow:0 2px 12px rgba(0,0,0,.6);white-space:nowrap;z-index:999;pointer-events:none;display:none}
+
+/* ── CHART PAIR ── */
+.chart-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.chart-wrap{background:var(--panel);border:1px solid var(--border);padding:8px 12px 10px}
+.chart-head{font-size:12px;font-weight:700;color:var(--text);text-align:center;letter-spacing:.03em;margin-bottom:2px}
+.chart-sub{font-size:10px;color:var(--dim);text-align:center;margin-bottom:8px;font-style:italic}
+.chart-cv{position:relative;height:220px}
+
+/* ── REGULAR TOGGLE ── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.toggle-wrap{background:var(--panel);border:1px solid var(--border);overflow:hidden}
+.toggle-header{background:var(--panel-alt);border-bottom:1px solid var(--border);
+  padding:6px 10px;display:flex;align-items:center;justify-content:space-between}
+.toggle-title{font-weight:700;font-size:12px;color:var(--text)}
+.toggle-btns{display:flex;gap:0}
+.toggle-btn{background:var(--border);border:1px solid var(--border);color:var(--dim);
+  font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600;padding:3px 10px;cursor:pointer;transition:all .15s}
+.toggle-btn:first-child{border-radius:2px 0 0 2px}
+.toggle-btn:last-child{border-radius:0 2px 2px 0;border-left:none}
+.toggle-btn.active{background:#2a7abf;border-color:var(--accent);color:#fff}
+.toggle-btn:hover:not(.active){border-color:var(--accent);color:var(--text)}
+.scroll-table{max-height:340px;overflow-y:auto}
+.scroll-table::-webkit-scrollbar{width:4px}
+.scroll-table::-webkit-scrollbar-track{background:#08111e}
+.scroll-table::-webkit-scrollbar-thumb{background:#243c58;border-radius:2px}
+.ir-table{width:100%;border-collapse:collapse;font-family:'Courier New',monospace;font-size:11px}
+.ir-table th{background:var(--panel);color:var(--dim);padding:4px 6px;text-align:left;
+  border-bottom:1px solid var(--border);position:sticky;top:0;
+  font-size:10px;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.ir-table th.sortable{cursor:pointer;user-select:none}
+.ir-table th.sortable:hover{color:var(--text)}
+.ir-table th.sort-active{color:var(--accent)}
+.ir-table td{padding:3px 6px;border-bottom:1px solid #0e1a28;white-space:nowrap}
+.ir-table tr:hover td{background:#111e30}
+.col-symbol{color:var(--text);font-weight:700}
+.col-ir{text-align:center}
+.col-zone{text-align:center}
+.col-3mo{text-align:center;font-size:10px}
+
+/* ── DENSITY HISTOGRAM (STOCK) ── */
+.density-wrap{margin-bottom:14px}
+.density-svg-box{background:var(--panel);border:1px solid var(--border);overflow:hidden}
+
+/* ── 1-WAY TOGGLE (STOCK SECTION) ── */
+.t1w-outer{display:grid;grid-template-columns:1fr;margin-bottom:14px}
+.t1w-wrap{background:var(--panel);border:1px solid var(--border);overflow:hidden}
+.t1w-hdr{background:var(--panel-alt);border-bottom:1px solid var(--border);
+  padding:6px 10px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.t1w-hdr-title{font-weight:700;font-size:12px;color:var(--text)}
+.ws-btn-grp{display:flex}
+.ws-btn{background:var(--panel);border:1px solid var(--border-lite);color:var(--dim);
+  font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;padding:3px 16px;
+  cursor:pointer;transition:all .15s}
+.ws-btn:first-child{border-radius:2px 0 0 2px;border-right:none}
+.ws-btn:last-child{border-radius:0 2px 2px 0}
+.ws-btn.active{background:#2a7abf;border-color:var(--accent);color:#fff}
+.ws-btn:hover:not(.active){border-color:var(--accent);color:var(--text)}
+.t1w-period-btns{display:flex}
+.t1w-period-btn{background:var(--border);border:1px solid var(--border);color:var(--dim);
+  font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600;padding:3px 12px;cursor:pointer;transition:all .15s}
+.t1w-period-btn:first-child{border-radius:2px 0 0 2px}
+.t1w-period-btn:last-child{border-radius:0 2px 2px 0;border-left:none}
+.t1w-period-btn.active{background:#2a7abf;border-color:var(--accent);color:#fff}
+.t1w-scroll{max-height:370px;overflow-y:auto}
+.t1w-scroll::-webkit-scrollbar{width:4px}
+.t1w-scroll::-webkit-scrollbar-track{background:#08111e}
+.t1w-scroll::-webkit-scrollbar-thumb{background:#243c58;border-radius:2px}
+
+/* ── SECTION DIVIDER ── */
+.section-divider{height:3px;background:linear-gradient(90deg,transparent,var(--border-lite),transparent);margin:0}
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<nav class="top-nav">
+  <div class="nav-left">
+    <button class="nav-back" onclick="history.back()">← BACK</button>
+    <button class="nav-btn" onclick="window.open('sml.html','_blank')">SML</button>
+    <button class="nav-btn" onclick="window.open('sp500.html','_blank')">S&amp;P 500</button>
+    <button class="nav-btn" onclick="window.open('sp400.html','_blank')">S&amp;P Midcap 400</button>
+  </div>
+  <input class="search-box" type="text" placeholder="⌕  SEARCH">
+</nav>
+
+<div id="shell">
+  <!-- PAGE TITLE -->
+  <div id="page-title">
+    <div class="pt-main">S&amp;P Small Cap 600 (SML)</div>
+    <div class="pt-sub">Market &nbsp;·&nbsp; Sector &nbsp;·&nbsp; Stock</div>
+    <div class="pt-exp">Watch the SML and its components rotate through the six Zones.</div>
+  </div>
+
+  <div id="content-scroll">
+
+    <!-- ══════════════════════════════════════════════════════════
+         SECTION 1 — MARKET
+    ══════════════════════════════════════════════════════════ -->
+    <div class="section-outer" id="sec-market">
+
+      <!-- LH TOGGLE — MARKET -->
+      <div class="lh-sidebar" id="lh-market-wrap">
+        <div class="lh-header">
+          <div class="lh-title">Market Indexes</div>
+          <div class="lh-period-btns">
+            <button class="lh-period-btn active" data-sid="mkt" data-period="90" onclick="lhPeriod(this)">90 IR</button>
+            <button class="lh-period-btn" data-sid="mkt" data-period="10" onclick="lhPeriod(this)">10 IR</button>
+          </div>
+        </div>
+        <div class="lh-scroll">
+          <table class="lh-table">
+            <thead><tr>
+              <th style="text-align:left">Tick</th>
+              <th style="text-align:left">Name</th>
+              <th class="sortable sort-active" id="mkt-th-ir" onclick="lhSort('mkt')" style="text-align:center">IR <span class="sort-arrow active" id="mkt-arr">↓</span></th>
+              <th style="text-align:center">Zn</th>
+            </tr></thead>
+            <tbody id="mkt-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- RIGHT — MARKET -->
+      <div class="right-content">
+        <div class="sec-title-box">
+          <div class="sec-title-inner">
+            <div class="sec-title-main">S&amp;P Small Cap 600 (SML) Market Analysis</div>
+            <div class="sec-title-exp">Follow market action by comparing the Implied Risk ratings of the major S&amp;P indexes and their Growth and Value factor indexes</div>
+          </div>
+        </div>
+
+        <div class="histo-wrap">
+          <div class="histo-section-title">Market Indexes — 90-day Implied Risk Histogram</div>
+          <div class="histo-svg-box">
+            <svg id="histo-mkt" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block"></svg>
+          </div>
+        </div>
+
+        <div class="chart-pair">
+          <div class="chart-wrap">
+            <div class="chart-head">S&amp;P SmallCap 600 Pure Growth ETF (RZG)</div>
+            <div class="chart-sub">90-Day Zone · 10-Day Zone · 30 Days</div>
+            <div class="chart-cv"><canvas id="chart-rzg"></canvas></div>
+          </div>
+          <div class="chart-wrap">
+            <div class="chart-head">S&amp;P SmallCap 600 Pure Value ETF (RZV)</div>
+            <div class="chart-sub">90-Day Zone · 10-Day Zone · 30 Days</div>
+            <div class="chart-cv"><canvas id="chart-rzv"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /sec-market -->
+
+    <div class="section-divider"></div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         SECTION 2 — SECTOR
+    ══════════════════════════════════════════════════════════ -->
+    <div class="section-outer" id="sec-sector">
+
+      <!-- LH TOGGLE — SECTOR -->
+      <div class="lh-sidebar" id="lh-sector-wrap">
+        <div class="lh-header">
+          <div class="lh-title">SML ETFs</div>
+          <div class="lh-period-btns">
+            <button class="lh-period-btn active" data-sid="sec" data-period="90" onclick="lhPeriod(this)">90 IR</button>
+            <button class="lh-period-btn" data-sid="sec" data-period="10" onclick="lhPeriod(this)">10 IR</button>
+          </div>
+        </div>
+        <div class="lh-scroll">
+          <table class="lh-table">
+            <thead><tr>
+              <th style="text-align:left">Tick</th>
+              <th style="text-align:left">Name</th>
+              <th class="sortable sort-active" id="sec-th-ir" onclick="lhSort('sec')" style="text-align:center">IR <span class="sort-arrow active" id="sec-arr">↓</span></th>
+              <th style="text-align:center">Zn</th>
+            </tr></thead>
+            <tbody id="sec-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- RIGHT — SECTOR -->
+      <div class="right-content">
+        <div class="sec-title-box">
+          <div class="sec-title-inner">
+            <div class="sec-title-main">S&amp;P Small Cap 600 (SML) ETF Analysis</div>
+            <div class="sec-title-exp">Follow SML ETF action by comparing the Implied Risk rating of the SML to the action of the SML sector ETFs and SML factor ETFs</div>
+          </div>
+        </div>
+
+        <div class="histo-wrap">
+          <div class="histo-section-title">SML ETFs — 90-day Implied Risk Histogram</div>
+          <div class="histo-svg-box">
+            <svg id="histo-sec" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block"></svg>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="toggle-wrap">
+            <div class="toggle-header">
+              <span class="toggle-title">SML Select Sector ETFs</span>
+              <div class="toggle-btns">
+                <button class="toggle-btn active" data-group="selsec" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+                <button class="toggle-btn" data-group="selsec" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+              </div>
+            </div>
+            <div class="scroll-table">
+              <table class="ir-table">
+                <thead><tr>
+                  <th style="text-align:left">Ticker</th>
+                  <th style="text-align:left">Name</th>
+                  <th class="sortable sort-active" id="selsec-th-ir" onclick="handleSortClick('selsec','ir')" style="text-align:center">IR <span class="sort-arrow active" id="selsec-arr-ir">↓</span></th>
+                  <th style="text-align:center">Zn</th>
+                  <th class="sortable" id="selsec-th-3mo" onclick="handleSortClick('selsec','3mo')" style="text-align:center;padding-left:14px">3Mo Ago <span class="sort-arrow" id="selsec-arr-3mo">↕</span></th>
+                </tr></thead>
+                <tbody id="selsec-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="toggle-wrap">
+            <div class="toggle-header">
+              <span class="toggle-title">SML Factor ETFs</span>
+              <div class="toggle-btns">
+                <button class="toggle-btn active" data-group="factorsec" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+                <button class="toggle-btn" data-group="factorsec" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+              </div>
+            </div>
+            <div class="scroll-table">
+              <table class="ir-table">
+                <thead><tr>
+                  <th style="text-align:left">Ticker</th>
+                  <th style="text-align:left">Name</th>
+                  <th class="sortable sort-active" id="factorsec-th-ir" onclick="handleSortClick('factorsec','ir')" style="text-align:center">IR <span class="sort-arrow active" id="factorsec-arr-ir">↓</span></th>
+                  <th style="text-align:center">Zn</th>
+                  <th class="sortable" id="factorsec-th-3mo" onclick="handleSortClick('factorsec','3mo')" style="text-align:center;padding-left:14px">3Mo Ago <span class="sort-arrow" id="factorsec-arr-3mo">↕</span></th>
+                </tr></thead>
+                <tbody id="factorsec-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /sec-sector -->
+
+    <div class="section-divider"></div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         SECTION 3 — STOCK
+    ══════════════════════════════════════════════════════════ -->
+    <div class="section-outer" id="sec-stock">
+
+      <!-- LH TOGGLE — STOCK (Weakest/Strongest) -->
+      <div class="lh-sidebar" id="lh-stock-wrap">
+        <div class="lh-header">
+          <div class="lh-title">S&amp;P Small Cap 600 (SML)</div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:4px">
+            <div class="ws-btn-grp">
+              <button class="ws-btn active" data-id="sml-stock" data-mode="weakest" onclick="handleWkStr(this)">Weakest</button>
+              <button class="ws-btn" data-id="sml-stock" data-mode="strongest" onclick="handleWkStr(this)">Strongest</button>
+            </div>
+            <div class="t1w-period-btns">
+              <button class="t1w-period-btn active" data-id="sml-stock" data-period="90" onclick="handleStockPeriod(this)">90 IR</button>
+              <button class="t1w-period-btn" data-id="sml-stock" data-period="10" onclick="handleStockPeriod(this)">10 IR</button>
+            </div>
+          </div>
+        </div>
+        <div class="lh-scroll">
+          <table class="lh-table">
+            <thead><tr>
+              <th style="text-align:left">Tick</th>
+              <th style="text-align:left">Name</th>
+              <th class="sortable sort-active" id="stk-th-ir" onclick="stkSort()" style="text-align:center">IR <span class="sort-arrow active" id="stk-arr">↓</span></th>
+              <th style="text-align:center">Zn</th>
+            </tr></thead>
+            <tbody id="stk-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- RIGHT — STOCK -->
+      <div class="right-content">
+        <div class="sec-title-box">
+          <div class="sec-title-inner">
+            <div class="sec-title-main">S&amp;P Small Cap 600 (SML) Stock Analysis</div>
+            <div class="sec-title-exp">Follow SML issue movement by comparing the Implied Risk rating of the SML to the status of the 600 issues that compose the index</div>
+          </div>
+        </div>
+
+        <div class="density-wrap">
+          <div class="histo-section-title">S&amp;P Small Cap 600 (SML) — 90-day Implied Risk Density Histogram</div>
+          <div class="density-svg-box">
+            <svg id="histo-density" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block"></svg>
+          </div>
+        </div>
+
+        <div class="chart-pair">
+          <div class="chart-wrap">
+            <div class="chart-head">S&amp;P SmallCap 600 ETF (IJR)</div>
+            <div class="chart-sub">90-Day Zone · 10-Day Zone · 30 Days</div>
+            <div class="chart-cv"><canvas id="chart-ijr"></canvas></div>
+          </div>
+          <div class="chart-wrap">
+            <div class="chart-head">S&amp;P SmallCap 600 Equal Weight ETF (EWSC)</div>
+            <div class="chart-sub">90-Day Zone · 10-Day Zone · 30 Days</div>
+            <div class="chart-cv"><canvas id="chart-ewsc"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /sec-stock -->
+
+  </div><!-- /content-scroll -->
+</div><!-- /shell -->
+
+<div id="histo-tip"></div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// ZONE UTILITIES
+// ═══════════════════════════════════════════════════
+const ZCL=['#00cc55','#88cc44','#7a9aaa','#aa9a7a','#ddcc00','#e83535'];
+function irToZone(ir){return ir>=67?1:ir>=34?2:ir>=1?3:ir>=-33?4:ir>=-66?5:6}
+function zoneBadge(z){return`<span class="zone-badge" style="background:${ZCL[z-1]}">${z}</span>`}
+function irFmt(v){return(v>0?'+':'')+v}
+function irCls(v){return v>0?'pos':v<0?'neg':'zer'}
+function trunc(s,n){return s.length>n?s.slice(0,n)+'…':s}
+
+// ═══════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════
+
+// ── MARKET (26 members, SML = North Star) ──
+const MKT_DATA=[
+  {symbol:'RZV',  name:'S&P SmallCap 600 Pure Value ETF',      ir_90:62,  ir_10:48,  ir_90_3mo:44,  ir_10_3mo:32},
+  {symbol:'XSHD', name:'S&P SmallCap High Dividend/Low Vol ETF',ir_90:58,  ir_10:44,  ir_90_3mo:40,  ir_10_3mo:28},
+  {symbol:'SML',  name:'S&P SmallCap 600',                      ir_90:52,  ir_10:38,  ir_90_3mo:36,  ir_10_3mo:22},
+  {symbol:'RZG',  name:'S&P SmallCap 600 Pure Growth ETF',      ir_90:44,  ir_10:30,  ir_90_3mo:28,  ir_10_3mo:16},
+  {symbol:'SPHD', name:'S&P 500 High Dividend/Low Volatility ETF',ir_90:42,ir_10:28,  ir_90_3mo:26,  ir_10_3mo:14},
+  {symbol:'RWJ',  name:'S&P SmallCap 600 Revenue ETF',          ir_90:42,  ir_10:28,  ir_90_3mo:26,  ir_10_3mo:14},
+  {symbol:'RFV',  name:'S&P MidCap 400 Pure Value ETF',         ir_90:38,  ir_10:24,  ir_90_3mo:22,  ir_10_3mo:10},
+  {symbol:'MID',  name:'S&P MidCap 400',                        ir_90:35,  ir_10:21,  ir_90_3mo:19,  ir_10_3mo:7},
+  {symbol:'XMLV', name:'S&P MidCap Low Volatility ETF',         ir_90:35,  ir_10:21,  ir_90_3mo:19,  ir_10_3mo:7},
+  {symbol:'RPV',  name:'S&P 500 Pure Value ETF',                ir_90:28,  ir_10:14,  ir_90_3mo:12,  ir_10_3mo:2},
+  {symbol:'XSHQ', name:'S&P SmallCap Quality ETF',              ir_90:25,  ir_10:11,  ir_90_3mo:9,   ir_10_3mo:-1},
+  {symbol:'EWMC', name:'S&P MidCap 400 Equal Weight ETF',       ir_90:22,  ir_10:8,   ir_90_3mo:6,   ir_10_3mo:-4},
+  {symbol:'RWK',  name:'S&P MidCap 400 Revenue ETF',            ir_90:20,  ir_10:6,   ir_90_3mo:4,   ir_10_3mo:-6},
+  {symbol:'XOE',  name:'S&P 500 Equal Weight',                  ir_90:18,  ir_10:4,   ir_90_3mo:2,   ir_10_3mo:-8},
+  {symbol:'RWL',  name:'S&P 500 Revenue ETF',                   ir_90:15,  ir_10:1,   ir_90_3mo:-1,  ir_10_3mo:-11},
+  {symbol:'XOEF', name:'S&P 500 ex S&P 100 ETF',               ir_90:14,  ir_10:0,   ir_90_3mo:-2,  ir_10_3mo:-12},
+  {symbol:'XSMO', name:'S&P SmallCap Momentum ETF',             ir_90:10,  ir_10:-4,  ir_90_3mo:-6,  ir_10_3mo:-16},
+  {symbol:'XMHQ', name:'S&P MidCap Quality ETF',                ir_90:5,   ir_10:-9,  ir_90_3mo:-11, ir_10_3mo:-21},
+  {symbol:'EQWL', name:'S&P 100 Equal Weight ETF',              ir_90:-5,  ir_10:-19, ir_90_3mo:-21, ir_10_3mo:-31},
+  {symbol:'RFG',  name:'S&P MidCap 400 Pure Growth ETF',        ir_90:-8,  ir_10:-22, ir_90_3mo:-24, ir_10_3mo:-34},
+  {symbol:'XMMO', name:'S&P MidCap Momentum ETF',               ir_90:-15, ir_10:-29, ir_90_3mo:-31, ir_10_3mo:-41},
+  {symbol:'OEX',  name:'S&P 100',                               ir_90:-18, ir_10:-32, ir_90_3mo:-34, ir_10_3mo:-44},
+  {symbol:'SPX',  name:'S&P 500',                               ir_90:-22, ir_10:-36, ir_90_3mo:-38, ir_10_3mo:-48},
+  {symbol:'SPHQ', name:'S&P 500 Quality ETF',                   ir_90:-25, ir_10:-39, ir_90_3mo:-41, ir_10_3mo:-51},
+  {symbol:'SPMO', name:'S&P 500 Momentum ETF',                  ir_90:-30, ir_10:-44, ir_90_3mo:-46, ir_10_3mo:-56},
+  {symbol:'RPG',  name:'S&P 500 Pure Growth ETF',               ir_90:-35, ir_10:-49, ir_90_3mo:-51, ir_10_3mo:-61},
+];
+
+// ── SECTOR — Full list for histogram + LH toggle ──
+const SEC_DATA=[
+  {symbol:'SML',  name:'S&P SmallCap 600',                         ir_90:52,  ir_10:38,  ir_90_3mo:36,  ir_10_3mo:22, northStar:true},
+  {symbol:'IJR',  name:'S&P Small-Cap ETF',                        ir_90:30,  ir_10:12,  ir_90_3mo:36,  ir_10_3mo:16},
+  {symbol:'IJT',  name:'Small-Cap 600 Growth ETF',                 ir_90:26,  ir_10:8,   ir_90_3mo:31,  ir_10_3mo:11},
+  {symbol:'IJS',  name:'S&P Small-Cap 600 Value ETF',              ir_90:34,  ir_10:16,  ir_90_3mo:40,  ir_10_3mo:20},
+  {symbol:'SPSM', name:'S&P 600 Small Cap ETF',                    ir_90:29,  ir_10:11,  ir_90_3mo:35,  ir_10_3mo:15},
+  {symbol:'SLYV', name:'S&P Small Cap 600 Value ETF',              ir_90:35,  ir_10:17,  ir_90_3mo:41,  ir_10_3mo:21},
+  {symbol:'SLYG', name:'S&P Small Cap 600 Growth ETF',             ir_90:25,  ir_10:7,   ir_90_3mo:30,  ir_10_3mo:10},
+  {symbol:'ISCV', name:'Small-Cap Value ETF',                      ir_90:38,  ir_10:19,  ir_90_3mo:44,  ir_10_3mo:23},
+  {symbol:'ISCG', name:'Small-Cap Growth ETF',                     ir_90:22,  ir_10:4,   ir_90_3mo:27,  ir_10_3mo:7},
+  {symbol:'PSCU', name:'SmallCap Utilities & Comm Services ETF',   ir_90:-6,  ir_10:-20, ir_90_3mo:4,   ir_10_3mo:-16},
+  {symbol:'PSCF', name:'S&P SmallCap Financials ETF',              ir_90:18,  ir_10:1,   ir_90_3mo:24,  ir_10_3mo:4},
+  {symbol:'PSCC', name:'Small Cap Consumer Staples ETF',           ir_90:-12, ir_10:-25, ir_90_3mo:-2,  ir_10_3mo:-20},
+  {symbol:'PSCD', name:'Small Cap Consumer Discret ETF',           ir_90:8,   ir_10:-10, ir_90_3mo:14,  ir_10_3mo:-6},
+  {symbol:'PSCE', name:'Small Cap Energy ETF',                     ir_90:48,  ir_10:28,  ir_90_3mo:42,  ir_10_3mo:22},
+  {symbol:'PSCT', name:'SmallCap Information Technology ETF',      ir_90:15,  ir_10:-4,  ir_90_3mo:21,  ir_10_3mo:-1},
+  {symbol:'PSCM', name:'S&P SmallCap Materials ETF',               ir_90:20,  ir_10:3,   ir_90_3mo:26,  ir_10_3mo:6},
+  {symbol:'PSCH', name:'S&P SmallCap Health Care ETF',             ir_90:55,  ir_10:35,  ir_90_3mo:48,  ir_10_3mo:28},
+  {symbol:'PSCI', name:'S&P SmallCap Industrials ETF',             ir_90:12,  ir_10:-8,  ir_90_3mo:18,  ir_10_3mo:-4},
+  {symbol:'RZV',  name:'S&P SmallCap 600 Pure Value ETF',          ir_90:42,  ir_10:22,  ir_90_3mo:35,  ir_10_3mo:15},
+  {symbol:'RZG',  name:'S&P SmallCap 600 Pure Growth ETF',         ir_90:28,  ir_10:10,  ir_90_3mo:32,  ir_10_3mo:12},
+  {symbol:'EWSC', name:'S&P SmallCap 600 Equal Weight ETF',        ir_90:32,  ir_10:14,  ir_90_3mo:38,  ir_10_3mo:18},
+];
+
+// ── SELECT SECTOR toggle (Elements 14) ──
+const SELSEC_DATA=[
+  {symbol:'PSCU', name:'SmallCap Utilities & Comm Services ETF',   ir_90:-6,  ir_10:-20, ir_90_3mo:4,   ir_10_3mo:-16},
+  {symbol:'PSCF', name:'S&P SmallCap Financials ETF',              ir_90:18,  ir_10:1,   ir_90_3mo:24,  ir_10_3mo:4},
+  {symbol:'PSCC', name:'Small Cap Consumer Staples ETF',           ir_90:-12, ir_10:-25, ir_90_3mo:-2,  ir_10_3mo:-20},
+  {symbol:'PSCD', name:'Small Cap Consumer Discret ETF',           ir_90:8,   ir_10:-10, ir_90_3mo:14,  ir_10_3mo:-6},
+  {symbol:'PSCE', name:'Small Cap Energy ETF',                     ir_90:48,  ir_10:28,  ir_90_3mo:42,  ir_10_3mo:22},
+  {symbol:'PSCT', name:'SmallCap Information Technology ETF',      ir_90:15,  ir_10:-4,  ir_90_3mo:21,  ir_10_3mo:-1},
+  {symbol:'PSCM', name:'S&P SmallCap Materials ETF',               ir_90:20,  ir_10:3,   ir_90_3mo:26,  ir_10_3mo:6},
+  {symbol:'PSCH', name:'S&P SmallCap Health Care ETF',             ir_90:55,  ir_10:35,  ir_90_3mo:48,  ir_10_3mo:28},
+  {symbol:'PSCI', name:'S&P SmallCap Industrials ETF',             ir_90:12,  ir_10:-8,  ir_90_3mo:18,  ir_10_3mo:-4},
+  {symbol:'IJR',  name:'S&P Small-Cap ETF',                        ir_90:30,  ir_10:12,  ir_90_3mo:36,  ir_10_3mo:16},
+  {symbol:'SPSM', name:'S&P 600 Small Cap ETF',                    ir_90:29,  ir_10:11,  ir_90_3mo:35,  ir_10_3mo:15},
+];
+
+// ── FACTOR ETFs toggle (Element 15) ──
+const FACTORSEC_DATA=[
+  {symbol:'IJR',  name:'S&P Small-Cap ETF',                        ir_90:30,  ir_10:12,  ir_90_3mo:36,  ir_10_3mo:16},
+  {symbol:'IJT',  name:'Small-Cap 600 Growth ETF',                 ir_90:26,  ir_10:8,   ir_90_3mo:31,  ir_10_3mo:11},
+  {symbol:'IJS',  name:'S&P Small-Cap 600 Value ETF',              ir_90:34,  ir_10:16,  ir_90_3mo:40,  ir_10_3mo:20},
+  {symbol:'SPSM', name:'S&P 600 Small Cap ETF',                    ir_90:29,  ir_10:11,  ir_90_3mo:35,  ir_10_3mo:15},
+  {symbol:'SLYV', name:'S&P Small Cap 600 Value ETF',              ir_90:35,  ir_10:17,  ir_90_3mo:41,  ir_10_3mo:21},
+  {symbol:'SLYG', name:'S&P Small Cap 600 Growth ETF',             ir_90:25,  ir_10:7,   ir_90_3mo:30,  ir_10_3mo:10},
+  {symbol:'ISCV', name:'Small-Cap Value ETF',                      ir_90:38,  ir_10:19,  ir_90_3mo:44,  ir_10_3mo:23},
+  {symbol:'ISCG', name:'Small-Cap Growth ETF',                     ir_90:22,  ir_10:4,   ir_90_3mo:27,  ir_10_3mo:7},
+  {symbol:'RZV',  name:'S&P SmallCap 600 Pure Value ETF',          ir_90:42,  ir_10:22,  ir_90_3mo:35,  ir_10_3mo:15},
+  {symbol:'RZG',  name:'S&P SmallCap 600 Pure Growth ETF',         ir_90:28,  ir_10:10,  ir_90_3mo:32,  ir_10_3mo:12},
+];
+
+// ── STOCK — 30 weakest/strongest per period (mock) ──
+const STK_DATA={
+  weakest90:[
+    {symbol:'PSCE',name:'Sml Cap Energy',ir:78,mo3:-42},
+    {symbol:'PSCH',name:'Sml Cap Health',ir:74,mo3:-38},
+    {symbol:'RZV', name:'SC Pure Value', ir:68,mo3:-45},
+    {symbol:'IJS', name:'SC 600 Value',  ir:65,mo3:-40},
+    {symbol:'ISCV',name:'SC Value ETF',  ir:62,mo3:-36},
+    {symbol:'SLYV',name:'SC 600 Value',  ir:60,mo3:-34},
+    {symbol:'IJR', name:'SC ETF',        ir:58,mo3:-32},
+    {symbol:'SPSM',name:'SC 600 ETF',    ir:56,mo3:-30},
+    {symbol:'PSCF',name:'SC Financials', ir:54,mo3:-28},
+    {symbol:'RZG', name:'SC Pure Growth',ir:52,mo3:-26},
+    {symbol:'EWSC',name:'SC Eq Weight',  ir:50,mo3:-24},
+    {symbol:'PSCI',name:'SC Industrials',ir:48,mo3:-22},
+    {symbol:'PSCM',name:'SC Materials',  ir:46,mo3:-20},
+    {symbol:'PSCT',name:'SC Info Tech',  ir:44,mo3:-18},
+    {symbol:'PSCD',name:'SC Cons Disc',  ir:42,mo3:-16},
+  ],
+  strongest90:[
+    {symbol:'PSCC',name:'SC Cons Staples',ir:-45,mo3:28},
+    {symbol:'PSCU',name:'SC Utilities',   ir:-38,mo3:22},
+    {symbol:'IJT', name:'SC 600 Growth',  ir:-32,mo3:18},
+    {symbol:'ISCG',name:'SC Growth ETF',  ir:-28,mo3:15},
+    {symbol:'SLYG',name:'SC 600 Growth',  ir:-25,mo3:12},
+    {symbol:'RPG', name:'SP500 Pure Grwth',ir:-22,mo3:10},
+    {symbol:'RPV', name:'SP500 Pure Val', ir:-18,mo3:8},
+    {symbol:'XOE', name:'SP500 Eq Wt',    ir:-15,mo3:6},
+    {symbol:'OEX', name:'S&P 100',        ir:-12,mo3:4},
+    {symbol:'SPX', name:'S&P 500',        ir:-10,mo3:2},
+    {symbol:'MID', name:'S&P MidCap',     ir:-8, mo3:1},
+    {symbol:'RFV', name:'MidCap PureVal', ir:-6, mo3:-1},
+    {symbol:'RFG', name:'MidCap PureGrwth',ir:-4,mo3:-2},
+    {symbol:'XOEF',name:'SP500 ex 100',   ir:-2, mo3:-4},
+    {symbol:'SML', name:'S&P SmallCap',   ir:-1, mo3:-6},
+  ],
+  weakest10:[
+    {symbol:'PSCE',name:'Sml Cap Energy',ir:82,mo3:-40},
+    {symbol:'PSCH',name:'Sml Cap Health',ir:76,mo3:-36},
+    {symbol:'RZV', name:'SC Pure Value', ir:70,mo3:-42},
+    {symbol:'ISCV',name:'SC Value ETF',  ir:66,mo3:-38},
+    {symbol:'IJS', name:'SC 600 Value',  ir:62,mo3:-34},
+    {symbol:'SLYV',name:'SC 600 Value',  ir:58,mo3:-30},
+    {symbol:'SPSM',name:'SC 600 ETF',    ir:55,mo3:-28},
+    {symbol:'IJR', name:'SC ETF',        ir:52,mo3:-26},
+    {symbol:'PSCF',name:'SC Financials', ir:49,mo3:-24},
+    {symbol:'EWSC',name:'SC Eq Weight',  ir:46,mo3:-22},
+    {symbol:'RZG', name:'SC Pure Growth',ir:43,mo3:-20},
+    {symbol:'PSCM',name:'SC Materials',  ir:40,mo3:-18},
+    {symbol:'PSCI',name:'SC Industrials',ir:37,mo3:-16},
+    {symbol:'PSCD',name:'SC Cons Disc',  ir:34,mo3:-14},
+    {symbol:'PSCT',name:'SC Info Tech',  ir:31,mo3:-12},
+  ],
+  strongest10:[
+    {symbol:'PSCC',name:'SC Cons Staples',ir:-48,mo3:30},
+    {symbol:'PSCU',name:'SC Utilities',   ir:-40,mo3:24},
+    {symbol:'ISCG',name:'SC Growth ETF',  ir:-34,mo3:20},
+    {symbol:'IJT', name:'SC 600 Growth',  ir:-30,mo3:17},
+    {symbol:'SLYG',name:'SC 600 Growth',  ir:-26,mo3:14},
+    {symbol:'RPG', name:'SP500 Pure Grwth',ir:-22,mo3:11},
+    {symbol:'XOE', name:'SP500 Eq Wt',    ir:-18,mo3:8},
+    {symbol:'RPV', name:'SP500 Pure Val', ir:-14,mo3:5},
+    {symbol:'OEX', name:'S&P 100',        ir:-10,mo3:3},
+    {symbol:'SPX', name:'S&P 500',        ir:-8, mo3:1},
+    {symbol:'MID', name:'S&P MidCap',     ir:-6, mo3:-1},
+    {symbol:'RFV', name:'MidCap PureVal', ir:-4, mo3:-3},
+    {symbol:'RFG', name:'MidCap PureGrwth',ir:-2,mo3:-5},
+    {symbol:'XOEF',name:'SP500 ex 100',   ir:-1, mo3:-7},
+    {symbol:'SML', name:'S&P SmallCap',   ir:2,  mo3:-8},
+  ]
+};
+
+const DATA={selsec:SELSEC_DATA,factorsec:FACTORSEC_DATA};
+
+// ═══════════════════════════════════════════════════
+// LEFT HAND TOGGLE ENGINE
+// ═══════════════════════════════════════════════════
+const lhState={
+  mkt:{period:'90',dir:1},
+  sec:{period:'90',dir:1}
+};
+const NORTHSTAR={mkt:'SML',sec:'SML'};
+
+function lhPeriod(btn){
+  const sid=btn.dataset.sid;
+  btn.closest('.lh-period-btns').querySelectorAll('.lh-period-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  lhState[sid].period=btn.dataset.period;
+  renderLH(sid);
+}
+function lhSort(sid){
+  lhState[sid].dir*=-1;
+  renderLH(sid);
+}
+function renderLH(sid){
+  const {period,dir}=lhState[sid];
+  const src=sid==='mkt'?MKT_DATA:SEC_DATA;
+  const iF=period==='90'?'ir_90':'ir_10';
+  const sorted=[...src].sort((a,b)=>(b[iF]-a[iF])*dir);
+  const ns=NORTHSTAR[sid];
+  const arr=document.getElementById(sid+'-arr');
+  if(arr)arr.textContent=dir===1?'↓':'↑';
+  document.getElementById(sid+'-tbody').innerHTML=sorted.map(r=>{
+    const ir=r[iF];
+    const z=irToZone(ir);
+    const nm=trunc(r.name,22);
+    const isNS=ns&&r.symbol===ns;
+    return`<tr>
+      <td class="col-sym${isNS?' northstar':''}">${r.symbol}</td>
+      <td class="col-name">${nm}</td>
+      <td class="col-ir" style="text-align:center"><span class="${irCls(ir)}">${irFmt(ir)}</span></td>
+      <td class="col-zone" style="text-align:center">${zoneBadge(z)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════
+// REGULAR TOGGLE ENGINE
+// ═══════════════════════════════════════════════════
+const sortState={};
+const periodState={};
+
+function handleSortClick(gid,field){
+  if(!sortState[gid])sortState[gid]={field:'ir',dir:1};
+  const s=sortState[gid];
+  sortState[gid]=s.field===field?{field,dir:s.dir*-1}:{field,dir:1};
+  renderToggleTable(gid);
+}
+function updateSortArrows(gid){
+  const{field,dir}=sortState[gid];
+  ['ir','3mo'].forEach(f=>{
+    const th=document.getElementById(`${gid}-th-${f}`);
+    const ar=document.getElementById(`${gid}-arr-${f}`);
+    if(!th||!ar)return;
+    const on=f===field;
+    if(on){th.classList.add('sort-active');ar.classList.add('active');ar.textContent=dir===1?'↓':'↑';}
+    else{th.classList.remove('sort-active');ar.classList.remove('active');ar.textContent='↕';}
+  });
+}
+function handlePeriodToggle(btn){
+  btn.closest('.toggle-btns').querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  periodState[btn.dataset.group]=btn.dataset.period;
+  renderToggleTable(btn.dataset.group);
+}
+function renderToggleTable(gid){
+  if(!sortState[gid])sortState[gid]={field:'ir',dir:1};
+  if(!periodState[gid])periodState[gid]='90';
+  const p=periodState[gid];
+  const iF=p==='90'?'ir_90':'ir_10';
+  const mF=p==='90'?'ir_90_3mo':'ir_10_3mo';
+  const{field,dir}=sortState[gid];
+  const sF=field==='ir'?iF:mF;
+  const rows=[...DATA[gid]].sort((a,b)=>(b[sF]-a[sF])*dir);
+  document.getElementById(gid+'-tbody').innerHTML=rows.map(r=>{
+    const ir=r[iF],mo=r[mF],z=irToZone(ir);
+    const nm=trunc(r.name,22);
+    return`<tr>
+      <td class="col-symbol">${r.symbol}</td>
+      <td style="color:var(--dim);font-size:10px">${nm}</td>
+      <td class="col-ir"><span class="${irCls(ir)}">${irFmt(ir)}</span></td>
+      <td class="col-zone">${zoneBadge(z)}</td>
+      <td class="col-3mo" style="padding-left:14px"><span class="${irCls(mo)}">${irFmt(mo)}</span></td>
+    </tr>`;
+  }).join('');
+  updateSortArrows(gid);
+}
+
+// ═══════════════════════════════════════════════════
+// STOCK LH TOGGLE (WEAKEST/STRONGEST + 90/10)
+// ═══════════════════════════════════════════════════
+let stkMode='weakest', stkPeriod='90', stkDir=1;
+function handleWkStr(btn){
+  stkMode=btn.dataset.mode;
+  stkDir=1;
+  btn.closest('.ws-btn-grp').querySelectorAll('.ws-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderStk();
+}
+function handleStockPeriod(btn){
+  stkPeriod=btn.dataset.period;
+  btn.closest('.t1w-period-btns').querySelectorAll('.t1w-period-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderStk();
+}
+function stkSort(){
+  stkDir*=-1;
+  document.getElementById('stk-arr').textContent=stkDir===1?'↓':'↑';
+  renderStk();
+}
+function renderStk(){
+  const key=stkMode+(stkPeriod==='90'?'90':'10');
+  const rows=[...STK_DATA[key]].sort((a,b)=>(b.ir-a.ir)*stkDir);
+  document.getElementById('stk-arr').textContent=stkDir===1?'↓':'↑';
+  document.getElementById('stk-tbody').innerHTML=rows.map(r=>{
+    const z=irToZone(r.ir);
+    return`<tr>
+      <td class="col-sym">${r.symbol}</td>
+      <td class="col-name">${trunc(r.name,22)}</td>
+      <td class="col-ir" style="text-align:center"><span class="${irCls(r.ir)}">${irFmt(r.ir)}</span></td>
+      <td class="col-zone" style="text-align:center">${zoneBadge(z)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════
+// HISTOGRAM BUILDER
+// ═══════════════════════════════════════════════════
+function buildHistogram(svgId,data,northStar){
+  const W=920,OW=28,BX=28,BW=864,ZW=144,SLOT_PITCH=36;
+  const SH=13;
+  // Assign slots
+  const slots=Array.from({length:24},()=>[]);
+  const slotBounds=[
+    [[99,91],[90,83],[82,75],[74,67]],
+    [[66,59],[58,52],[51,43],[42,34]],
+    [[33,26],[25,18],[17,9],[8,1]],
+    [[-1,-8],[-9,-17],[-18,-25],[-26,-33]],
+    [[-34,-42],[-43,-51],[-52,-58],[-59,-66]],
+    [[-67,-74],[-75,-82],[-83,-90],[-91,-99]]
+  ];
+  const oobL=[],oobR=[];
+  data.forEach(d=>{
+    const ir=d.ir_90;
+    if(ir>=99){oobL.push(d.symbol);return}
+    if(ir<=-99){oobR.push(d.symbol);return}
+    let placed=false;
+    for(let z=0;z<6&&!placed;z++){
+      for(let sl=0;sl<4&&!placed;sl++){
+        const[hi,lo]=slotBounds[z][sl];
+        if(ir<=hi&&ir>=lo){slots[z*4+sl].push(d.symbol);placed=true}
+      }
+    }
+  });
+  slots.forEach(s=>s.sort());
+  const maxStk=Math.max(1,...slots.map(s=>s.length));
+  let BY=205;
+  if(maxStk*SH+20>BY)BY=maxStk*SH+20;
+  const H=BY+63;
+  const LY_RANGE=BY+18,LY_ZONE=BY+31;
+  const BELL_A=168,BELL_FLOOR=16,BELL_SIG=ZW,BCX=BX+BW/2;
+  let s=`<defs>
+    <filter id="glow${svgId}"><feGaussianBlur stdDeviation="2.8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="sg${svgId}"><feGaussianBlur stdDeviation="1.5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>`;
+  // OOB backgrounds
+  s+=`<rect x="0" y="0" width="${OW}" height="${BY}" fill="${ZCL[0]}" opacity="0.07"/>`;
+  s+=`<rect x="${BX+BW}" y="0" width="${OW}" height="${BY}" fill="${ZCL[5]}" opacity="0.07"/>`;
+  // Zone backgrounds
+  for(let z=0;z<6;z++){
+    const zx=BX+z*ZW;
+    s+=`<rect x="${zx}" y="0" width="${ZW}" height="${BY}" fill="${ZCL[z]}" opacity="0.07"/>`;
+  }
+  // Zone dividers
+  for(let z=1;z<6;z++){
+    s+=`<line x1="${BX+z*ZW}" y1="0" x2="${BX+z*ZW}" y2="${BY}" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>`;
+  }
+  s+=`<line x1="${BX}" y1="0" x2="${BX}" y2="${BY}" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>`;
+  s+=`<line x1="${BX+BW}" y1="0" x2="${BX+BW}" y2="${BY}" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>`;
+  // Slot dividers
+  for(let i=1;i<24;i++){
+    if(i%4===0)continue;
+    const sx=BX+i*SLOT_PITCH;
+    s+=`<line x1="${sx}" y1="8" x2="${sx}" y2="${BY}" stroke="rgba(255,255,255,0.055)" stroke-width="0.5" stroke-dasharray="3,6"/>`;
+  }
+  // Baseline
+  s+=`<line x1="0" y1="${BY}" x2="${W}" y2="${BY}" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>`;
+  // Bell curve — 3 passes
+  let bellPts=[];
+  for(let px=BX;px<=BX+BW;px+=2){
+    const dx=px-BCX;
+    const y=BY-(BELL_A*Math.exp(-dx*dx/(2*BELL_SIG*BELL_SIG))+BELL_FLOOR);
+    bellPts.push(`${px},${y.toFixed(2)}`);
+  }
+  const bpath='M'+bellPts.join('L');
+  s+=`<path d="${bpath}" fill="none" stroke="rgba(120,185,255,0.14)" stroke-width="8"/>`;
+  s+=`<path d="${bpath}" fill="none" stroke="rgba(155,210,255,0.72)" stroke-width="1.6" stroke-dasharray="8,4" filter="url(#glow${svgId})"/>`;
+  s+=`<path d="${bpath}" fill="none" stroke="rgba(205,235,255,0.38)" stroke-width="0.8" stroke-dasharray="8,4"/>`;
+  // Symbols
+  for(let z=0;z<6;z++){
+    for(let sl=0;sl<4;sl++){
+      const gi=z*4+sl;
+      const scx=BX+(gi+0.5)*SLOT_PITCH;
+      const syms=slots[gi];
+      syms.forEach((sym,idx)=>{
+        const sy=BY-(idx+1)*SH+4;
+        const d=data.find(d=>d.symbol===sym);
+        const tip=d?`${d.symbol} — ${d.name} | 90-IR: ${irFmt(d.ir_90)} | Zone ${irToZone(d.ir_90)}`:`${sym}`;
+        const isNS=northStar&&sym===northStar;
+        const col=isNS?'#ffffff':ZCL[z];
+        const fw=isNS?'800':'bold';
+        s+=`<text x="${scx}" y="${sy}" text-anchor="middle" font-family="'Courier New',monospace" font-size="9" font-weight="${fw}" fill="${col}" filter="url(#sg${svgId})" cursor="pointer" data-tip="${tip}">${sym.slice(0,3)}</text>`;
+      });
+    }
+  }
+  // Zone labels
+  const zLabels=['Zone 1','Zone 2','Zone 3','Zone 4','Zone 5','Zone 6'];
+  const zRanges=['+99 to +67','+66 to +34','+33 to +1','−1 to −33','−34 to −66','−67 to −99'];
+  for(let z=0;z<6;z++){
+    const cx=BX+z*ZW+ZW/2;
+    s+=`<text x="${cx}" y="${LY_RANGE}" text-anchor="middle" font-family="'Courier New',monospace" font-size="8.5" fill="rgba(255,255,255,0.48)">${zRanges[z]}</text>`;
+    s+=`<text x="${cx}" y="${LY_ZONE}" text-anchor="middle" font-family="Trebuchet MS,sans-serif" font-size="10.5" font-weight="bold" fill="${ZCL[z]}">${zLabels[z]}</text>`;
+  }
+  // OOB labels
+  s+=`<text x="${OW/2}" y="12" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[0]}">OOB</text>`;
+  s+=`<text x="${OW/2}" y="22" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[0]}">Weak</text>`;
+  s+=`<text x="${OW/2}" y="32" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[0]}">[${oobL.length}]</text>`;
+  oobL.forEach((sym,i)=>{s+=`<text x="${OW/2}" y="${42+i*12}" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[0]}">${sym.slice(0,3)}</text>`});
+  s+=`<text x="${BX+BW+OW/2}" y="12" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[5]}">OOB</text>`;
+  s+=`<text x="${BX+BW+OW/2}" y="22" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[5]}">Str</text>`;
+  s+=`<text x="${BX+BW+OW/2}" y="32" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[5]}">[${oobR.length}]</text>`;
+  oobR.forEach((sym,i)=>{s+=`<text x="${BX+BW+OW/2}" y="${42+i*12}" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[5]}">${sym.slice(0,3)}</text>`});
+  // Legend
+  s+=`<text x="${BX+4}" y="${H-5}" font-family="Trebuchet MS,sans-serif" font-size="7.5" fill="rgba(0,212,160,0.40)">← Weak / Oversold</text>`;
+  s+=`<text x="${BX+BW-4}" y="${H-5}" text-anchor="end" font-family="Trebuchet MS,sans-serif" font-size="7.5" fill="rgba(232,53,53,0.40)">Overbought / Strong →</text>`;
+  const el=document.getElementById(svgId);
+  el.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  el.innerHTML=s;
+  // Tooltip
+  el.addEventListener('mousemove',e=>{
+    const t=e.target;
+    if(t.dataset.tip){
+      const tip=document.getElementById('histo-tip');
+      tip.textContent=t.dataset.tip;
+      tip.style.display='block';
+      tip.style.left=(e.clientX+14)+'px';
+      tip.style.top=(e.clientY-6)+'px';
+    }
+  });
+  el.addEventListener('mouseleave',()=>{document.getElementById('histo-tip').style.display='none'});
+}
+
+// ═══════════════════════════════════════════════════
+// DENSITY HISTOGRAM (STOCK SECTION)
+// ═══════════════════════════════════════════════════
+function buildDensityHistogram(svgId,data,northStar){
+  // For density: 600 stocks represented as stacked counts per slot
+  // Mock: generate plausible zone distribution weighted toward center zones
+  const W=920,OW=28,BX=28,BW=864,ZW=144,SLOT_PITCH=36;
+  // Generate mock counts per slot
+  const mockCounts=[2,3,4,6,8,12,18,25,32,38,42,40,38,35,30,28,25,22,18,14,10,7,4,2];
+  const maxCount=Math.max(...mockCounts);
+  let BY=205;
+  const H=BY+63;
+  const LY_RANGE=BY+18,LY_ZONE=BY+31;
+  const BELL_A=168,BELL_FLOOR=16,BELL_SIG=ZW,BCX=BX+BW/2;
+  let s=`<defs>
+    <filter id="glow${svgId}"><feGaussianBlur stdDeviation="2.8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="sg${svgId}"><feGaussianBlur stdDeviation="1.5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>`;
+  // OOB backgrounds
+  s+=`<rect x="0" y="0" width="${OW}" height="${BY}" fill="${ZCL[0]}" opacity="0.07"/>`;
+  s+=`<rect x="${BX+BW}" y="0" width="${OW}" height="${BY}" fill="${ZCL[5]}" opacity="0.07"/>`;
+  // Zone backgrounds
+  for(let z=0;z<6;z++){
+    s+=`<rect x="${BX+z*ZW}" y="0" width="${ZW}" height="${BY}" fill="${ZCL[z]}" opacity="0.07"/>`;
+  }
+  // Density bars per slot
+  const barW=SLOT_PITCH-4;
+  for(let i=0;i<24;i++){
+    const z=Math.floor(i/4);
+    const cnt=mockCounts[i];
+    const barH=(cnt/maxCount)*(BY-20);
+    const scx=BX+(i+0.5)*SLOT_PITCH;
+    s+=`<rect x="${scx-barW/2}" y="${BY-barH}" width="${barW}" height="${barH}" fill="${ZCL[z]}" opacity="0.55"/>`;
+    // Count label above bar
+    if(cnt>0)s+=`<text x="${scx}" y="${BY-barH-3}" text-anchor="middle" font-family="'Courier New',monospace" font-size="7.5" fill="${ZCL[z]}" opacity="0.85">${cnt}</text>`;
+  }
+  // Zone dividers
+  for(let z=1;z<6;z++){
+    s+=`<line x1="${BX+z*ZW}" y1="0" x2="${BX+z*ZW}" y2="${BY}" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>`;
+  }
+  s+=`<line x1="${BX}" y1="0" x2="${BX}" y2="${BY}" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>`;
+  s+=`<line x1="${BX+BW}" y1="0" x2="${BX+BW}" y2="${BY}" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>`;
+  // Slot dividers
+  for(let i=1;i<24;i++){
+    if(i%4===0)continue;
+    const sx=BX+i*SLOT_PITCH;
+    s+=`<line x1="${sx}" y1="8" x2="${sx}" y2="${BY}" stroke="rgba(255,255,255,0.055)" stroke-width="0.5" stroke-dasharray="3,6"/>`;
+  }
+  // North Star marker — polygon diamond at SML's slot position
+  if(northStar){
+    const smlIR=31; // SML 90 IR — Zone 2 Slot 4 (global slot 7)
+    // Use slot boundaries: +33 to +1, SML at +31 → Zone 2, Slot 4 → gi = 1*4+3 = 7
+    const gi=7;
+    const mx=BX+(gi+0.5)*SLOT_PITCH,dy=14;
+    s+=`<polygon points="${mx},${BY-dy-7} ${mx+6},${BY-dy} ${mx},${BY-dy+7} ${mx-6},${BY-dy}" fill="#ffffff" stroke="rgba(255,255,255,0.4)" stroke-width="0.8" opacity="0.92"/>`;
+    s+=`<text x="${mx}" y="${BY-dy-12}" text-anchor="middle" font-family="'Courier New',monospace" font-size="8.5" font-weight="bold" fill="#ffffff">SML</text>`;
+  }
+  // Baseline
+  s+=`<line x1="0" y1="${BY}" x2="${W}" y2="${BY}" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>`;
+  // Bell curve
+  let bellPts=[];
+  for(let px=BX;px<=BX+BW;px+=2){
+    const dx=px-BCX;
+    const y=BY-(BELL_A*Math.exp(-dx*dx/(2*BELL_SIG*BELL_SIG))+BELL_FLOOR);
+    bellPts.push(`${px},${y.toFixed(2)}`);
+  }
+  const bpath='M'+bellPts.join('L');
+  s+=`<path d="${bpath}" fill="none" stroke="rgba(120,185,255,0.14)" stroke-width="8"/>`;
+  s+=`<path d="${bpath}" fill="none" stroke="rgba(155,210,255,0.72)" stroke-width="1.6" stroke-dasharray="8,4" filter="url(#glow${svgId})"/>`;
+  s+=`<path d="${bpath}" fill="none" stroke="rgba(205,235,255,0.38)" stroke-width="0.8" stroke-dasharray="8,4"/>`;
+  // Zone labels
+  const zLabels=['Zone 1','Zone 2','Zone 3','Zone 4','Zone 5','Zone 6'];
+  const zRanges=['+99 to +67','+66 to +34','+33 to +1','−1 to −33','−34 to −66','−67 to −99'];
+  for(let z=0;z<6;z++){
+    const cx=BX+z*ZW+ZW/2;
+    s+=`<text x="${cx}" y="${LY_RANGE}" text-anchor="middle" font-family="'Courier New',monospace" font-size="8.5" fill="rgba(255,255,255,0.48)">${zRanges[z]}</text>`;
+    s+=`<text x="${cx}" y="${LY_ZONE}" text-anchor="middle" font-family="Trebuchet MS,sans-serif" font-size="10.5" font-weight="bold" fill="${ZCL[z]}">${zLabels[z]}</text>`;
+  }
+  // OOB
+  s+=`<text x="${OW/2}" y="12" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[0]}">OOB</text>`;
+  s+=`<text x="${OW/2}" y="22" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[0]}">Weak</text>`;
+  s+=`<text x="${OW/2}" y="32" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[0]}">[0]</text>`;
+  s+=`<text x="${BX+BW+OW/2}" y="12" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[5]}">OOB</text>`;
+  s+=`<text x="${BX+BW+OW/2}" y="22" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[5]}">Str</text>`;
+  s+=`<text x="${BX+BW+OW/2}" y="32" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${ZCL[5]}">[0]</text>`;
+  // Legend
+  s+=`<text x="${BX+4}" y="${H-5}" font-family="Trebuchet MS,sans-serif" font-size="7.5" fill="rgba(0,212,160,0.40)">← Weak / Oversold</text>`;
+  s+=`<text x="${BX+BW-4}" y="${H-5}" text-anchor="end" font-family="Trebuchet MS,sans-serif" font-size="7.5" fill="rgba(232,53,53,0.40)">Overbought / Strong →</text>`;
+  const el=document.getElementById(svgId);
+  el.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  el.innerHTML=s;
+}
+
+// ═══════════════════════════════════════════════════
+// ZONE COMBO CHARTS
+// ═══════════════════════════════════════════════════
+function genDates30(){
+  const d=[];let cur=new Date();let n=0;
+  while(n<30){
+    if(cur.getDay()!==0&&cur.getDay()!==6){
+      d.unshift(cur.toLocaleDateString('en-US',{month:'numeric',day:'numeric'}));n++;
+    }
+    cur.setDate(cur.getDate()-1);
+  }
+  return d;
+}
+const DATES30=genDates30();
+
+Chart.defaults.color='#5a7a9a';
+Chart.defaults.borderColor='rgba(255,255,255,0.06)';
+
+function buildZoneChart(canvasId,z90,z10){
+  const ctx=document.getElementById(canvasId);
+  if(!ctx)return;
+  new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:DATES30,
+      datasets:[
+        {type:'bar',label:'90-Day Zone',data:z90,
+          backgroundColor:z90.map(z=>ZCL[z-1]+'99'),borderColor:z90.map(z=>ZCL[z-1]),
+          borderWidth:1,order:2},
+        {type:'line',label:'10-Day Zone',data:z10,
+          borderColor:'#c9a227',pointBackgroundColor:'#c9a227',
+          pointRadius:2.5,pointHoverRadius:4,borderWidth:1.8,fill:false,tension:0.3,order:1}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      layout:{padding:{left:2,right:4,top:4,bottom:2}},
+      plugins:{legend:{display:true,position:'top',labels:{color:'#5a7a9a',font:{family:"'Courier New',monospace",size:9},boxWidth:12,padding:8}}},
+      scales:{
+        y:{min:0.3,max:6.5,
+          title:{display:true,text:'Zone',color:'#5a7a9a',font:{family:"'Courier New',monospace",size:9},padding:{bottom:4}},
+          ticks:{stepSize:1,
+            callback:(v)=>(v>=1&&v<=6)?String(Math.round(v)):'',
+            color:(c)=>{const v=Math.round(c.tick.value);return(v>=1&&v<=6)?ZCL[v-1]:'#5a7a9a'},
+            font:{family:"'Courier New',monospace",size:9},padding:3},
+          grid:{color:(c)=>c.tick.value===3||c.tick.value===4?'rgba(255,255,255,0.12)':'rgba(255,255,255,0.05)',
+            lineWidth:(c)=>c.tick.value===3||c.tick.value===4?1.2:0.6},
+          border:{color:'#243c58'}},
+        x:{ticks:{maxRotation:45,autoSkip:true,maxTicksLimit:10,color:'#5a7a9a',font:{family:"'Courier New',monospace",size:8}},
+          grid:{color:'rgba(255,255,255,0.03)'},border:{color:'#243c58'}}
+      }
+    }
+  });
+}
+
+// Chart data
+const RZG_Z90=[2,2,3,3,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2];
+const RZG_Z10=[2,3,3,2,2,2,3,3,4,4,3,3,3,4,4,4,4,3,3,3,4,4,3,3,3,4,4,3,3,4];
+const RZV_Z90=[1,1,2,2,2,1,1,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,1,1];
+const RZV_Z10=[2,2,1,1,2,2,2,1,2,2,2,2,2,2,2,2,2,2,2,2,2,1,1,2,2,2,2,2,1,1];
+const IJR_Z90=[2,2,2,3,3,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2];
+const IJR_Z10=[2,3,3,3,2,2,3,3,3,4,4,3,3,3,4,4,4,3,3,3,3,3,3,3,3,3,3,2,2,3];
+const EWSC_Z90=[2,2,2,2,3,2,2,2,2,3,3,3,3,3,3,3,3,2,2,2,2,2,2,2,2,2,2,2,2,2];
+const EWSC_Z10=[2,2,3,3,2,2,2,3,3,4,3,3,3,4,4,3,3,3,3,3,3,3,3,2,2,2,3,3,2,2];
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded',()=>{
+  // LH toggles
+  renderLH('mkt');
+  renderLH('sec');
+  // Regular toggles
+  ['selsec','factorsec'].forEach(gid=>{
+    sortState[gid]={field:'ir',dir:1};
+    periodState[gid]='90';
+    renderToggleTable(gid);
+  });
+  // Stock LH
+  renderStk();
+  // Histograms
+  buildHistogram('histo-mkt',MKT_DATA,'SML');
+  buildHistogram('histo-sec',SEC_DATA,'SML');
+  buildDensityHistogram('histo-density',null,'SML');
+  // Combo charts
+  buildZoneChart('chart-rzg',RZG_Z90,RZG_Z10);
+  buildZoneChart('chart-rzv',RZV_Z90,RZV_Z10);
+  buildZoneChart('chart-ijr',IJR_Z90,IJR_Z10);
+  buildZoneChart('chart-ewsc',EWSC_Z90,EWSC_Z10);
+});
+</script>
+</body>
+</html>

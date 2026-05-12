@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invesco ETFs — Sponsor Page</title>
+<style>
+:root {
+  --bg:#08111e; --panel:#0d1829; --panel-alt:#0a1420;
+  --border:#1a2d44; --border-lite:#243c58;
+  --text:#b8cce0; --text-dim:#5a7a9a; --text-bright:#ddeeff;
+  --accent:#2a7abf; --accent-glow:#3090d8;
+  --z1:#00cc55; --z2:#88cc44; --z3:#7a9aaa;
+  --z4:#aa9a7a; --z5:#ddcc00; --z6:#e83535;
+  --font-mono:'Courier New',Courier,monospace;
+  --font-ui:'Trebuchet MS',Tahoma,Geneva,sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-ui);font-size:13px;min-height:100vh}
+
+.header-bar{background:var(--panel);border-bottom:1px solid var(--border);padding:8px 16px;display:flex;align-items:center;gap:10px}
+.btn-nav{background:#1a2d44;color:var(--text-bright);border:1px solid var(--border-lite);padding:5px 14px;font-family:var(--font-ui);font-size:12px;cursor:pointer;letter-spacing:.05em;text-transform:uppercase;transition:background .15s,border-color .15s}
+.btn-nav:hover{background:#243c58;border-color:var(--accent);color:#fff}
+.search-box{background:#060f1a;border:1px solid var(--border-lite);color:var(--text-bright);padding:5px 10px;font-family:var(--font-mono);font-size:12px;width:180px;outline:none}
+.search-box:focus{border-color:var(--accent)}
+.search-box::placeholder{color:var(--text-dim)}
+
+.sponsor-nav{background:var(--panel-alt);border-bottom:1px solid var(--border);padding:5px 16px;text-align:right;font-size:11px}
+.sponsor-nav a{color:var(--accent-glow);text-decoration:none;margin-left:12px;letter-spacing:.03em}
+.sponsor-nav a:hover{color:#fff;text-decoration:underline}
+.sponsor-nav a.active{color:#fff;font-weight:bold}
+
+.page-title-block{padding:14px 16px 0;text-align:center}
+.page-title{font-size:20px;font-weight:bold;color:var(--text-bright);letter-spacing:.04em;text-transform:uppercase}
+
+.desc-block{margin:10px 16px 6px;background:var(--panel);border:1px solid var(--border);padding:10px 14px}
+.desc-text{color:var(--text);line-height:1.55;font-size:12px}
+.desc-text.collapsed{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.desc-toggle{background:none;border:none;color:var(--accent-glow);font-size:11px;cursor:pointer;margin-top:4px;padding:0;letter-spacing:.04em}
+.desc-toggle:hover{color:#fff}
+
+.main-body{display:flex;height:calc(100vh - 125px);overflow:hidden}
+
+.sidebar{width:285px;min-width:285px;border-right:2px solid var(--border-lite);display:flex;flex-direction:column;overflow:hidden;background:var(--panel-alt)}
+.sidebar-header{padding:8px 10px 6px;border-bottom:1px solid var(--border);flex-shrink:0}
+.sidebar-title{font-weight:bold;font-size:12px;color:var(--text-bright);text-align:center;display:block;margin-bottom:5px}
+.toggle-btns{display:flex;gap:4px;justify-content:center}
+.toggle-btn{background:#1a2d44;color:var(--text-dim);border:1px solid var(--border);padding:3px 10px;font-size:11px;cursor:pointer;font-family:var(--font-ui);transition:all .15s}
+.toggle-btn.active{background:var(--accent);color:#fff;border-color:var(--accent-glow)}
+.toggle-btn:hover:not(.active){border-color:var(--accent);color:var(--text-bright)}
+.sidebar-scroll{overflow-y:auto;flex:1}
+.sidebar-scroll::-webkit-scrollbar{width:4px}
+.sidebar-scroll::-webkit-scrollbar-track{background:var(--bg)}
+.sidebar-scroll::-webkit-scrollbar-thumb{background:var(--border-lite)}
+
+.right-content{flex:1;overflow-y:auto;padding:10px 14px}
+.right-content::-webkit-scrollbar{width:5px}
+.right-content::-webkit-scrollbar-track{background:var(--bg)}
+.right-content::-webkit-scrollbar-thumb{background:var(--border-lite)}
+
+.ir-table{width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:11px}
+.ir-table th{background:#0d1829;color:var(--text-dim);padding:4px 6px;text-align:left;border-bottom:1px solid var(--border);position:sticky;top:0;font-size:10px;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
+.ir-table th.sortable{cursor:pointer;user-select:none}
+.ir-table th.sortable:hover{color:var(--text-bright)}
+.ir-table th.sort-active{color:var(--accent-glow)}
+.sort-arrow{font-size:10px;margin-left:3px;opacity:0.5}
+.sort-arrow.active{opacity:1;color:var(--accent-glow)}
+.ir-table td{padding:3px 6px;border-bottom:1px solid #0e1a28;white-space:nowrap}
+.ir-table tr:hover td{background:#111e30}
+.col-symbol{color:var(--text-bright);font-weight:bold}
+.zone-badge{display:inline-block;padding:1px 5px;font-size:10px;font-weight:bold;border-radius:2px;color:#000}
+
+.histo-wrap{margin-bottom:14px}
+.section-title{font-weight:bold;font-size:13px;color:var(--text-bright);text-align:center;margin-bottom:6px;letter-spacing:.03em}
+.histo-svg-box{background:var(--panel);border:1px solid var(--border);overflow:hidden}
+
+.boxed-title{border:1px solid var(--border-lite);text-align:center;padding:6px 20px;font-weight:bold;font-size:13px;color:var(--text-bright);margin:14px 0 10px;background:var(--panel);letter-spacing:.03em}
+
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.toggle-wrap{background:var(--panel);border:1px solid var(--border)}
+.toggle-header{background:var(--panel-alt);border-bottom:1px solid var(--border);padding:6px 10px;display:flex;align-items:center;justify-content:space-between}
+.toggle-title{font-weight:bold;font-size:12px;color:var(--text-bright)}
+.scroll-table{max-height:340px;overflow-y:auto}
+.scroll-table::-webkit-scrollbar{width:4px}
+.scroll-table::-webkit-scrollbar-track{background:var(--bg)}
+.scroll-table::-webkit-scrollbar-thumb{background:var(--border-lite)}
+
+#histo-tip{position:fixed;background:#0d1829;border:1px solid #3090d8;color:#ddeeff;font-family:'Courier New',monospace;font-size:11px;padding:5px 9px;pointer-events:none;display:none;z-index:999;white-space:nowrap;border-radius:2px;box-shadow:0 2px 12px rgba(0,0,0,0.6)}
+</style>
+</head>
+<body>
+
+<div id="histo-tip"></div>
+
+<div class="header-bar">
+  <button class="btn-nav" onclick="history.back()">◀ Back</button>
+  <input class="search-box" type="text" placeholder="Search ticker…" id="searchInput"
+    onkeydown="if(event.key==='Enter'){var q=this.value.trim().toUpperCase();if(q)alert('Search: '+q);}">
+  <button class="btn-nav" onclick="var q=document.getElementById('searchInput').value.trim().toUpperCase();if(q)alert('Search: '+q);">Search</button>
+</div>
+
+<div class="sponsor-nav">
+  <a href="ishares.html">iShares</a>
+  <a href="statestreet.html">State Street</a>
+  <a href="globx.html">Global X</a>
+  <a href="firsttrust.html">First Trust</a>
+  <a href="vanguard.html">Vanguard</a>
+  <a href="vaneck.html">Van Eck</a>
+  <a href="proshares.html">ProShares</a>
+  <a href="others.html">Others</a>
+  <a href="invesco.html" class="active">Invesco</a>
+</div>
+
+<div class="page-title-block">
+  <div class="page-title">Invesco ETFs</div>
+</div>
+<div class="desc-block">
+  <div class="desc-text collapsed" id="descText">
+    Invesco Ltd. is a global independent investment management firm headquartered in Atlanta, Georgia. The company was established in 1935 and currently operates in more than 20 countries worldwide. Invesco is listed on the New York Stock Exchange under the symbol IVZ and manages approximately $2.1 trillion in assets as of September 30, 2025. The firm offers institutional and retail clients an expansive array of active and passive investment styles across traditional and alternative investments. Invesco's investment capabilities span equity, fixed income, separately managed accounts, exchange-traded funds, mutual funds, and alternative investment vehicles. The company serves a diverse global clientele including retail investors, institutional investors, defined benefit and defined contribution plans, insurance companies, foundations, endowments, and sovereign wealth funds. In September 2006, Invesco acquired PowerShares Capital Management LLC, significantly expanding its exchange-traded fund capabilities. PowerShares was recognized as an innovator in the ETF marketplace, receiving SEC approval in 2007 as the first firm to operate actively managed equity and fixed-income ETFs. Following the acquisition, the PowerShares brand was integrated as Invesco PowerShares, combining Invesco's global resources with PowerShares' ETF expertise. In 2007, the company rebranded from AMVESCAP PLC to Invesco Ltd. and redomiciled from the United Kingdom to Bermuda. The firm moved its headquarters from London to Atlanta in November 2007. Invesco Distributors, Inc. serves as the principal underwriter for Invesco exchange-traded funds. Information gathered from company website.
+  </div>
+  <button class="desc-toggle" id="descBtn" onclick="toggleDesc()">▼ Show More</button>
+</div>
+
+<div class="main-body">
+
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <span class="sidebar-title">Invesco ETFs</span>
+      <div class="toggle-btns">
+        <button class="toggle-btn active" data-group="all" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+        <button class="toggle-btn"        data-group="all" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+      </div>
+    </div>
+    <div class="sidebar-scroll">
+      <table class="ir-table">
+        <thead>
+          <tr>
+            <th>Tick</th><th>Name</th>
+            <th class="sortable sort-active" onclick="handleSortClick('all','ir')" id="all-th-ir" style="text-align:center">IR <span class="sort-arrow active" id="all-arr-ir">↓</span></th>
+            <th style="text-align:center">Zn</th>
+          </tr>
+        </thead>
+        <tbody id="all-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="right-content">
+
+    <div class="histo-wrap">
+      <div class="section-title">Invesco ETFs — 90-day Implied Risk Histogram</div>
+      <div class="histo-svg-box">
+        <svg id="mainHisto" viewBox="0 0 920 268" width="100%"
+             preserveAspectRatio="xMidYMid meet" style="display:block;"></svg>
+      </div>
+    </div>
+
+    <div class="boxed-title">Invesco ETFs With Members and Without Members</div>
+
+    <div class="two-col">
+
+      <div class="toggle-wrap">
+        <div class="toggle-header">
+          <span class="toggle-title">Invesco ETFs With Members</span>
+          <div class="toggle-btns">
+            <button class="toggle-btn active" data-group="with" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+            <button class="toggle-btn"        data-group="with" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+          </div>
+        </div>
+        <div class="scroll-table">
+          <table class="ir-table">
+            <thead>
+              <tr>
+                <th>Ticker</th><th>Name</th>
+                <th class="sortable sort-active" onclick="handleSortClick('with','ir')" id="with-th-ir" style="text-align:center">IR <span class="sort-arrow active" id="with-arr-ir">↓</span></th>
+                <th style="text-align:center">Zn</th>
+                <th class="sortable" onclick="handleSortClick('with','3mo')" id="with-th-3mo" style="text-align:center;padding-left:14px">3Mo Ago <span class="sort-arrow" id="with-arr-3mo">↕</span></th>
+              </tr>
+            </thead>
+            <tbody id="with-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="toggle-wrap">
+        <div class="toggle-header">
+          <span class="toggle-title">Invesco ETFs Without Members</span>
+          <div class="toggle-btns">
+            <button class="toggle-btn active" data-group="without" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+            <button class="toggle-btn"        data-group="without" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+          </div>
+        </div>
+        <div class="scroll-table">
+          <table class="ir-table">
+            <thead>
+              <tr>
+                <th>Ticker</th><th>Name</th>
+                <th class="sortable sort-active" onclick="handleSortClick('without','ir')" id="without-th-ir" style="text-align:center">IR <span class="sort-arrow active" id="without-arr-ir">↓</span></th>
+                <th style="text-align:center">Zn</th>
+                <th class="sortable" onclick="handleSortClick('without','3mo')" id="without-th-3mo" style="text-align:center;padding-left:14px">3Mo Ago <span class="sort-arrow" id="without-arr-3mo">↕</span></th>
+              </tr>
+            </thead>
+            <tbody id="without-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// DATA — 62 unique ETFs (PFI duplicate resolved: one entry kept)
+// Distribution: crypto/commodities/currency oversold left;
+// DW momentum/small-cap sectors overbought right
+// ═══════════════════════════════════════════════════════════
+
+// WITHOUT MEMBERS (33):
+const WITHOUT_DATA = [
+  {t:'BTCO', name:'Galaxy Bitcoin ETF',                    ir90: 92,ir10: 88,ir90_3mo: 68,ir10_3mo: 62},
+  {t:'QSOL', name:'Galaxy Solana ETF',                     ir90: 88,ir10: 82,ir90_3mo: 62,ir10_3mo: 55},
+  {t:'QETH', name:'Galaxy Ethereum ETF',                   ir90: 85,ir10: 78,ir90_3mo: 58,ir10_3mo: 52},
+  {t:'DBO',  name:'DB Oil Fund',                           ir90: 78,ir10: 72,ir90_3mo: 55,ir10_3mo: 48},
+  {t:'DBP',  name:'DB Precious Metals Fund',               ir90: 75,ir10: 68,ir90_3mo: 52,ir10_3mo: 45},
+  {t:'DBE',  name:'DB Energy Fund',                        ir90: 72,ir10: 65,ir90_3mo: 48,ir10_3mo: 42},
+  {t:'DBA',  name:'DB Agricultural Fund',                  ir90: 68,ir10: 62,ir90_3mo: 45,ir10_3mo: 38},
+  {t:'DBB',  name:'DB Base Metals Fund',                   ir90: 67,ir10: 60,ir90_3mo: 42,ir10_3mo: 35},
+  {t:'DBC',  name:'DB Commodity Index',                    ir90: 65,ir10: 58,ir90_3mo: 42,ir10_3mo: 35},
+  {t:'FXY',  name:'CurrencyShares Japanese Yen Trust',     ir90: 62,ir10: 55,ir90_3mo: 38,ir10_3mo: 32},
+  {t:'UDN',  name:'DB US Dollar Index Bearish',            ir90: 58,ir10: 52,ir90_3mo: 35,ir10_3mo: 28},
+  {t:'FXA',  name:'CurrencyShares Australian Dollar Trust',ir90: 55,ir10: 48,ir90_3mo: 32,ir10_3mo: 25},
+  {t:'FXB',  name:'CurrencyShares British Pound Trust',    ir90: 52,ir10: 45,ir90_3mo: 28,ir10_3mo: 22},
+  {t:'FXC',  name:'CurrencyShares Canadian Dollar Trust',  ir90: 48,ir10: 42,ir90_3mo: 25,ir10_3mo: 18},
+  {t:'FXF',  name:'CurrencyShares Swiss Franc Trust',      ir90: 45,ir10: 38,ir90_3mo: 22,ir10_3mo: 15},
+  {t:'FXE',  name:'CurrencyShares Euro Trust',             ir90: 42,ir10: 35,ir90_3mo: 18,ir10_3mo: 12},
+  {t:'PGJ',  name:'Golden Dragon China ETF',               ir90: 38,ir10: 32,ir90_3mo: 15,ir10_3mo:  8},
+  {t:'PIN',  name:'India ETF',                             ir90: 35,ir10: 28,ir90_3mo: 12,ir10_3mo:  5},
+  {t:'CQQQ', name:'China Technology ETF',                  ir90: 32,ir10: 25,ir90_3mo:  8,ir10_3mo:  2},
+  {t:'PIE',  name:'DW Emerging Markets Momentum ETF',      ir90: 28,ir10: 22,ir90_3mo:  5,ir10_3mo: -2},
+  {t:'PIZ',  name:'DW Developed Markets Momentum ETF',     ir90: 25,ir10: 18,ir90_3mo:  2,ir10_3mo: -5},
+  {t:'UUP',  name:'DB US Dollar Index Bullish',            ir90: 22,ir10: 18,ir90_3mo: -2,ir10_3mo: -8},
+  {t:'PBP',  name:'S&P 500 BuyWrite ETF',                  ir90: 18,ir10: 15,ir90_3mo: -5,ir10_3mo:-10},
+  {t:'PHDG', name:'S&P 500 Downside Hedged ETF',           ir90: 15,ir10: 12,ir90_3mo: -8,ir10_3mo:-12},
+  {t:'RZV',  name:'S&P SmallCap 600 Pure Value ETF',       ir90: 12,ir10:  8,ir90_3mo:-12,ir10_3mo:-18},
+  {t:'RPV',  name:'S&P 500 Pure Value ETF',                ir90:  8,ir10:  5,ir90_3mo:-15,ir10_3mo:-20},
+  {t:'RFV',  name:'S&P MidCap 400 Pure Value ETF',         ir90:  5,ir10:  2,ir90_3mo:-18,ir10_3mo:-22},
+  {t:'CZA',  name:'Zacks Mid-Cap ETF',                     ir90:  2,ir10: -2,ir90_3mo:-22,ir10_3mo:-28},
+  {t:'RZG',  name:'S&P SmallCap 600 Pure Growth ETF',      ir90: -5,ir10: -8,ir90_3mo:-25,ir10_3mo:-32},
+  {t:'RPG',  name:'S&P 500 Pure Growth ETF',               ir90: -8,ir10:-12,ir90_3mo:-28,ir10_3mo:-35},
+  {t:'RFG',  name:'S&P MidCap 400 Pure Growth ETF',        ir90:-12,ir10:-15,ir90_3mo:-32,ir10_3mo:-38},
+  {t:'LGPT', name:'AI & Next Gen Software ETF',            ir90:-15,ir10:-18,ir90_3mo:-35,ir10_3mo:-42},
+  {t:'IBBQ', name:'Nasdaq Biotechnology ETF',              ir90:-18,ir10:-22,ir90_3mo:-38,ir10_3mo:-45}
+];
+
+// WITH MEMBERS (29, note: PFI duplicate resolved — one entry):
+const WITH_DATA = [
+  {t:'PSCU', name:'SmallCap Utilities & Comm Services ETF',ir90: -2,ir10: -5,ir90_3mo:-22,ir10_3mo:-28},
+  {t:'QQQM', name:'NASDAQ 100 ETF',                        ir90:-22,ir10:-25,ir90_3mo:-42,ir10_3mo:-48},
+  {t:'XLG',  name:'S&P 500 Top 50 ETF',                    ir90:-25,ir10:-28,ir90_3mo:-45,ir10_3mo:-52},
+  {t:'PTH',  name:'DW Healthcare Momentum ETF',            ir90:-28,ir10:-32,ir90_3mo:-48,ir10_3mo:-55},
+  {t:'PYZ',  name:'DW Basic Materials Momentum ETF',       ir90:-32,ir10:-35,ir90_3mo:-52,ir10_3mo:-58},
+  {t:'PSCF', name:'S&P SmallCap Financials ETF',           ir90:-35,ir10:-38,ir90_3mo:-55,ir10_3mo:-62},
+  {t:'PXJ',  name:'Oil & Gas Services ETF',                ir90:-38,ir10:-42,ir90_3mo:-58,ir10_3mo:-65},
+  {t:'PUI',  name:'DW Utilities Momentum ETF',             ir90:-42,ir10:-45,ir90_3mo:-62,ir10_3mo:-68},
+  {t:'PJP',  name:'Pharmaceuticals ETF',                   ir90:-45,ir10:-48,ir90_3mo:-65,ir10_3mo:-72},
+  {t:'PBE',  name:'Biotechnology & Genome ETF',            ir90:-48,ir10:-52,ir90_3mo:-68,ir10_3mo:-75},
+  {t:'PEJ',  name:'Leisure & Entertainment ETF',           ir90:-52,ir10:-55,ir90_3mo:-72,ir10_3mo:-78},
+  {t:'PKB',  name:'Building & Construction ETF',           ir90:-55,ir10:-58,ir90_3mo:-75,ir10_3mo:-82},
+  {t:'PSCD', name:'Small Cap Consumer Discretionary ETF',  ir90:-58,ir10:-62,ir90_3mo:-78,ir10_3mo:-85},
+  {t:'PSCE', name:'Small Cap Energy ETF',                  ir90:-62,ir10:-65,ir90_3mo:-82,ir10_3mo:-88},
+  {t:'PSI',  name:'Semiconductors ETF',                    ir90:-65,ir10:-68,ir90_3mo:-85,ir10_3mo:-92},
+  {t:'PXI',  name:'DW Energy Momentum ETF',                ir90:-68,ir10:-72,ir90_3mo:-88,ir10_3mo:-92},
+  {t:'PSCC', name:'Small Cap Consumer Staples ETF',        ir90:-70,ir10:-74,ir90_3mo:-90,ir10_3mo:-95},
+  {t:'PEZ',  name:'DW Consumer Cyclicals Momentum ETF',    ir90:-72,ir10:-75,ir90_3mo:-90,ir10_3mo:-95},
+  {t:'PBJ',  name:'Food & Beverage ETF',                   ir90:-73,ir10:-78,ir90_3mo:-92,ir10_3mo:-96},
+  {t:'PSCT', name:'S&P SmallCap Information Technology ETF',ir90:-75,ir10:-78,ir90_3mo:-92,ir10_3mo:-96},
+  {t:'KBWB', name:'KBW Bank ETF',                          ir90:-78,ir10:-82,ir90_3mo:-95,ir10_3mo:-98},
+  {t:'PSCH', name:'S&P SmallCap Health Care ETF',          ir90:-82,ir10:-85,ir90_3mo:-95,ir10_3mo:-98},
+  {t:'PSCM', name:'S&P SmallCap Materials ETF',            ir90:-85,ir10:-88,ir90_3mo:-92,ir10_3mo:-95},
+  {t:'PFI',  name:'DW Financial Momentum ETF',             ir90:-88,ir10:-92,ir90_3mo:-88,ir10_3mo:-92},
+  {t:'PTF',  name:'DW Industrials Momentum ETF',           ir90:-88,ir10:-92,ir90_3mo:-85,ir10_3mo:-90},
+  {t:'PSL',  name:'DW Consumer Staples Momentum ETF',      ir90:-92,ir10:-95,ir90_3mo:-82,ir10_3mo:-88},
+  {t:'PXE',  name:'Energy Exploration & Production ETF',   ir90:-92,ir10:-95,ir90_3mo:-78,ir10_3mo:-85},
+  {t:'FDIQ', name:'Bloomberg Financial Data Providers ETF',ir90:-95,ir10:-98,ir90_3mo:-75,ir10_3mo:-82},
+  {t:'KBWP', name:'KBW Property & Casualty Insurance ETF', ir90:-95,ir10:-98,ir90_3mo:-72,ir10_3mo:-78}
+];
+
+const ALL_DATA = [...WITHOUT_DATA, ...WITH_DATA];
+
+const WITH_TICKERS = WITH_DATA.map(d=>d.t);
+
+// ═══════════════════════════════════════════════════════════
+// HISTOGRAM — 62 ETFs across 24 slots
+// ═══════════════════════════════════════════════════════════
+const HISTO_ZONES = [
+  { label:'Zone 1', range:'+99 to +67', color:'#00cc55', bg:'rgba(0,204,85,0.07)',
+    slots:[
+      // S1(+91-99): BTCO(92)
+      [{tr:'BTC',full:'BTCO',name:'Galaxy Bitcoin ETF',ir90:92}],
+      // S2(+83-90): QSOL(88), QETH(85)
+      [{tr:'QSO',full:'QSOL',name:'Galaxy Solana ETF',ir90:88},
+       {tr:'QET',full:'QETH',name:'Galaxy Ethereum ETF',ir90:85}],
+      // S3(+75-82): DBO(78), DBP(75)
+      [{tr:'DBO',full:'DBO',name:'DB Oil Fund',ir90:78},
+       {tr:'DBP',full:'DBP',name:'DB Precious Metals Fund',ir90:75}],
+      // S4(+67-74): DBE(72), DBA(68), DBB(67)
+      [{tr:'DBE',full:'DBE',name:'DB Energy Fund',ir90:72},
+       {tr:'DBA',full:'DBA',name:'DB Agricultural Fund',ir90:68},
+       {tr:'DBB',full:'DBB',name:'DB Base Metals Fund',ir90:67}]
+    ]},
+  { label:'Zone 2', range:'+66 to +34', color:'#88cc44', bg:'rgba(136,204,68,0.07)',
+    slots:[
+      // S1(+59-66): DBC(65), FXY(62)
+      [{tr:'DBC',full:'DBC',name:'DB Commodity Index',ir90:65},
+       {tr:'FXY',full:'FXY',name:'CurrencyShares Japanese Yen Trust',ir90:62}],
+      // S2(+52-58): UDN(58), FXA(55), FXB(52)
+      [{tr:'UDN',full:'UDN',name:'DB US Dollar Index Bearish',ir90:58},
+       {tr:'FXA',full:'FXA',name:'CurrencyShares Australian Dollar Trust',ir90:55},
+       {tr:'FXB',full:'FXB',name:'CurrencyShares British Pound Trust',ir90:52}],
+      // S3(+43-51): FXC(48), FXF(45)
+      [{tr:'FXC',full:'FXC',name:'CurrencyShares Canadian Dollar Trust',ir90:48},
+       {tr:'FXF',full:'FXF',name:'CurrencyShares Swiss Franc Trust',ir90:45}],
+      // S4(+34-42): FXE(42), PGJ(38), PIN(35)
+      [{tr:'FXE',full:'FXE',name:'CurrencyShares Euro Trust',ir90:42},
+       {tr:'PGJ',full:'PGJ',name:'Golden Dragon China ETF',ir90:38},
+       {tr:'PIN',full:'PIN',name:'India ETF',ir90:35}]
+    ]},
+  { label:'Zone 3', range:'+33 to +1', color:'#7a9aaa', bg:'rgba(122,154,170,0.07)',
+    slots:[
+      // S1(+26-33): CQQQ(32), PIE(28)
+      [{tr:'CQQ',full:'CQQQ',name:'China Technology ETF',ir90:32},
+       {tr:'PIE',full:'PIE',name:'DW Emerging Markets Momentum ETF',ir90:28}],
+      // S2(+18-25): PIZ(25), UUP(22), PBP(18)
+      [{tr:'PIZ',full:'PIZ',name:'DW Developed Markets Momentum ETF',ir90:25},
+       {tr:'UUP',full:'UUP',name:'DB US Dollar Index Bullish',ir90:22},
+       {tr:'PBP',full:'PBP',name:'S&P 500 BuyWrite ETF',ir90:18}],
+      // S3(+9-17): PHDG(15), RZV(12)
+      [{tr:'PHD',full:'PHDG',name:'S&P 500 Downside Hedged ETF',ir90:15},
+       {tr:'RZV',full:'RZV',name:'S&P SmallCap 600 Pure Value ETF',ir90:12}],
+      // S4(+1-8): RPV(8), RFV(5), CZA(2)
+      [{tr:'RPV',full:'RPV',name:'S&P 500 Pure Value ETF',ir90:8},
+       {tr:'RFV',full:'RFV',name:'S&P MidCap 400 Pure Value ETF',ir90:5},
+       {tr:'CZA',full:'CZA',name:'Zacks Mid-Cap ETF',ir90:2}]
+    ]},
+  { label:'Zone 4', range:'−1 to −33', color:'#aa9a7a', bg:'rgba(170,154,122,0.07)',
+    slots:[
+      // S1(-1 to -8): PSCU(-2), RZG(-5), RPG(-8)
+      [{tr:'PSU',full:'PSCU',name:'SmallCap Utilities & Comm Services ETF',ir90:-2},
+       {tr:'RZG',full:'RZG',name:'S&P SmallCap 600 Pure Growth ETF',ir90:-5},
+       {tr:'RPG',full:'RPG',name:'S&P 500 Pure Growth ETF',ir90:-8}],
+      // S2(-9 to -17): RFG(-12), LGPT(-15)
+      [{tr:'RFG',full:'RFG',name:'S&P MidCap 400 Pure Growth ETF',ir90:-12},
+       {tr:'LGP',full:'LGPT',name:'AI & Next Gen Software ETF',ir90:-15}],
+      // S3(-18 to -25): IBBQ(-18), QQQM(-22), XLG(-25)
+      [{tr:'IBB',full:'IBBQ',name:'Nasdaq Biotechnology ETF',ir90:-18},
+       {tr:'QQM',full:'QQQM',name:'NASDAQ 100 ETF',ir90:-22},
+       {tr:'XLG',full:'XLG',name:'S&P 500 Top 50 ETF',ir90:-25}],
+      // S4(-26 to -33): PTH(-28), PYZ(-32)
+      [{tr:'PTH',full:'PTH',name:'DW Healthcare Momentum ETF',ir90:-28},
+       {tr:'PYZ',full:'PYZ',name:'DW Basic Materials Momentum ETF',ir90:-32}]
+    ]},
+  { label:'Zone 5', range:'−34 to −66', color:'#ddcc00', bg:'rgba(221,204,0,0.07)',
+    slots:[
+      // S1(-34 to -42): PSCF(-35), PXJ(-38), PUI(-42)
+      [{tr:'PCF',full:'PSCF',name:'S&P SmallCap Financials ETF',ir90:-35},
+       {tr:'PXJ',full:'PXJ',name:'Oil & Gas Services ETF',ir90:-38},
+       {tr:'PUI',full:'PUI',name:'DW Utilities Momentum ETF',ir90:-42}],
+      // S2(-43 to -51): PJP(-45), PBE(-48)
+      [{tr:'PJP',full:'PJP',name:'Pharmaceuticals ETF',ir90:-45},
+       {tr:'PBE',full:'PBE',name:'Biotechnology & Genome ETF',ir90:-48}],
+      // S3(-52 to -58): PEJ(-52), PKB(-55), PSCD(-58)
+      [{tr:'PEJ',full:'PEJ',name:'Leisure & Entertainment ETF',ir90:-52},
+       {tr:'PKB',full:'PKB',name:'Building & Construction ETF',ir90:-55},
+       {tr:'PCD',full:'PSCD',name:'Small Cap Consumer Discretionary ETF',ir90:-58}],
+      // S4(-59 to -66): PSCE(-62), PSI(-65)
+      [{tr:'PCE',full:'PSCE',name:'Small Cap Energy ETF',ir90:-62},
+       {tr:'PSI',full:'PSI',name:'Semiconductors ETF',ir90:-65}]
+    ]},
+  { label:'Zone 6', range:'−67 to −99', color:'#e83535', bg:'rgba(232,53,53,0.07)',
+    slots:[
+      // S1(-67 to -74): PXI(-68), PSCC(-70), PEZ(-72), PBJ(-73)
+      [{tr:'PXI',full:'PXI',name:'DW Energy Momentum ETF',ir90:-68},
+       {tr:'PCC',full:'PSCC',name:'Small Cap Consumer Staples ETF',ir90:-70},
+       {tr:'PEZ',full:'PEZ',name:'DW Consumer Cyclicals Momentum ETF',ir90:-72},
+       {tr:'PBJ',full:'PBJ',name:'Food & Beverage ETF',ir90:-73}],
+      // S2(-75 to -82): PSCT(-75), KBWB(-78), PSCH(-82)
+      [{tr:'PCT',full:'PSCT',name:'S&P SmallCap Information Technology ETF',ir90:-75},
+       {tr:'KBB',full:'KBWB',name:'KBW Bank ETF',ir90:-78},
+       {tr:'PCH',full:'PSCH',name:'S&P SmallCap Health Care ETF',ir90:-82}],
+      // S3(-83 to -90): PSCM(-85), PFI(-88), PTF(-88)
+      [{tr:'PCM',full:'PSCM',name:'S&P SmallCap Materials ETF',ir90:-85},
+       {tr:'PFI',full:'PFI',name:'DW Financial Momentum ETF',ir90:-88},
+       {tr:'PTF',full:'PTF',name:'DW Industrials Momentum ETF',ir90:-88}],
+      // S4(-91 to -99): PSL(-92), PXE(-92), FDIQ(-95), KBWP(-95)
+      [{tr:'PSL',full:'PSL',name:'DW Consumer Staples Momentum ETF',ir90:-92},
+       {tr:'PXE',full:'PXE',name:'Energy Exploration & Production ETF',ir90:-92},
+       {tr:'FDI',full:'FDIQ',name:'Bloomberg Financial Data Providers ETF',ir90:-95},
+       {tr:'KBP',full:'KBWP',name:'KBW Property & Casualty Insurance ETF',ir90:-95}]
+    ]}
+];
+
+// ═══════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════
+function irToZone(ir){
+  if(ir>=67)return 1; if(ir>=34)return 2; if(ir>=1)return 3;
+  if(ir>=-33)return 4; if(ir>=-66)return 5; return 6;
+}
+const ZC={1:'#00cc55',2:'#88cc44',3:'#7a9aaa',4:'#aa9a7a',5:'#ddcc00',6:'#e83535'};
+function zoneBadge(z){return`<span class="zone-badge" style="background:${ZC[z]};color:#000">Z${z}</span>`}
+function irColor(ir){return ir>0?'#00cc55':ir<0?'#e83535':'#b8cce0'}
+function fmtIR(ir){return(ir>0?'+':'')+ir}
+
+const sortState   = {all:{field:'ir',dir:1}, with:{field:'ir',dir:1}, without:{field:'ir',dir:1}};
+const periodState = {all:'90', with:'90', without:'90'};
+
+function renderToggleTable(gid){
+  const map={all:ALL_DATA, with:WITH_DATA, without:WITHOUT_DATA};
+  const data=map[gid]; if(!data)return;
+  const period=periodState[gid];
+  const {field,dir}=sortState[gid];
+  const irField=period==='90'?'ir90':'ir10';
+  const moField=period==='90'?'ir90_3mo':'ir10_3mo';
+  const sortField=field==='ir'?irField:moField;
+  const sorted=[...data].sort((a,b)=>dir*(b[sortField]-a[sortField]));
+  const tbody=document.getElementById(`${gid}-tbody`); if(!tbody)return;
+  const hasThreeMo=(gid!=='all');
+  tbody.innerHTML=sorted.map(d=>{
+    const ir=d[irField], mo=d[moField], z=irToZone(ir);
+    const nm=d.name.length>22?d.name.slice(0,22)+'…':d.name;
+    const moCell=hasThreeMo
+      ?`<td style="color:${irColor(mo)};font-size:10px;text-align:center;padding-left:14px;font-family:'Courier New',monospace">${fmtIR(mo)}</td>`:'';
+    return`<tr>
+      <td class="col-symbol">${d.t}</td>
+      <td style="color:var(--text-dim);font-size:10px" title="${d.name}">${nm}</td>
+      <td style="color:${irColor(ir)};text-align:center;font-family:'Courier New',monospace;font-size:11px">${fmtIR(ir)}</td>
+      <td style="text-align:center">${zoneBadge(z)}</td>
+      ${moCell}
+    </tr>`;
+  }).join('');
+  updateSortArrows(gid);
+}
+
+function updateSortArrows(gid){
+  const {field,dir}=sortState[gid];
+  const sym=dir===1?'↓':'↑';
+  ['ir','3mo'].forEach(f=>{
+    const th=document.getElementById(`${gid}-th-${f}`);
+    const ar=document.getElementById(`${gid}-arr-${f}`);
+    if(!th||!ar)return;
+    if(field===f){th.classList.add('sort-active');ar.classList.add('active');ar.textContent=sym;}
+    else{th.classList.remove('sort-active');ar.classList.remove('active');ar.textContent='↕';}
+  });
+}
+
+function handlePeriodToggle(btn){
+  const{group,period}=btn.dataset;
+  btn.closest('.toggle-btns').querySelectorAll('.toggle-btn')
+     .forEach(b=>b.classList.toggle('active',b===btn));
+  periodState[group]=period;
+  renderToggleTable(group);
+}
+
+function handleSortClick(gid,field){
+  const st=sortState[gid];
+  if(st.field===field){st.dir*=-1;} else{st.field=field;st.dir=1;}
+  renderToggleTable(gid);
+}
+
+function toggleDesc(){
+  const t=document.getElementById('descText'),b=document.getElementById('descBtn');
+  if(t.classList.contains('collapsed')){t.classList.remove('collapsed');b.textContent='▲ Show Less';}
+  else{t.classList.add('collapsed');b.textContent='▼ Show More';}
+}
+
+// ═══════════════════════════════════════
+// HISTOGRAM
+// ═══════════════════════════════════════
+function buildHistogram(){
+  const W=920,OW=28,BX=OW,BW=W-2*OW,ZW=BW/6;
+  const SLOT_PITCH=BW/24;
+  let BY=205; const SH=13,SFS=9;
+  const BELL_A=168,BELL_FLOOR=16,BELL_SIG=ZW,BCX=BX+BW/2;
+  // Dynamic height: grow SVG upward if tallest stack would clip
+  const _maxStk=Math.max(1,...HISTO_ZONES.flatMap(z=>z.slots.map(s=>s.length)));
+  if(_maxStk*SH+20>BY)BY=_maxStk*SH+20;
+  const H=BY+63;
+  document.getElementById('mainHisto').setAttribute('viewBox',`0 0 ${W} ${H}`);
+  const LY_RANGE=BY+18,LY_ZONE=BY+31;
+
+  let s='';
+  s+=`<defs>
+    <filter id="glow"><feGaussianBlur stdDeviation="2.8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="softglow"><feGaussianBlur stdDeviation="1.5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>`;
+
+  s+=`<rect x="0" y="0" width="${OW}" height="${H}" fill="rgba(0,0,0,0.3)"/>`;
+  s+=`<rect x="${BX+BW}" y="0" width="${OW}" height="${H}" fill="rgba(0,0,0,0.3)"/>`;
+  for(let z=0;z<6;z++)
+    s+=`<rect x="${(BX+z*ZW).toFixed(1)}" y="0" width="${ZW.toFixed(1)}" height="${BY}" fill="${HISTO_ZONES[z].bg}"/>`;
+  for(let z=0;z<=6;z++){
+    const x=(BX+z*ZW).toFixed(1),op=(z===0||z===6)?'0.45':'0.22',sw=(z===0||z===6)?1.5:1;
+    s+=`<line x1="${x}" y1="0" x2="${x}" y2="${BY}" stroke="rgba(255,255,255,${op})" stroke-width="${sw}"/>`;
+  }
+  for(let i=1;i<24;i++){
+    const x=(BX+i*SLOT_PITCH).toFixed(1);
+    s+=`<line x1="${x}" y1="8" x2="${x}" y2="${BY}" stroke="rgba(255,255,255,0.055)" stroke-width="0.5" stroke-dasharray="3,6"/>`;
+  }
+  s+=`<line x1="0" y1="${BY}" x2="${W}" y2="${BY}" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>`;
+
+  let cp='';
+  for(let px=BX;px<=BX+BW;px+=2){
+    const dx=px-BCX,fy=BY-(BELL_A*Math.exp(-(dx*dx)/(2*BELL_SIG*BELL_SIG))+BELL_FLOOR);
+    cp+=(px===BX?`M${px.toFixed(1)},${fy.toFixed(1)}`:`L${px.toFixed(1)},${fy.toFixed(1)}`);
+  }
+  s+=`<path d="${cp}" fill="none" stroke="rgba(120,185,255,0.14)" stroke-width="8"/>`;
+  s+=`<path d="${cp}" fill="none" stroke="rgba(155,210,255,0.72)" stroke-width="1.6" stroke-dasharray="8,4" filter="url(#glow)"/>`;
+  s+=`<path d="${cp}" fill="none" stroke="rgba(205,235,255,0.38)" stroke-width="0.8" stroke-dasharray="8,4"/>`;
+
+  for(let z=0;z<6;z++){
+    const zone=HISTO_ZONES[z],color=zone.color;
+    for(let sl=0;sl<4;sl++){
+      const syms=zone.slots[sl]; if(!syms||!syms.length)continue;
+      const i=z*4+sl,scx=(BX+(i+0.5)*SLOT_PITCH).toFixed(1),n=syms.length;
+      [...syms].sort((a,b)=>a.tr.localeCompare(b.tr)).forEach((sym,i2)=>{
+        const sy=(BY-(n-i2)*SH+SH*0.78).toFixed(1);
+        const sign=sym.ir90>0?'+':'';
+        const tip=`${sym.full} — ${sym.name}  |  90-IR: ${sign}${sym.ir90}  |  ${zone.label}`;
+        s+=`<text x="${scx}" y="${sy}" text-anchor="middle"
+          font-family="'Courier New',monospace" font-size="${SFS}" font-weight="bold"
+          fill="${color}" cursor="pointer" class="hsym" data-tip="${tip}"
+          filter="url(#softglow)">${sym.tr}</text>`;
+      });
+    }
+  }
+
+  for(let z=0;z<6;z++){
+    const zone=HISTO_ZONES[z],zx=BX+z*ZW,zcx=(zx+ZW/2).toFixed(1);
+    s+=`<text x="${zcx}" y="${LY_RANGE}" text-anchor="middle" font-family="'Courier New',monospace" font-size="8.5" fill="rgba(255,255,255,0.48)">${zone.range}</text>`;
+    s+=`<text x="${zcx}" y="${LY_ZONE}" text-anchor="middle" font-family="'Trebuchet MS',sans-serif" font-size="10.5" font-weight="bold" fill="${zone.color}">${zone.label}</text>`;
+  }
+
+  const OL=OW/2,OR=BX+BW+OW/2;
+  s+=`<text x="${OL}" y="20" text-anchor="middle" font-family="'Trebuchet MS',sans-serif" font-size="8.5" font-weight="bold" fill="#00cc55">OOB</text>`;
+  s+=`<text x="${OL}" y="32" text-anchor="middle" font-family="'Trebuchet MS',sans-serif" font-size="8" fill="#00cc55" opacity="0.7">Weak</text>`;
+  s+=`<text x="${OL}" y="${BY-8}" text-anchor="middle" font-family="'Courier New',monospace" font-size="12" font-weight="bold" fill="#00cc55">[0]</text>`;
+  s+=`<text x="${OL}" y="${LY_RANGE}" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="rgba(0,204,85,0.45)">≥+99</text>`;
+  s+=`<text x="${OR}" y="20" text-anchor="middle" font-family="'Trebuchet MS',sans-serif" font-size="8.5" font-weight="bold" fill="#e83535">OOB</text>`;
+  s+=`<text x="${OR}" y="32" text-anchor="middle" font-family="'Trebuchet MS',sans-serif" font-size="8" fill="#e83535" opacity="0.7">Strong</text>`;
+  s+=`<text x="${OR}" y="${BY-8}" text-anchor="middle" font-family="'Courier New',monospace" font-size="12" font-weight="bold" fill="#e83535">[0]</text>`;
+  s+=`<text x="${OR}" y="${LY_RANGE}" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="rgba(232,53,53,0.45)">≤−99</text>`;
+  s+=`<text x="${BX+8}" y="${H-5}" font-family="'Trebuchet MS',sans-serif" font-size="7.5" fill="rgba(0,204,85,0.4)">← Weak / Oversold</text>`;
+  s+=`<text x="${BX+BW-8}" y="${H-5}" text-anchor="end" font-family="'Trebuchet MS',sans-serif" font-size="7.5" fill="rgba(232,53,53,0.4)">Overbought / Strong →</text>`;
+
+  document.getElementById('mainHisto').innerHTML=s;
+  document.querySelectorAll('.hsym').forEach(el=>{
+    el.addEventListener('mouseenter',e=>{
+      const tip=document.getElementById('histo-tip');
+      tip.textContent=el.dataset.tip;tip.style.display='block';
+      tip.style.left=(e.clientX+14)+'px';tip.style.top=(e.clientY-8)+'px';
+    });
+    el.addEventListener('mousemove',e=>{
+      const tip=document.getElementById('histo-tip');
+      tip.style.left=(e.clientX+14)+'px';tip.style.top=(e.clientY-8)+'px';
+    });
+    el.addEventListener('mouseleave',()=>document.getElementById('histo-tip').style.display='none');
+  });
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  renderToggleTable('all');
+  renderToggleTable('with');
+  renderToggleTable('without');
+  buildHistogram();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Top Down Trading</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:          #08111e;
+  --panel:       #0d1829;
+  --panel-alt:   #0a1420;
+  --border:      #1a2d44;
+  --border-lite: #243c58;
+  --text:        #ddeeff;
+  --dim:         #5a7a9a;
+  --accent:      #3090d8;
+  --gold:        #c9a227;
+  --z1: #00cc55;
+  --z2: #88cc44;
+  --z3: #7a9aaa;
+  --z4: #aa9a7a;
+  --z5: #ddcc00;
+  --z6: #e83535;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Rajdhani', sans-serif;
+  overflow: hidden;
+  height: 100vh;
+}
+
+/* ═══════════════════════════════════════════
+   HEADER BLOCK
+═══════════════════════════════════════════ */
+.header-block { flex-shrink: 0; }
+
+/* Line 1: Login only */
+.login-bar {
+  height: 40px;
+  background: var(--panel-alt);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 12px;
+  gap: 8px;
+}
+
+.login-input {
+  background: var(--panel);
+  border: 1px solid var(--border-lite);
+  color: var(--text);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 12px;
+  padding: 4px 10px;
+  outline: none;
+  width: 150px;
+  transition: border-color .15s;
+}
+.login-input::placeholder { color: var(--dim); }
+.login-input:focus { border-color: var(--accent); }
+
+.login-btn {
+  background: var(--panel);
+  border: 1px solid var(--border-lite);
+  color: var(--dim);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  padding: 5px 18px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.login-btn:hover { border-color: var(--accent); color: var(--text); }
+
+/* Line 2: Six horizontal nav buttons */
+.horiz-nav {
+  height: 40px;
+  background: var(--panel);
+  border-bottom: 2px solid var(--border-lite);
+  display: flex;
+  align-items: flex-end;
+  padding: 0 12px 6px 188px;
+  gap: 6px;
+}
+
+.h-btn {
+  background: transparent;
+  border: 1px solid var(--border-lite);
+  color: var(--text);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  padding: 5px 14px;
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.h-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ═══════════════════════════════════════════
+   SHELL
+═══════════════════════════════════════════ */
+.shell {
+  display: flex;
+  height: calc(100vh - 80px);
+  overflow: hidden;
+}
+
+/* ═══════════════════════════════════════════
+   VERTICAL NAV
+═══════════════════════════════════════════ */
+.vert-nav {
+  width: 185px;
+  min-width: 185px;
+  background: var(--panel-alt);
+  border-right: 2px solid var(--border-lite);
+  display: flex;
+  flex-direction: column;
+  padding: 14px 8px;
+  gap: 7px;
+  flex-shrink: 0;
+  overflow-x: visible;
+  overflow-y: hidden;
+  position: relative;
+  z-index: 2;
+}
+
+.v-btn {
+  width: 100%;
+  background: var(--panel);
+  border: 1px solid var(--border-lite);
+  color: var(--dim);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  padding: 9px 8px;
+  cursor: pointer;
+  transition: all .15s;
+  text-align: center;
+}
+.v-btn:hover { border-color: var(--accent); color: var(--text); }
+
+/* Option Strategy Game — slightly wider, protrudes right */
+.v-btn.wide {
+  width: 212px;
+  border-color: var(--border-lite);
+  background: #0e1f38;
+  position: relative;
+  z-index: 3;
+}
+.v-btn.wide:hover { border-color: var(--accent); color: var(--text); }
+
+/* ═══════════════════════════════════════════
+   RIGHT CONTENT
+═══════════════════════════════════════════ */
+.right-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 14px 16px;
+}
+.right-content::-webkit-scrollbar       { width: 6px; }
+.right-content::-webkit-scrollbar-track { background: #08111e; }
+.right-content::-webkit-scrollbar-thumb { background: #243c58; border-radius: 3px; }
+
+/* ═══════════════════════════════════════════
+   LOGO
+═══════════════════════════════════════════ */
+.logo-block {
+  text-align: center;
+  padding: 12px 0 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--border-lite);
+  position: relative;
+}
+
+/* Decorative left and right rule flanking logo */
+.logo-block::before, .logo-block::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: calc(50% - 180px);
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--gold));
+  opacity: 0.3;
+}
+.logo-block::before { left: 0; }
+.logo-block::after  { right: 0; background: linear-gradient(to left, transparent, var(--gold)); }
+
+.logo-text {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+.logo-tag {
+  font-family: 'IM Fell English', serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--dim);
+  margin-top: 4px;
+  letter-spacing: .02em;
+}
+
+/* ═══════════════════════════════════════════
+   COMMENTARY
+═══════════════════════════════════════════ */
+.commentary-wrap {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 10px 16px 12px;
+  margin-bottom: 11px;
+  display: flex;
+  gap: 0;
+}
+
+.comm-section {
+  flex: 1;
+  padding: 0 14px;
+  border-right: 1px solid var(--border);
+}
+.comm-section:first-child { padding-left: 0; }
+.comm-section:last-child  { padding-right: 0; border-right: none; }
+
+.comm-title {
+  text-align: center;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.comm-text {
+  font-family: 'IM Fell English', serif;
+  font-size: 15px;
+  color: var(--dim);
+  line-height: 1.55;
+  text-align: left;
+}
+
+/* ═══════════════════════════════════════════
+   DATA PAIR: Toggle + Histogram
+═══════════════════════════════════════════ */
+.data-pair {
+  display: grid;
+  grid-template-columns: 268px 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+  align-items: stretch;
+}
+
+/* ─── TOGGLE PANEL ─── */
+.toggle-panel {
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.toggle-head {
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  padding: 6px 8px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.toggle-head-title {
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--text);
+  margin-bottom: 5px;
+  letter-spacing: .02em;
+}
+
+.period-btns { display: flex; justify-content: center; gap: 3px; }
+
+.p-btn {
+  background: #1a2d44;
+  border: 1px solid #1a2d44;
+  color: var(--dim);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 10px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.p-btn.active             { background: #2a7abf; border-color: #3090d8; color: #fff; }
+.p-btn:hover:not(.active) { border-color: #3090d8; color: var(--text); }
+
+.toggle-scroll { overflow-y: auto; max-height: 298px; }
+.toggle-scroll::-webkit-scrollbar       { width: 4px; }
+.toggle-scroll::-webkit-scrollbar-track { background: #08111e; }
+.toggle-scroll::-webkit-scrollbar-thumb { background: #243c58; border-radius: 2px; }
+
+.lh-table { width: 100%; border-collapse: collapse; font-family: 'Courier New', monospace; font-size: 11px; }
+
+.lh-table th {
+  background: var(--panel-alt);
+  color: var(--dim);
+  padding: 4px 5px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  font-size: 10px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.lh-table th.sortable { cursor: pointer; user-select: none; }
+.lh-table th.sortable:hover { color: var(--text); }
+.lh-table th.sort-active { color: var(--accent); }
+
+.sort-arrow        { font-size: 10px; margin-left: 3px; opacity: .5; }
+.sort-arrow.active { opacity: 1; color: var(--accent); }
+
+.lh-table td { padding: 3px 5px; border-bottom: 1px solid #0e1a28; white-space: nowrap; }
+.lh-table tr:hover td { background: #111e30; }
+
+.col-sym  { color: var(--text); font-weight: bold; cursor: default; }
+.col-ir   { text-align: center; }
+.col-zone { text-align: center; }
+
+.zone-badge {
+  display: inline-block;
+  padding: 1px 5px;
+  font-size: 10px;
+  font-weight: bold;
+  border-radius: 2px;
+  color: #000;
+}
+
+.pos { color: #88cc44; }
+.neg { color: #e83535; }
+.zer { color: #b8cce0; }
+
+/* ─── HISTOGRAM PANEL ─── */
+.histo-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.histo-head {
+  text-align: center;
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--text);
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  letter-spacing: .02em;
+  flex-shrink: 0;
+}
+
+.histo-svg-box {
+  background: var(--panel);
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+.histo-comment {
+  text-align: center;
+  font-family: 'IM Fell English', serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--dim);
+  padding: 6px 10px 8px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════
+   HISTOGRAM TOOLTIP
+═══════════════════════════════════════════ */
+#histo-tip {
+  position: fixed;
+  background: #0d1829;
+  border: 1px solid #3090d8;
+  color: #ddeeff;
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  padding: 5px 9px;
+  border-radius: 2px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.6);
+  white-space: nowrap;
+  z-index: 999;
+  pointer-events: none;
+  display: none;
+}
+
+/* ═══════════════════════════════════════════
+   DAILY QUOTE
+═══════════════════════════════════════════ */
+.daily-quote {
+  text-align: center;
+  padding: 14px 40px 10px;
+  border-top: 1px solid var(--border);
+}
+
+.quote-text {
+  font-family: 'IM Fell English', serif;
+  font-style: italic;
+  font-size: 14px;
+  color: var(--dim);
+  display: block;
+  margin-bottom: 7px;
+  line-height: 1.65;
+}
+
+.quote-attr {
+  font-family: 'IM Fell English', serif;
+  font-style: normal;
+  font-size: 12px;
+  color: var(--dim);
+  opacity: 0.65;
+}
+
+/* ═══════════════════════════════════════════
+   LEARN MORE SLIDE-OUT PANEL
+═══════════════════════════════════════════ */
+.lm-overlay {
+  position: fixed;
+  left: 185px;
+  top: 80px;
+  bottom: 0;
+  width: 480px;
+  background: #dce6ef;
+  z-index: 500;
+  display: none;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-shadow: 6px 0 22px rgba(0,0,0,0.24);
+}
+.lm-overlay.open {
+  display: flex;
+  animation: lmSlideIn .22s ease-out;
+}
+@keyframes lmSlideIn {
+  from { transform: translateX(-22px); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+
+/* Close button — sticky so it stays visible while scrolling */
+.lm-close {
+  position: sticky;
+  top: 8px;
+  align-self: flex-end;
+  margin: 8px 10px 0;
+  flex-shrink: 0;
+  background: #fff;
+  border: 1px solid #9ab0c0;
+  color: #1a2d44;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  padding: 4px 13px;
+  cursor: pointer;
+  transition: all .15s;
+  z-index: 10;
+}
+.lm-close:hover { border-color: #243c58; color: #08111e; }
+
+/* Top header — LearnMore1.1 */
+.lm-header {
+  text-align: center;
+  flex-shrink: 0;
+  padding: 2px 16px 10px;
+  border-bottom: 1px solid #a8bed0;
+}
+.lm-header-line {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0d1829;
+  letter-spacing: .03em;
+  line-height: 1.45;
+}
+.lm-header-cta {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: .10em;
+  text-transform: uppercase;
+  margin-top: 6px;
+  cursor: pointer;
+  transition: opacity .15s;
+}
+.lm-header-cta:hover { opacity: 0.70; }
+
+/* Vertical bubble stack */
+.lm-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 14px 16px 6px;
+}
+
+/* Bubble container */
+.tb-container {
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  transition: opacity .2s;
+}
+.tb-container.dimmed       { opacity: 0.30; }
+.tb-container.highlighted  { opacity: 1; }
+.tb-container.dimmed:hover { opacity: 0.65; }
+
+/* Main oval */
+.tb-oval {
+  background: rgba(255, 255, 255, 0.90);
+  border: 1px solid #a8bed0;
+  border-radius: 16px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  transition: border-color .2s, box-shadow .2s;
+}
+.tb-container.highlighted .tb-oval {
+  border-color: var(--gold);
+  box-shadow: 0 0 16px rgba(201, 162, 39, 0.28);
+  background: rgba(255, 255, 255, 0.98);
+}
+
+/* Intro */
+.tb-intro {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1a2d44;
+  text-align: center;
+  line-height: 1.35;
+}
+
+/* Feature items */
+.tb-features { display: flex; flex-direction: column; gap: 5px; }
+
+.tb-feat-title {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: .03em;
+  line-height: 1.2;
+}
+.tb-feat-desc {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  color: #3a5570;
+  line-height: 1.25;
+  margin-top: 1px;
+}
+
+/* Cascade circles (thought bubble tail) */
+.tb-tail {
+  display: flex;
+  flex-direction: column;
+  padding-left: 28px;
+  gap: 3px;
+  margin-top: 2px;
+}
+.tb-dot {
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.90);
+  border: 1px solid #a8bed0;
+  flex-shrink: 0;
+}
+.td1 { width: 13px; height: 13px; }
+.td2 { width:  8px; height:  8px; margin-left:  4px; }
+.td3 { width:  5px; height:  5px; margin-left:  9px; }
+.tb-container.highlighted .tb-dot {
+  border-color: var(--gold);
+  background: #fff;
+}
+
+/* Label — outside the bubble, touching the cascade */
+.tb-label {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: #5a7a9a;
+  padding-left: 24px;
+  margin-top: 3px;
+  transition: color .2s;
+}
+.tb-container.highlighted .tb-label { color: var(--gold); }
+
+/* Bottom footer — LearnMore1.8 */
+.lm-footer {
+  text-align: center;
+  flex-shrink: 0;
+  padding: 12px 16px 22px;
+  border-top: 1px solid #a8bed0;
+  margin-top: 6px;
+}
+.lm-footer-trial {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a6ab8;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+.lm-footer-game {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0d1829;
+  margin-top: 2px;
+}
+.lm-footer-details {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  color: var(--gold);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(201,162,39,0.45);
+  display: inline-block;
+  margin-top: 4px;
+  transition: opacity .15s;
+}
+.lm-footer-details:hover { opacity: 0.70; }
+</style>
+</head>
+<body>
+
+<!-- TOOLTIP -->
+<div id="histo-tip"></div>
+
+<!-- ═══════════ HEADER BLOCK ═══════════ -->
+<div class="header-block">
+
+  <!-- Line 1: Login bar -->
+  <div class="login-bar">
+    <input class="login-input" type="text"     placeholder="Email or username" autocomplete="username">
+    <input class="login-input" type="password" placeholder="Password"          autocomplete="current-password">
+    <button class="login-btn" onclick="handleLogin()">LOG IN</button>
+  </div>
+
+  <!-- Line 2: Horizontal nav -->
+  <div class="horiz-nav">
+    <button class="h-btn" onclick="navTo('about.html','aboutPage')">About Us</button>
+    <button class="h-btn" onclick="navTo('zone_system.html','zonePage')">The Zone System</button>
+    <button class="h-btn" onclick="navTo('stock_analysis.html','stockAnalysisPage')">Stock Analysis</button>
+    <button class="h-btn" onclick="navTo('options_strategies.html','optionsPage')">Options Strategies</button>
+    <button class="h-btn" onclick="navTo('resources.html','resourcesPage')">Resources</button>
+    <button class="h-btn" onclick="navTo('contact.html','contactPage')">Contact</button>
+  </div>
+
+</div>
+
+<!-- ═══════════ SHELL ═══════════ -->
+<div class="shell">
+
+  <!-- LEFT: Vertical nav buttons -->
+  <div class="vert-nav">
+    <button class="v-btn" onclick="openLM('portfolio')">My Portfolio</button>
+    <button class="v-btn" onclick="openLM('market')">Market</button>
+    <button class="v-btn" onclick="openLM('sector')">Sector</button>
+    <button class="v-btn" onclick="openLM('stock')">Stock</button>
+    <button class="v-btn" onclick="openLM('options')">Options</button>
+    <button class="v-btn wide" onclick="window.open('https://optionstrategygame.com','_blank')">Option Strategy Game</button>
+  </div>
+
+  <!-- RIGHT: Main content -->
+  <div class="right-content">
+
+    <!-- LOGO -->
+    <div class="logo-block">
+      <div class="logo-text">Top Down Trading</div>
+      <div class="logo-tag">The stock market from an options market perspective</div>
+    </div>
+
+    <!-- COMMENTARY -->
+    <div class="commentary-wrap">
+      <div class="comm-section">
+        <div class="comm-title">Market</div>
+        <p class="comm-text">The Phase Chart rests in Zone 5, one standard deviation above the mean on a 90-day basis. The S&amp;P 500 (SPX) reads −36 in Zone 5, while the S&amp;P Midcap (MID) trails at −24 in Zone 4 and the S&amp;P Smallcap registers +4 in Zone 3.</p>
+      </div>
+      <div class="comm-section">
+        <div class="comm-title">Sector</div>
+        <p class="comm-text">The Energy sector leads the market higher. The Energy Sector SPDR (XLE) has reached −67 in Zone 6, while the United States Energy Fund (USO) has followed suit. The Utility Sector SPDR (XLU) trails the pack at +6 in Zone 3 on a 90-day basis.</p>
+      </div>
+      <div class="comm-section">
+        <div class="comm-title">Stock</div>
+        <p class="comm-text">Twenty-six percent of issues in our database have reached Zone 5, while 13% are currently in Zone 6 on a 90-day basis. Boeing (BA) and Chevron (CVX) lead the pack. Nvidia (NVDA) and Nike (NKE) are the weakest names, both deep in Zone 6.</p>
+      </div>
+    </div>
+
+    <!-- DATA PAIR: Toggle + Histogram -->
+    <div class="data-pair">
+
+      <!-- Left: DIA Member Toggle -->
+      <div class="toggle-panel">
+        <div class="toggle-head">
+          <div class="toggle-head-title">DJIA ETF (DIA) Members</div>
+          <div class="period-btns">
+            <button class="p-btn active" data-period="90" onclick="handlePeriod(this)">90 IR</button>
+            <button class="p-btn"        data-period="10" onclick="handlePeriod(this)">10 IR</button>
+          </div>
+        </div>
+        <div class="toggle-scroll">
+          <table class="lh-table">
+            <thead><tr>
+              <th style="text-align:left">Tick</th>
+              <th style="text-align:left">Name</th>
+              <th class="sortable sort-active" id="th-ir" onclick="handleSort()" style="text-align:center">
+                IR <span class="sort-arrow active" id="arr-ir">↓</span>
+              </th>
+              <th style="text-align:center">Zn</th>
+            </tr></thead>
+            <tbody id="dia-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Right: DIA Histogram -->
+      <div class="histo-panel">
+        <div class="histo-head">DJIA ETF (DIA) — 90-Day Implied Risk Histogram</div>
+        <div class="histo-svg-box">
+          <svg id="mainHisto" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block"></svg>
+        </div>
+        <div class="histo-comment" id="histo-comment"></div>
+      </div>
+
+    </div><!-- end data-pair -->
+
+    <!-- DAILY QUOTE -->
+    <div class="daily-quote">
+      <span class="quote-text">"If a stock doesn't act right, don't touch it; because being unable to decide precisely what is wrong, you cannot tell which way it is going."</span>
+      <span class="quote-attr">Edwin Lefèvre &nbsp;·&nbsp; Reminiscences of a Stock Operator (1923)</span>
+    </div>
+
+  </div><!-- end right-content -->
+</div><!-- end shell -->
+
+<!-- LEARN MORE OVERLAY -->
+<div class="lm-overlay" id="lm-overlay">
+  <button class="lm-close" onclick="closeLM()">✕ &nbsp;Close</button>
+
+  <!-- LearnMore1.1 — Top Header -->
+  <div class="lm-header">
+    <div class="lm-header-line">Learn to follow and trade the market on a risk-adjusted basis</div>
+    <div class="lm-header-line">Discover why sector analysis is the missing link for trading success</div>
+    <div class="lm-header-line">Prove whether risk-adjusted trading is for you with our paper portfolio</div>
+    <div class="lm-header-cta">Sign Up Now</div>
+  </div>
+
+  <!-- 3×2 Bubble Grid -->
+  <div class="lm-grid">
+
+    <!-- My Portfolio -->
+    <div class="tb-container dimmed" id="tb-portfolio" onclick="activateBubble('portfolio')">
+      <div class="tb-oval">
+        <div class="tb-intro">Employ this feature to help determine<br>entry and exit points for issues you follow</div>
+        <div class="tb-features">
+          <div><div class="tb-feat-title">Portfolio Tracking</div>
+               <div class="tb-feat-desc">Create and manage your own paper trading portfolio</div></div>
+          <div><div class="tb-feat-title">Portfolio Comparisons</div>
+               <div class="tb-feat-desc">Compare your paper portfolio's risk profile with others</div></div>
+          <div><div class="tb-feat-title">Portfolio Research</div>
+               <div class="tb-feat-desc">Choose which listed sector indexes to monitor closely</div></div>
+        </div>
+      </div>
+      <div class="tb-tail">
+        <div class="tb-dot td1"></div>
+        <div class="tb-dot td2"></div>
+        <div class="tb-dot td3"></div>
+      </div>
+      <div class="tb-label">My Portfolio</div>
+    </div>
+
+    <!-- Market -->
+    <div class="tb-container dimmed" id="tb-market" onclick="activateBubble('market')">
+      <div class="tb-oval">
+        <div class="tb-intro">Visit this page for risk-based insights<br>into each day's stock market activity</div>
+        <div class="tb-features">
+          <div><div class="tb-feat-title">Proprietary Market Indicators</div>
+               <div class="tb-feat-desc">Follow the market using a Relative Risk approach</div></div>
+          <div><div class="tb-feat-title">Major Market Index Analysis</div>
+               <div class="tb-feat-desc">Stay in step with the action of the country's largest indexes</div></div>
+          <div><div class="tb-feat-title">Market Graphs That Make Matter</div>
+               <div class="tb-feat-desc">Get the full picture at a glance with graphs of rates and volatility</div></div>
+        </div>
+      </div>
+      <div class="tb-tail">
+        <div class="tb-dot td1"></div>
+        <div class="tb-dot td2"></div>
+        <div class="tb-dot td3"></div>
+      </div>
+      <div class="tb-label">Market</div>
+    </div>
+
+    <!-- Sector -->
+    <div class="tb-container dimmed" id="tb-sector" onclick="activateBubble('sector')">
+      <div class="tb-oval">
+        <div class="tb-intro">Depend upon this page to show you<br>market-sector rotation really works</div>
+        <div class="tb-features">
+          <div><div class="tb-feat-title">Sector Index Analysis</div>
+               <div class="tb-feat-desc">Watch market sectors rotate from oversold to overbought</div></div>
+          <div><div class="tb-feat-title">Sector Index Comparisons</div>
+               <div class="tb-feat-desc">Understand sector-index activity to keep abreast of the market</div></div>
+          <div><div class="tb-feat-title">Sector Index Issue Rotation</div>
+               <div class="tb-feat-desc">Discover which issues are driving the direction of each index</div></div>
+        </div>
+      </div>
+      <div class="tb-tail">
+        <div class="tb-dot td1"></div>
+        <div class="tb-dot td2"></div>
+        <div class="tb-dot td3"></div>
+      </div>
+      <div class="tb-label">Sector</div>
+    </div>
+
+    <!-- Stock -->
+    <div class="tb-container dimmed" id="tb-stock" onclick="activateBubble('stock')">
+      <div class="tb-oval">
+        <div class="tb-intro">Click on this page to view the relative<br>overbought or oversold status of stocks</div>
+        <div class="tb-features">
+          <div><div class="tb-feat-title">Stocks-By-Zone Analysis</div>
+               <div class="tb-feat-desc">Observe which stocks are furthest from their 90-day mean prices</div></div>
+          <div><div class="tb-feat-title">Weakest/Strongest Lists</div>
+               <div class="tb-feat-desc">See the market's most overbought and most oversold issues</div></div>
+          <div><div class="tb-feat-title">Momentum Reversals Alerts</div>
+               <div class="tb-feat-desc">Catch the moment when stock momentum turns the other way</div></div>
+        </div>
+      </div>
+      <div class="tb-tail">
+        <div class="tb-dot td1"></div>
+        <div class="tb-dot td2"></div>
+        <div class="tb-dot td3"></div>
+      </div>
+      <div class="tb-label">Stock</div>
+    </div>
+
+    <!-- Options -->
+    <div class="tb-container dimmed" id="tb-options" onclick="activateBubble('options')">
+      <div class="tb-oval">
+        <div class="tb-intro">Trust this page for timely stock-and-option<br>strategy guidance with options trading tips</div>
+        <div class="tb-features">
+          <div><div class="tb-feat-title">Option Strategy Trade Alerts</div>
+               <div class="tb-feat-desc">View the strategies most appropriate for today's market</div></div>
+          <div><div class="tb-feat-title">Option Strategy Index Trading</div>
+               <div class="tb-feat-desc">Trade the SPX efficiently using option-strategy indexes</div></div>
+          <div><div class="tb-feat-title">Buy/Write Recommendations</div>
+               <div class="tb-feat-desc">Profit repeatedly by employing hedged-stock trading ideas</div></div>
+        </div>
+      </div>
+      <div class="tb-tail">
+        <div class="tb-dot td1"></div>
+        <div class="tb-dot td2"></div>
+        <div class="tb-dot td3"></div>
+      </div>
+      <div class="tb-label">Options</div>
+    </div>
+
+    <!-- Option Strategy Game -->
+    <div class="tb-container dimmed" id="tb-osg" onclick="activateBubble('osg'); window.open('https://optionstrategygame.com','_blank')">
+      <div class="tb-oval">
+        <div class="tb-intro">Earn two weeks of free access by<br>completing the Options Strategy Game</div>
+        <div class="tb-features">
+          <div><div class="tb-feat-title">Options Strategy Gameplay</div>
+               <div class="tb-feat-desc">Master real option strategies through guided competitive play</div></div>
+          <div><div class="tb-feat-title">Risk-Free Practice</div>
+               <div class="tb-feat-desc">Make market-linked decisions using virtual money and real scenarios</div></div>
+          <div><div class="tb-feat-title">Win Your Free Trial</div>
+               <div class="tb-feat-desc">Finish the game to unlock two weeks of full platform access</div></div>
+        </div>
+      </div>
+      <div class="tb-tail">
+        <div class="tb-dot td1"></div>
+        <div class="tb-dot td2"></div>
+        <div class="tb-dot td3"></div>
+      </div>
+      <div class="tb-label">Option Strategy Game</div>
+    </div>
+
+  </div><!-- end lm-grid -->
+
+  <!-- LearnMore1.8 — Bottom Footer -->
+  <div class="lm-footer">
+    <div class="lm-footer-trial">Earn A Two-Week Free Trial</div>
+    <div class="lm-footer-game">Play the Options Strategy Game</div>
+    <a href="https://optionstrategygame.com" target="_blank" class="lm-footer-details">Details</a>
+  </div>
+
+</div><!-- end lm-overlay -->
+
+<script>
+/* ══════════════════════════════════════
+   DIA MEMBER DATA
+══════════════════════════════════════ */
+const DIA_DATA = [
+  { sym:'AAPL', name:'Apple Inc',           ir90: -35, ir10: -28 },
+  { sym:'AMGN', name:'Amgen Inc',           ir90:  55, ir10:  48 },
+  { sym:'AMZN', name:'Amazon.com Inc',      ir90: -12, ir10:  -8 },
+  { sym:'AXP',  name:'American Express',    ir90:  67, ir10:  72 },
+  { sym:'BA',   name:'Boeing Co',           ir90:  91, ir10:  85 },
+  { sym:'CAT',  name:'Caterpillar Inc',     ir90:  78, ir10:  68 },
+  { sym:'CRM',  name:'Salesforce Inc',      ir90: -55, ir10: -48 },
+  { sym:'CSCO', name:'Cisco Systems',       ir90:  42, ir10:  38 },
+  { sym:'CVX',  name:'Chevron Corp',        ir90:  85, ir10:  78 },
+  { sym:'DIA',  name:'DJIA ETF',            ir90: -14, ir10: -10, isWhite: true },
+  { sym:'DIS',  name:'Walt Disney Co',      ir90:   5, ir10:  12 },
+  { sym:'GS',   name:'Goldman Sachs',       ir90:  45, ir10:  38 },
+  { sym:'HD',   name:'Home Depot Inc',      ir90:  34, ir10:  28 },
+  { sym:'HON',  name:'Honeywell Intl',      ir90:  22, ir10:  18 },
+  { sym:'IBM',  name:'Intl Business Mach',  ir90:  62, ir10:  55 },
+  { sym:'JNJ',  name:'Johnson & Johnson',   ir90:  38, ir10:  32 },
+  { sym:'JPM',  name:'JP Morgan Chase',     ir90: -18, ir10: -12 },
+  { sym:'KO',   name:'Coca-Cola Co',        ir90:  18, ir10:  22 },
+  { sym:'MCD',  name:"McDonald's Corp",     ir90:   8, ir10:  14 },
+  { sym:'MMM',  name:'3M Co',               ir90:  48, ir10:  42 },
+  { sym:'MRK',  name:'Merck & Co',          ir90:  72, ir10:  65 },
+  { sym:'MSFT', name:'Microsoft Corp',      ir90: -22, ir10: -15 },
+  { sym:'NKE',  name:'Nike Inc',            ir90: -62, ir10: -55 },
+  { sym:'NVDA', name:'Nvidia Corp',         ir90: -72, ir10: -68 },
+  { sym:'PG',   name:'Procter & Gamble',    ir90:  15, ir10:   8 },
+  { sym:'SHW',  name:'Sherwin-Williams',    ir90: -45, ir10: -38 },
+  { sym:'TRV',  name:'Travelers Cos',       ir90:  28, ir10:  35 },
+  { sym:'UNH',  name:'United Health Grp',   ir90:  12, ir10:  18 },
+  { sym:'V',    name:'Visa Inc',            ir90:  -8, ir10: -14 },
+  { sym:'VZ',   name:'Verizon Commun',      ir90:  68, ir10:  62 },
+  { sym:'WMT',  name:'Walmart Inc',         ir90: -28, ir10: -22 },
+];
+
+/* ══════════════════════════════════════
+   ZONE CONSTANTS
+══════════════════════════════════════ */
+const ZCL = ['#00cc55','#88cc44','#7a9aaa','#aa9a7a','#ddcc00','#e83535'];
+
+function irToZone(ir) {
+  if (ir >= 67) return 1; if (ir >= 34) return 2; if (ir >= 1) return 3;
+  if (ir >= -33) return 4; if (ir >= -66) return 5; return 6;
+}
+function irFmt(v)   { return (v > 0 ? '+' : '') + v; }
+function irCls(v)   { return v > 0 ? 'pos' : v < 0 ? 'neg' : 'zer'; }
+function trunc(s,n) { return s.length > n ? s.slice(0,n) + '…' : s; }
+function zoneBadge(z) {
+  return `<span class="zone-badge" style="background:${ZCL[z-1]}">${z}</span>`;
+}
+
+/* ══════════════════════════════════════
+   TOGGLE
+══════════════════════════════════════ */
+let currentPeriod = '90';
+let sortDir = 1; // 1 = descending (weakest/most oversold first)
+
+function handlePeriod(btn) {
+  document.querySelectorAll('.p-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  currentPeriod = btn.dataset.period;
+  renderToggle();
+}
+
+function handleSort() {
+  sortDir *= -1;
+  const arr = document.getElementById('arr-ir');
+  arr.textContent = sortDir === 1 ? '↓' : '↑';
+  renderToggle();
+}
+
+function renderToggle() {
+  const irF = currentPeriod === '90' ? 'ir90' : 'ir10';
+  const rows = [...DIA_DATA].sort((a,b) => (b[irF] - a[irF]) * sortDir);
+
+  document.getElementById('dia-tbody').innerHTML = rows.map(r => {
+    const ir = r[irF];
+    const z  = irToZone(ir);
+    const nm = trunc(r.name, 18);
+    const symColor = r.isWhite ? 'color:#ffffff;' : '';
+    return `<tr>
+      <td class="col-sym" style="${symColor}cursor:default">${r.sym}</td>
+      <td style="color:var(--dim);font-size:10px">${nm}</td>
+      <td class="col-ir"><span class="${irCls(ir)}">${irFmt(ir)}</span></td>
+      <td class="col-zone">${zoneBadge(z)}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════
+   HISTOGRAM
+══════════════════════════════════════ */
+function getSlotInfo(ir) {
+  if (ir >= 91) return {z:0,s:0}; if (ir >= 83) return {z:0,s:1};
+  if (ir >= 75) return {z:0,s:2}; if (ir >= 67) return {z:0,s:3};
+  if (ir >= 59) return {z:1,s:0}; if (ir >= 52) return {z:1,s:1};
+  if (ir >= 43) return {z:1,s:2}; if (ir >= 34) return {z:1,s:3};
+  if (ir >= 26) return {z:2,s:0}; if (ir >= 18) return {z:2,s:1};
+  if (ir >=  9) return {z:2,s:2}; if (ir >=  1) return {z:2,s:3};
+  if (ir >= -8) return {z:3,s:0}; if (ir >= -17) return {z:3,s:1};
+  if (ir >= -25) return {z:3,s:2}; if (ir >= -33) return {z:3,s:3};
+  if (ir >= -42) return {z:4,s:0}; if (ir >= -51) return {z:4,s:1};
+  if (ir >= -58) return {z:4,s:2}; if (ir >= -66) return {z:4,s:3};
+  if (ir >= -74) return {z:5,s:0}; if (ir >= -82) return {z:5,s:1};
+  if (ir >= -90) return {z:5,s:2}; return {z:5,s:3};
+}
+
+function buildHistogram() {
+  const W = 920, OW = 28;
+  const BX = OW, BW = W - 2 * OW;   // BW = 864
+  const ZW = BW / 6;                  // 144
+  const SLOT_PITCH = BW / 24;         // 36
+  const SH = 13, SFS = 9;
+  const BELL_A = 168, BELL_FLOOR = 16, BELL_SIG = ZW;
+  const BCX = BX + BW / 2;           // 460
+
+  /* Build slot arrays */
+  const slots   = Array.from({length: 24}, () => []);
+  const oobLeft = [], oobRight = [];
+
+  DIA_DATA.forEach(m => {
+    const ir = m.ir90;
+    if (ir > 99)  { oobLeft.push(m);  return; }
+    if (ir < -99) { oobRight.push(m); return; }
+    const {z, s} = getSlotInfo(ir);
+    slots[z * 4 + s].push(m);
+  });
+
+  /* Sort alphabetically within each slot */
+  slots.forEach(sl => sl.sort((a,b) => a.sym.localeCompare(b.sym)));
+
+  /* Dynamic height */
+  const maxStk = Math.max(1, ...slots.map(sl => sl.length));
+  let BY = 205;
+  if (maxStk * SH + 20 > BY) BY = maxStk * SH + 20;
+  const H = BY + 63;
+  const LY_RANGE = BY + 18;
+  const LY_ZONE  = BY + 31;
+
+  const svgEl = document.getElementById('mainHisto');
+  svgEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  // NEVER setAttribute('height') — viewBox + width="100%" only
+
+  let s = '';
+
+  /* Defs */
+  s += `<defs>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2.8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softglow">
+      <feGaussianBlur stdDeviation="1.5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>`;
+
+  /* OOB backgrounds */
+  s += `<rect x="0" y="0" width="${OW}" height="${BY}" fill="${ZCL[0]}" fill-opacity="0.10"/>`;
+  s += `<rect x="${W-OW}" y="0" width="${OW}" height="${BY}" fill="${ZCL[5]}" fill-opacity="0.10"/>`;
+
+  /* Zone backgrounds */
+  for (let zi = 0; zi < 6; zi++) {
+    const zx = BX + zi * ZW;
+    s += `<rect x="${zx}" y="0" width="${ZW}" height="${BY}" fill="${ZCL[zi]}" fill-opacity="0.07"/>`;
+  }
+
+  /* Zone dividers */
+  for (let zi = 1; zi < 6; zi++) {
+    const dx = BX + zi * ZW;
+    s += `<line x1="${dx}" y1="0" x2="${dx}" y2="${BY}" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>`;
+  }
+  /* OOB boundaries */
+  s += `<line x1="${OW}" y1="0" x2="${OW}" y2="${BY}" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>`;
+  s += `<line x1="${W-OW}" y1="0" x2="${W-OW}" y2="${BY}" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>`;
+
+  /* Slot dividers (23 dashed lines) */
+  for (let i = 1; i < 24; i++) {
+    const dx = BX + i * SLOT_PITCH;
+    s += `<line x1="${dx}" y1="8" x2="${dx}" y2="${BY}" stroke="rgba(255,255,255,0.055)" stroke-width="0.5" stroke-dasharray="3,6"/>`;
+  }
+
+  /* Baseline */
+  s += `<line x1="0" y1="${BY}" x2="${W}" y2="${BY}" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>`;
+
+  /* Bell curve — 3 passes */
+  const pts = [];
+  for (let px = BX; px <= BX + BW; px += 2) {
+    const dx = px - BCX;
+    const yv = BY - (BELL_A * Math.exp(-dx*dx / (2*BELL_SIG*BELL_SIG)) + BELL_FLOOR);
+    pts.push(`${px},${yv.toFixed(1)}`);
+  }
+  const bellPath = 'M ' + pts.join(' L ');
+  s += `<path d="${bellPath}" fill="none" stroke="rgba(120,185,255,0.14)" stroke-width="8"/>`;
+  s += `<path d="${bellPath}" fill="none" stroke="rgba(155,210,255,0.72)" stroke-width="1.6" stroke-dasharray="8,4" filter="url(#glow)"/>`;
+  s += `<path d="${bellPath}" fill="none" stroke="rgba(205,235,255,0.38)" stroke-width="0.8" stroke-dasharray="8,4"/>`;
+
+  /* Symbols — stacked upward from baseline, alphabetical within slot */
+  slots.forEach((sl, gi) => {
+    if (!sl.length) return;
+    const scx   = BX + (gi + 0.5) * SLOT_PITCH;
+    const zi    = Math.floor(gi / 4);
+    const zcol  = ZCL[zi];
+
+    sl.forEach((m, idx) => {
+      const sy         = BY - (idx + 1) * SH + SH * 0.75;
+      const dispSym    = m.sym.length > 3 ? m.sym.slice(0,3) : m.sym;
+      const fillColor  = m.isWhite ? '#ffffff' : zcol;
+      const tipStr     = `${m.sym} — ${m.name}  |  90-IR: ${irFmt(m.ir90)}  |  Zone ${irToZone(m.ir90)}`;
+      s += `<text x="${scx}" y="${sy.toFixed(1)}"
+        text-anchor="middle"
+        font-family="'Courier New',monospace"
+        font-size="${SFS}"
+        font-weight="bold"
+        fill="${fillColor}"
+        filter="url(#softglow)"
+        cursor="default"
+        data-tip="${tipStr}">${dispSym}</text>`;
+    });
+  });
+
+  /* OOB labels */
+  const oobLabelStyle = `font-family="'Courier New',monospace"`;
+  s += `<text x="${OW/2}" y="16" text-anchor="middle" ${oobLabelStyle} font-size="7" fill="${ZCL[0]}" opacity="0.8">OOB</text>`;
+  s += `<text x="${OW/2}" y="26" text-anchor="middle" ${oobLabelStyle} font-size="7" fill="${ZCL[0]}" opacity="0.8">Weak</text>`;
+  s += `<text x="${OW/2}" y="37" text-anchor="middle" ${oobLabelStyle} font-size="7" fill="${ZCL[0]}" opacity="0.8">[${oobLeft.length}]</text>`;
+  s += `<text x="${OW/2}" y="47" text-anchor="middle" ${oobLabelStyle} font-size="6"  fill="${ZCL[0]}" opacity="0.55">≥+99</text>`;
+
+  s += `<text x="${W-OW/2}" y="16" text-anchor="middle" ${oobLabelStyle} font-size="7" fill="${ZCL[5]}" opacity="0.8">OOB</text>`;
+  s += `<text x="${W-OW/2}" y="26" text-anchor="middle" ${oobLabelStyle} font-size="7" fill="${ZCL[5]}" opacity="0.8">Str</text>`;
+  s += `<text x="${W-OW/2}" y="37" text-anchor="middle" ${oobLabelStyle} font-size="7" fill="${ZCL[5]}" opacity="0.8">[${oobRight.length}]</text>`;
+  s += `<text x="${W-OW/2}" y="47" text-anchor="middle" ${oobLabelStyle} font-size="6"  fill="${ZCL[5]}" opacity="0.55">≤−99</text>`;
+
+  /* Zone labels below baseline */
+  const ZONE_RANGES = ['+99 to +67','+66 to +34','+33 to +1','−1 to −33','−34 to −66','−67 to −99'];
+  const ZONE_LABELS = ['Zone 1','Zone 2','Zone 3','Zone 4','Zone 5','Zone 6'];
+  for (let zi = 0; zi < 6; zi++) {
+    const cx = BX + zi * ZW + ZW / 2;
+    s += `<text x="${cx}" y="${LY_RANGE}" text-anchor="middle"
+      font-family="'Courier New',monospace" font-size="8.5"
+      fill="rgba(255,255,255,0.48)">${ZONE_RANGES[zi]}</text>`;
+    s += `<text x="${cx}" y="${LY_ZONE}" text-anchor="middle"
+      font-family="'Trebuchet MS',sans-serif" font-size="10.5" font-weight="bold"
+      fill="${ZCL[zi]}">${ZONE_LABELS[zi]}</text>`;
+  }
+
+  /* Direction legend */
+  s += `<text x="${BX+8}" y="${H-5}"
+    font-family="'Trebuchet MS',sans-serif" font-size="7.5"
+    fill="rgba(0,212,160,0.40)">← Weak / Oversold</text>`;
+  s += `<text x="${BX+BW-8}" y="${H-5}" text-anchor="end"
+    font-family="'Trebuchet MS',sans-serif" font-size="7.5"
+    fill="rgba(232,53,53,0.40)">Overbought / Strong →</text>`;
+
+  svgEl.innerHTML = s;
+
+  /* Tooltip */
+  const tip = document.getElementById('histo-tip');
+  svgEl.addEventListener('mousemove', e => {
+    const el = e.target;
+    if (el.dataset && el.dataset.tip) {
+      tip.textContent  = el.dataset.tip;
+      tip.style.display = 'block';
+      tip.style.left   = (e.clientX + 14) + 'px';
+      tip.style.top    = (e.clientY - 8)  + 'px';
+    } else {
+      tip.style.display = 'none';
+    }
+  });
+  svgEl.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+
+  /* Histogram comment */
+  const dia      = DIA_DATA.find(m => m.sym === 'DIA');
+  const diaZone  = irToZone(dia.ir90);
+  document.getElementById('histo-comment').textContent =
+    `The Dow Jones Industrial Average ETF (DIA) is in Zone ${diaZone} with a reading of ${irFmt(dia.ir90)}.`;
+}
+
+/* ══════════════════════════════════════
+   NAVIGATION
+══════════════════════════════════════ */
+function navTo(url, winName) {
+  if (window.innerWidth < 768) location.href = url;
+  else window.open(url, winName);
+}
+
+function handleLogin() {
+  // Placeholder — login logic to be implemented
+  alert('Login functionality coming soon.');
+}
+
+/* ══════════════════════════════════════
+   LEARN MORE OVERLAY
+══════════════════════════════════════ */
+const LM_IDS = ['portfolio','market','sector','stock','options','osg'];
+
+function openLM(activeId) {
+  LM_IDS.forEach(id => {
+    const el = document.getElementById('tb-' + id);
+    el.classList.remove('highlighted','dimmed');
+    el.classList.add(id === activeId ? 'highlighted' : 'dimmed');
+  });
+  document.getElementById('lm-overlay').classList.add('open');
+
+  // After panel renders, scroll highlighted bubble to vertical center
+  setTimeout(() => {
+    const bubble = document.getElementById('tb-' + activeId);
+    if (bubble) bubble.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }, 60);
+}
+
+function closeLM() {
+  document.getElementById('lm-overlay').classList.remove('open');
+}
+
+function activateBubble(id) {
+  LM_IDS.forEach(bid => {
+    const el = document.getElementById('tb-' + bid);
+    el.classList.remove('highlighted','dimmed');
+    el.classList.add(bid === id ? 'highlighted' : 'dimmed');
+  });
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeLM();
+});
+
+/* ══════════════════════════════════════
+   INIT
+══════════════════════════════════════ */
+renderToggle();
+buildHistogram();
+</script>
+</body>
+</html>

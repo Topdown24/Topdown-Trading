@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en" style="background:#163a1c">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Walt Disney (DIS) — Top Down Trading</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root {
+  --border:#1a2d44; --border-lite:#243c58; --text:#ddeeff; --dim:#5a7a9a;
+  --accent:#3090d8; --gold:#c9a227;
+  --z1:#00cc55; --z2:#88cc44; --z3:#7a9aaa; --z4:#aa9a7a; --z5:#ddcc00; --z6:#e83535;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+html,body { background-color:#163a1c !important; }
+body { color:#ddeeff; font-family:'Rajdhani',sans-serif; overflow:hidden; }
+
+.top-nav {
+  height:44px; background-color:#163a1c !important;
+  border-bottom:2px solid #243c58;
+  display:flex; align-items:center; padding:0 12px; gap:10px;
+  position:sticky; top:0; z-index:100; flex-shrink:0;
+}
+.nav-back {
+  background-color:#122e16; border:1px solid #243c58; color:#5a7a9a;
+  font-family:'Rajdhani',sans-serif; font-size:12px; font-weight:700;
+  letter-spacing:.06em; text-transform:uppercase; padding:5px 14px; cursor:pointer;
+}
+.nav-back:hover { border-color:#3090d8; color:#ddeeff; }
+.nav-spacer { flex:1; }
+.alert-nav { font-family:'Rajdhani',sans-serif; font-size:13px; font-weight:700; color:#e83535; letter-spacing:.10em; text-transform:uppercase; display:none; animation:ap 1.1s ease-in-out infinite; }
+.alert-nav.on { display:block; }
+@keyframes ap { 0%,100%{opacity:1} 50%{opacity:.35} }
+.search-box { background-color:#122e16; border:1px solid #243c58; color:#ddeeff; font-family:'Rajdhani',sans-serif; font-size:12px; padding:5px 10px; outline:none; width:160px; }
+.search-box:focus { border-color:#3090d8; }
+.search-box::placeholder { color:#5a7a9a; }
+
+.shell { display:flex; height:calc(100vh - 44px); overflow:hidden; background-color:#163a1c !important; }
+
+.sidebar { width:285px; min-width:285px; border-right:2px solid #243c58; display:flex; flex-direction:column; background-color:#163a1c !important; flex-shrink:0; overflow:hidden; }
+.sb-head { padding:8px 10px 7px; border-bottom:1px solid #1a2d44; flex-shrink:0; }
+.sb-title-main { text-align:center; font-weight:700; font-size:12px; color:#ddeeff; letter-spacing:.05em; text-transform:uppercase; }
+.sb-title-sub  { text-align:center; font-size:11px; color:#5a7a9a; margin-bottom:5px; }
+.sb-sector { text-align:center; margin-bottom:6px; }
+.sb-sector a { font-size:11px; font-weight:600; color:#c9a227; text-decoration:none; }
+.sb-sector a:hover { color:#ddeeff; text-decoration:underline; }
+.period-btns { display:flex; justify-content:center; gap:4px; }
+.p-btn { background:#1a2d44; border:1px solid #1a2d44; color:#5a7a9a; font-family:'Rajdhani',sans-serif; font-size:11px; font-weight:600; padding:3px 10px; cursor:pointer; }
+.p-btn.active { background:#2a7abf; border-color:#3090d8; color:#fff; }
+.p-btn:hover:not(.active) { border-color:#3090d8; color:#ddeeff; }
+.sb-scroll { overflow-y:auto; flex:1; }
+.sb-scroll::-webkit-scrollbar { width:4px; }
+.sb-scroll::-webkit-scrollbar-track { background-color:#163a1c; }
+.sb-scroll::-webkit-scrollbar-thumb { background:#243c58; border-radius:2px; }
+.lh-table { width:100%; border-collapse:collapse; font-family:'Courier New',monospace; font-size:11px; }
+.lh-table th { background-color:#163a1c !important; color:#5a7a9a; padding:4px 6px; border-bottom:1px solid #1a2d44; position:sticky; top:0; font-size:10px; letter-spacing:.04em; text-transform:uppercase; white-space:nowrap; }
+.lh-table th.sortable { cursor:pointer; user-select:none; }
+.lh-table th.sortable:hover { color:#ddeeff; }
+.lh-table th.lh-sort-active { color:#3090d8; }
+.lh-table td { padding:3px 6px; border-bottom:1px solid #0e1a28; white-space:nowrap; }
+.lh-table tr:hover td { background:#111e30; }
+.sort-arrow { font-size:10px; margin-left:3px; opacity:.5; }
+.sort-arrow.active { opacity:1; color:#3090d8; }
+.col-sym-lnk { color:#ddeeff; font-weight:bold; cursor:pointer; }
+.col-sym-lnk:hover { color:#3090d8; text-decoration:underline; }
+.col-ir,.col-zone { text-align:center; }
+.zone-badge { display:inline-block; padding:1px 5px; font-size:10px; font-weight:bold; border-radius:2px; color:#000; }
+.pos{color:#88cc44;} .neg{color:#e83535;} .zer{color:#b8cce0;}
+
+.right-content { flex:1; overflow-y:auto; padding:10px 14px 20px; background-color:#163a1c !important; }
+.right-content::-webkit-scrollbar { width:6px; }
+.right-content::-webkit-scrollbar-track { background-color:#163a1c; }
+.right-content::-webkit-scrollbar-thumb { background:#243c58; border-radius:3px; }
+
+.alert-bar { display:none; text-align:center; font-family:'Rajdhani',sans-serif; font-size:17px; font-weight:700; color:#e83535; letter-spacing:.12em; text-transform:uppercase; padding:6px 0 2px; margin-bottom:4px; animation:ap 1.1s ease-in-out infinite; }
+.alert-bar.on { display:block; }
+
+.issue-title { text-align:center; font-family:'Rajdhani',sans-serif; font-size:24px; font-weight:700; color:#ddeeff; letter-spacing:.04em; margin-bottom:4px; }
+.issue-desc  { text-align:center; font-size:11px; color:#5a7a9a; line-height:1.48; max-width:860px; margin:0 auto 12px; padding:0 6px; }
+
+.two-col { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
+
+.hist-title { font-weight:700; font-size:12px; color:#ddeeff; text-align:center; margin-bottom:3px; letter-spacing:.03em; }
+.range-display { text-align:center; margin-bottom:5px; font-family:'Courier New',monospace; font-size:14px; font-weight:700; letter-spacing:.02em; }
+.range-low  { color:#88cc44; }
+.range-sep  { color:#5a7a9a; }
+.range-high { color:#e83535; }
+.histo-svg-box { background-color:#122e16 !important; border:1px solid #1a2d44; overflow:hidden; }
+
+.daily-status { text-align:center; font-size:15px; font-style:italic; color:#5a7a9a; line-height:1.55; margin:6px 0 10px; padding:4px 10px; }
+
+.options-section { background-color:#122e16; border:1px solid #1a2d44; padding:14px 18px 18px; margin-bottom:14px; }
+.options-label   { font-size:12px; font-weight:700; color:#c9a227; text-transform:uppercase; letter-spacing:.05em; margin-bottom:5px; }
+.options-date    { font-size:12px; color:#5a7a9a; font-family:'Courier New',monospace; margin-bottom:8px; }
+.options-comment { font-size:15px; font-style:italic; color:#5a7a9a; line-height:1.65; }
+
+.section-heading { font-size:13px; font-weight:700; color:#c9a227; text-align:center; letter-spacing:.05em; text-transform:uppercase; margin:14px 0 8px; border-top:1px solid #243c58; padding-top:12px; }
+
+.chart-wrap { background-color:#122e16 !important; border:1px solid #1a2d44; padding:8px 12px 10px; }
+.chart-head { font-size:12px; font-weight:700; color:#ddeeff; text-align:center; letter-spacing:.03em; margin-bottom:6px; }
+.chart-cv   { position:relative; height:188px; background-color:#122e16 !important; }
+canvas      { background-color:#122e16 !important; }
+.trading-light-on { border-color:#e83535 !important; box-shadow:0 0 0 2px #e83535,0 0 16px rgba(232,53,53,.55); }
+
+#histo-tip { position:fixed; background:#122e16; border:1px solid #3090d8; color:#ddeeff; font-family:'Courier New',monospace; font-size:11px; padding:5px 9px; border-radius:2px; white-space:nowrap; z-index:999; pointer-events:none; display:none; }
+</style>
+</head>
+<body style="background-color:#163a1c">
+
+<nav class="top-nav">
+  <button class="nav-back" onclick="navTo('sector.html','sectorPage')">&#8592; Back</button>
+  <div class="nav-spacer"></div>
+  <span class="alert-nav" id="alert-nav">&#9889; TRADING ALERT &#9889;</span>
+  <div class="nav-spacer"></div>
+  <input class="search-box" type="text" placeholder="Search ticker or name&#8230;"
+         onkeydown="if(event.key==='Enter')doSearch(this.value)">
+</nav>
+
+<div class="shell" style="background-color:#163a1c">
+  <aside class="sidebar" style="background-color:#163a1c">
+    <div class="sb-head">
+      <div class="sb-title-main">Indexes</div>
+      <div class="sb-title-sub">Member</div>
+      <div class="sb-sector">
+        <a href="#" onclick="navTo('zones.html?sector=leisure','zonesPage');return false">Leisure / Entertainment</a>
+      </div>
+      <div class="period-btns">
+        <button class="p-btn active" data-period="90" onclick="handleIdxPeriod(this)">90 IR</button>
+        <button class="p-btn"        data-period="10" onclick="handleIdxPeriod(this)">10 IR</button>
+      </div>
+    </div>
+    <div class="sb-scroll">
+      <table class="lh-table">
+        <thead><tr>
+          <th style="text-align:left">Tick</th>
+          <th style="text-align:left">Name</th>
+          <th class="sortable lh-sort-active" id="idx-th-ir" onclick="handleIdxSort()" style="text-align:center">IR <span class="sort-arrow active" id="idx-arr">&#8595;</span></th>
+          <th style="text-align:center">Zn</th>
+        </tr></thead>
+        <tbody id="idx-tbody"></tbody>
+      </table>
+    </div>
+  </aside>
+
+  <main class="right-content" id="right-content" style="background-color:#163a1c">
+    <div class="alert-bar" id="alert-bar">&#9889; TRADING ALERT &#9889;</div>
+    <div class="issue-title">Walt Disney (DIS)</div>
+    <div class="issue-desc">The Walt Disney Company, together with its subsidiaries, is a diversified worldwide entertainment company. The Entertainment segment encompasses the Company's non-sports focused global film and episodic content production and distribution activities including Domestic (ABC Television Network; Disney, Freeform, FX and National Geographic branded television channels; eight owned ABC television stations), International (Disney, FX, National Geographic branded channels), a 50% equity investment in A&amp;E Global Media, and Disney+, a global direct-to-consumer service offering general entertainment and family programming.</div>
+
+    <div class="two-col">
+      <div>
+        <div class="hist-title">Expected Trading Range (90-day)</div>
+        <div class="range-display">
+          <span class="range-low">$60</span>
+          <span class="range-sep"> — </span>
+          <span class="range-high">$146</span>
+        </div>
+        <div class="histo-svg-box" id="histo90-box" style="background-color:#122e16"></div>
+      </div>
+      <div>
+        <div class="hist-title">Expected Trading Range (10-day)</div>
+        <div class="range-display">
+          <span class="range-low">$89</span>
+          <span class="range-sep"> — </span>
+          <span class="range-high">$117</span>
+        </div>
+        <div class="histo-svg-box" id="histo10-box" style="background-color:#122e16"></div>
+      </div>
+    </div>
+
+    <div class="daily-status">Disney (DIS) is in Zone 4 with a 90-day Implied Risk (IR) reading of -17 and a 10-day Implied Risk (IR) reading of +21.</div>
+
+    <div class="section-heading">Market Data</div>
+    <div class="two-col">
+      <div class="chart-wrap" style="background-color:#122e16"><div class="chart-head" id="head-price">DIS Closing Price</div><div class="chart-cv" style="background-color:#122e16"><canvas id="chart-price" style="background-color:#122e16"></canvas></div></div>
+      <div class="chart-wrap" id="iv-wrap" style="background-color:#122e16"><div class="chart-head" id="head-iv">DIS Implied Volatility</div><div class="chart-cv" style="background-color:#122e16"><canvas id="chart-iv" style="background-color:#122e16"></canvas></div></div>
+    </div>
+
+    <div class="section-heading">Implied Risk Data</div>
+    <div class="two-col">
+      <div class="chart-wrap" style="background-color:#122e16"><div class="chart-head" id="head-z90">DIS &#8212; 90-day Implied Risk</div><div class="chart-cv" style="background-color:#122e16"><canvas id="chart-z90" style="background-color:#122e16"></canvas></div></div>
+      <div class="chart-wrap" style="background-color:#122e16"><div class="chart-head" id="head-z10">DIS &#8212; 10-day Implied Risk</div><div class="chart-cv" style="background-color:#122e16"><canvas id="chart-z10" style="background-color:#122e16"></canvas></div></div>
+    </div>
+
+    <div class="section-heading" id="options-heading" style="display:none">Potential Options Strategies</div>
+    <div class="options-section" id="options-section" style="display:none;background-color:#122e16">
+      <div class="options-date" id="options-date">Posted 4/28</div>
+      <div class="options-comment" id="options-comment"></div>
+    </div>
+
+  </main>
+</div>
+<div id="histo-tip"></div>
+
+<script>
+var ZCL=['#00cc55','#88cc44','#7a9aaa','#aa9a7a','#ddcc00','#e83535'];
+function navTo(u,w){if(window.innerWidth<768)location.href=u;else window.open(u,w);}
+function doSearch(v){var s=v.trim().toUpperCase();if(s)navTo('issue.html?sym='+s,'symbolWindow');}
+function getCookie(n){var m=document.cookie.match(new RegExp('(?:^|; )'+n+'=([^;]*)'));return m?decodeURIComponent(m[1]):null;}
+/* DEMO: tier hardcoded to 'options' — local file:// blocks cookies.
+   Production: server writes tier cookie at login; remove the line below. */
+function getTier(){return 'options';}
+function irToZone(ir){if(ir>=67)return 1;if(ir>=34)return 2;if(ir>=1)return 3;if(ir>=-33)return 4;if(ir>=-66)return 5;return 6;}
+function zoneBadge(z){return '<span class="zone-badge" style="background:'+ZCL[z-1]+'">'+z+'</span>';}
+function irFmt(v){return(v>0?'+':'')+v;}
+function irCls(v){return v>0?'pos':v<0?'neg':'zer';}
+function trunc(s,n){return s.length>n?s.slice(0,n)+'\u2026':s;}
+
+var DIS={
+  sym:'DIS',ir_90:-17,ir_10:21,price:99.00,iv:28.0,
+  range_90:{low:60,high:146},range_10:{low:89,high:117},
+  indexes:[
+    {sym:'PEJ', name:'Invesco Dyn Leisure',   ir_90:34, ir_10:28},
+    {sym:'XLY', name:'Consumer Discret SPDR', ir_90:22, ir_10:15},
+    {sym:'XLC', name:'Comm Services SPDR',    ir_90:8,  ir_10:-3},
+    {sym:'OEX', name:'S&P 100 Index',         ir_90:8,  ir_10:5 },
+    {sym:'SPX', name:'S&P 500 Index',         ir_90:-5, ir_10:-8},
+    {sym:'DJIA',name:'Dow Jones Indus Avg',   ir_90:-12,ir_10:-18}
+  ],
+  z90:[4,4,4,4,3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4],
+  z10:[4,4,3,3,3,4,4,3,3,3,3,3,4,4,3,3,3,3,4,3,3,3,3,3,3,3,3,3,3,3],
+  prices:[96.2,95.8,96.5,97.1,97.8,98.2,97.9,98.5,99.1,99.8,100.2,99.7,99.3,98.8,99.5,100.1,100.8,101.2,100.5,99.8,99.2,98.7,99.1,99.5,100.0,99.8,99.4,98.9,99.1,99.0],
+  ivs:[28.5,29.1,28.8,27.6,26.9,27.3,28.1,29.5,30.2,29.8,28.4,27.9,28.1,28.6,29.0,28.5,27.8,27.1,26.8,27.5,28.2,29.1,30.5,31.2,30.8,29.7,28.9,28.1,27.8,28.0],
+  optionsDate:'4/28',
+  optionsComment:'With DIS in Zone 4, neutral strategies apply. IV is near normal at 28%, supporting moderate premium-based plays. Bull Spreads, Bear Spreads, and Buy Writes are all appropriate. The Leisure sector (PEJ) is in Zone 2, more oversold than DIS itself, suggesting the sector may be recovering. A mild upside bias favors Buy Writes and Bull Spreads over pure neutral plays. The broader market (SPX) sits in Zone 4 alongside DIS, confirming the neutral backdrop. Neutral-to-bullish strategies are reasonable; wait for IV to lift before committing to short-premium positions.'
+};
+
+var idxPeriod='90',idxDir=1;
+function renderIdxTable(d){
+  var f=idxPeriod==='90'?'ir_90':'ir_10';
+  var rows=d.indexes.slice().sort(function(a,b){return(b[f]-a[f])*idxDir;});
+  document.getElementById('idx-tbody').innerHTML=rows.map(function(r){
+    var ir=r[f],z=irToZone(ir);
+    return '<tr><td class="col-sym-lnk" onclick="navTo(\'issue.html?sym='+r.sym+'\',\'symbolWindow\')">'+r.sym+'</td>'
+      +'<td style="color:#5a7a9a;font-size:10px">'+trunc(r.name,22)+'</td>'
+      +'<td class="col-ir"><span class="'+irCls(ir)+'">'+irFmt(ir)+'</span></td>'
+      +'<td class="col-zone">'+zoneBadge(z)+'</td></tr>';
+  }).join('');
+  var arr=document.getElementById('idx-arr');
+  if(arr)arr.textContent=idxDir===1?'\u2193':'\u2191';
+}
+function handleIdxPeriod(btn){
+  btn.closest('.period-btns').querySelectorAll('.p-btn').forEach(function(b){b.classList.remove('active');});
+  btn.classList.add('active');idxPeriod=btn.dataset.period;renderIdxTable(DIS);
+}
+function handleIdxSort(){idxDir*=-1;renderIdxTable(DIS);}
+
+function buildEmptyHisto(cid,ir,rd){
+  var W=500,OW=12,BX=12,BW=476,ZW=BW/6,BY=50,H=BY+38;
+  var RNG=['+99/+67','+66/+34','+33/+1','-1/-33','-34/-66','-67/-99'];
+  var LBL=['Zone 1','Zone 2','Zone 3','Zone 4','Zone 5','Zone 6'];
+  var dx=(BX+BW*(99-ir)/198).toFixed(1);
+  var dc=ir>0?'#00cc55':ir<0?'#e83535':'#b8cce0';
+  var uid=cid.replace(/\W/g,'');
+  var s='<svg width="100%" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="xMidYMid meet" style="display:block">'
+    +'<defs><filter id="g'+uid+'"><feGaussianBlur stdDeviation="2.8" result="b"/>'
+    +'<feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>';
+  for(var i=0;i<6;i++){var zx=(BX+i*ZW).toFixed(1);s+='<rect x="'+zx+'" y="0" width="'+ZW.toFixed(1)+'" height="'+BY+'" fill="'+ZCL[i]+'" fill-opacity="0.09"/>';}
+  s+='<rect x="0" y="0" width="'+OW+'" height="'+BY+'" fill="'+ZCL[0]+'" fill-opacity="0.20"/>';
+  s+='<rect x="'+(W-OW)+'" y="0" width="'+OW+'" height="'+BY+'" fill="'+ZCL[5]+'" fill-opacity="0.20"/>';
+  for(var i=1;i<6;i++){var zx=(BX+i*ZW).toFixed(1);s+='<line x1="'+zx+'" y1="0" x2="'+zx+'" y2="'+BY+'" stroke="rgba(255,255,255,0.15)" stroke-width="0.8"/>';}
+  s+='<line x1="0" y1="'+BY+'" x2="'+W+'" y2="'+BY+'" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>';
+  s+='<circle cx="'+dx+'" cy="'+BY+'" r="5.5" fill="'+dc+'" opacity="0.92" filter="url(#g'+uid+')"/>';
+  s+='<text x="'+dx+'" y="'+(BY-9)+'" text-anchor="middle" font-family="Courier New,monospace" font-size="7.5" font-weight="bold" fill="'+dc+'">'+irFmt(ir)+'</text>';
+  for(var i=0;i<6;i++){
+    var cx=(BX+i*ZW+ZW/2).toFixed(1);
+    s+='<text x="'+cx+'" y="'+(BY+11)+'" text-anchor="middle" font-family="Courier New,monospace" font-size="6.5" fill="rgba(255,255,255,0.40)">'+RNG[i]+'</text>';
+    s+='<text x="'+cx+'" y="'+(BY+22)+'" text-anchor="middle" font-family="Trebuchet MS,sans-serif" font-size="8.5" font-weight="bold" fill="'+ZCL[i]+'">'+LBL[i]+'</text>';
+  }
+  if(rd){
+    var rLow=Math.round(rd.low), rHigh=Math.round(rd.high);
+    s+='<text x="'+(BX+1)+'" y="'+(BY+34)+'" text-anchor="start" font-family="Courier New,monospace" font-size="10.5" font-weight="bold" fill="#88cc44">$'+rLow+'</text>';
+    s+='<text x="'+(W-OW-1)+'" y="'+(BY+34)+'" text-anchor="end" font-family="Courier New,monospace" font-size="10.5" font-weight="bold" fill="#e83535">$'+rHigh+'</text>';
+  }
+  s+='</svg>';
+  document.getElementById(cid).innerHTML=s;
+}
+
+Chart.defaults.color='#5a7a9a';
+Chart.defaults.borderColor='rgba(255,255,255,0.06)';
+
+function zY(){
+  return{min:0.3,max:6.5,
+    title:{display:true,text:'Zone',color:'#5a7a9a',font:{family:'Courier New,monospace',size:9},padding:{bottom:4}},
+    ticks:{stepSize:1,
+      callback:function(v){return(v>=1&&v<=6)?String(Math.round(v)):'';},
+      color:function(c){var v=Math.round(c.tick.value);return(v>=1&&v<=6)?ZCL[v-1]:'#5a7a9a';},
+      font:{family:'Courier New,monospace',size:9},padding:3},
+    grid:{color:function(c){return(c.tick.value===3||c.tick.value===4)?'rgba(255,255,255,0.12)':'rgba(255,255,255,0.05)';},
+      lineWidth:function(c){return(c.tick.value===3||c.tick.value===4)?1.2:0.6;}},
+    border:{color:'#243c58'}};
+}
+function xAx(){return{ticks:{maxRotation:45,autoSkip:true,maxTicksLimit:10,color:'#5a7a9a',font:{family:'Courier New,monospace',size:8}},grid:{color:'rgba(255,255,255,0.03)'},border:{color:'#243c58'}};}
+function lgd(){return{display:true,position:'top',labels:{color:'#5a7a9a',font:{family:'Courier New,monospace',size:9},boxWidth:12,padding:8}};}
+function valY(fmt){return{ticks:{color:'#5a7a9a',font:{family:'Courier New,monospace',size:9},callback:fmt},grid:{color:'rgba(255,255,255,0.05)'},border:{color:'#243c58'}};}
+
+function mkChart(id,cfg){var el=document.getElementById(id);if(!el)return null;return new Chart(el,cfg);}
+
+function buildPage(d){
+  if(Math.abs(d.ir_90)>82){
+    document.getElementById('alert-bar').classList.add('on');
+    document.getElementById('alert-nav').classList.add('on');
+    document.getElementById('iv-wrap').classList.add('trading-light-on');
+  }
+  renderIdxTable(d);
+  buildEmptyHisto('histo90-box',d.ir_90,d.range_90);
+  buildEmptyHisto('histo10-box',d.ir_10,d.range_10);
+  /* Inject range display lines dynamically from data */
+  function setRange(boxId, rd) {
+    var box = document.getElementById(boxId);
+    if (!box) return;
+    var disp = box.previousElementSibling;
+    if (disp && disp.classList.contains('range-display')) {
+      disp.querySelector('.range-low').textContent  = '$' + Math.round(rd.low);
+      disp.querySelector('.range-high').textContent = '$' + Math.round(rd.high);
+    }
+  }
+  setRange('histo90-box', d.range_90);
+  setRange('histo10-box', d.range_10);
+  if(getTier()==='options'){
+    document.getElementById('options-date').textContent='Posted '+d.optionsDate;
+    document.getElementById('options-comment').textContent=d.optionsComment;
+    document.getElementById('options-section').style.display='block';
+    document.getElementById('options-heading').style.display='block';
+  }
+  document.getElementById('head-price').textContent=d.sym+' Closing Price [$'+d.price.toFixed(2)+']';
+  mkChart('chart-price',{type:'line',data:{labels:DATES30,datasets:[{label:'Close $',data:d.prices,borderColor:'#88cc44',pointBackgroundColor:'#88cc44',pointRadius:1.8,borderWidth:1.7,fill:false,tension:0.3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:lgd()},scales:{y:valY(function(v){return'$'+v.toFixed(0);}),x:xAx()}}});
+  document.getElementById('head-iv').textContent=d.sym+' Implied Volatility ['+d.iv.toFixed(1)+'%]';
+  mkChart('chart-iv',{type:'line',data:{labels:DATES30,datasets:[{label:'IV %',data:d.ivs,borderColor:'#c9a227',pointBackgroundColor:'#c9a227',pointRadius:1.8,borderWidth:1.7,fill:false,tension:0.3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:lgd()},scales:{y:valY(function(v){return v.toFixed(1)+'%';}),x:xAx()}}});
+  document.getElementById('head-z90').textContent=d.sym+' \u2014 90-day Implied Risk ['+irFmt(d.ir_90)+']';
+  mkChart('chart-z90',{type:'bar',data:{labels:DATES30,datasets:[{label:'90-Day Zone',data:d.z90,backgroundColor:d.z90.map(function(z){return ZCL[z-1]+'99';}),borderColor:d.z90.map(function(z){return ZCL[z-1];}),borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:lgd()},scales:{y:zY(),x:xAx()}}});
+  document.getElementById('head-z10').textContent=d.sym+' \u2014 10-day Implied Risk ['+irFmt(d.ir_10)+']';
+  mkChart('chart-z10',{type:'line',data:{labels:DATES30,datasets:[{label:'10-Day Zone',data:d.z10,borderColor:'#c9a227',pointBackgroundColor:'#c9a227',pointRadius:2.5,borderWidth:1.8,fill:false,tension:0.3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:lgd()},scales:{y:zY(),x:xAx()}}});
+}
+
+function genDates30(){var d=[],c=new Date(),n=0;while(n<30){if(c.getDay()!==0&&c.getDay()!==6){d.unshift(c.toLocaleDateString('en-US',{month:'numeric',day:'numeric'}));n++;}c.setDate(c.getDate()-1);}return d;}
+var DATES30=genDates30();
+
+try { buildPage(DIS); } catch(e) { console.error('buildPage failed:',e); }
+
+setTimeout(function(){
+  var bg1='#163a1c', bg2='#122e16';
+  ['html','body'].forEach(function(t){var el=document.querySelector(t);if(el)el.style.setProperty('background-color',bg1,'important');});
+  document.querySelectorAll('.shell,.right-content').forEach(function(el){el.style.setProperty('background-color',bg1,'important');});
+  document.querySelectorAll('.chart-wrap,.chart-cv,.histo-svg-box,.options-section,canvas').forEach(function(el){el.style.setProperty('background-color',bg2,'important');});
+}, 100);
+</script>
+</body>
+</html>

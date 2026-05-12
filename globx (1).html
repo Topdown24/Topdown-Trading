@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GlobalX ETFs — Sponsor Page</title>
+<style>
+:root {
+  --bg:#08111e; --panel:#0d1829; --panel-alt:#0a1420;
+  --border:#1a2d44; --border-lite:#243c58;
+  --text:#b8cce0; --text-dim:#5a7a9a; --text-bright:#ddeeff;
+  --accent:#2a7abf; --accent-glow:#3090d8;
+  --z1:#e83535; --z2:#e06020; --z3:#c8a800;
+  --z4:#7acc00; --z5:#22d860; --z6:#00d4a0;
+  --font-mono:'Courier New',Courier,monospace;
+  --font-ui:'Trebuchet MS',Tahoma,Geneva,sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-ui);font-size:13px;min-height:100vh}
+
+.header-bar{background:var(--panel);border-bottom:1px solid var(--border);padding:8px 16px;display:flex;align-items:center;gap:10px}
+.btn-nav{background:#1a2d44;color:var(--text-bright);border:1px solid var(--border-lite);padding:5px 14px;font-family:var(--font-ui);font-size:12px;cursor:pointer;letter-spacing:.05em;text-transform:uppercase;transition:background .15s,border-color .15s}
+.btn-nav:hover{background:#243c58;border-color:var(--accent);color:#fff}
+.search-box{background:#060f1a;border:1px solid var(--border-lite);color:var(--text-bright);padding:5px 10px;font-family:var(--font-mono);font-size:12px;width:180px;outline:none}
+.search-box:focus{border-color:var(--accent)}
+.search-box::placeholder{color:var(--text-dim)}
+
+.sponsor-nav{background:var(--panel-alt);border-bottom:1px solid var(--border);padding:5px 16px;text-align:right;font-size:11px}
+.sponsor-nav a{color:var(--accent-glow);text-decoration:none;margin-left:12px;letter-spacing:.03em}
+.sponsor-nav a:hover{color:#fff;text-decoration:underline}
+.sponsor-nav a.active{color:#fff;font-weight:bold}
+
+.page-title-block{padding:14px 16px 0;text-align:center}
+.page-title{font-size:20px;font-weight:bold;color:var(--text-bright);letter-spacing:.04em;text-transform:uppercase}
+
+.desc-block{margin:10px 16px 6px;background:var(--panel);border:1px solid var(--border);padding:10px 14px}
+.desc-text{color:var(--text);line-height:1.55;font-size:12px}
+.desc-text.collapsed{display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.desc-toggle{background:none;border:none;color:var(--accent-glow);font-size:11px;cursor:pointer;margin-top:4px;padding:0;letter-spacing:.04em}
+.desc-toggle:hover{color:#fff}
+
+.main-body{display:flex;height:calc(100vh - 125px);overflow:hidden}
+
+.sidebar{width:212px;min-width:212px;border-right:2px solid var(--border-lite);display:flex;flex-direction:column;overflow:hidden;background:var(--panel-alt)}
+.sidebar-header{padding:8px 10px 6px;border-bottom:1px solid var(--border);flex-shrink:0}
+.sidebar-title{font-weight:bold;font-size:12px;color:var(--text-bright);text-align:center;display:block;margin-bottom:5px}
+.toggle-btns{display:flex;gap:4px;justify-content:center}
+.toggle-btn{background:#1a2d44;color:var(--text-dim);border:1px solid var(--border);padding:3px 10px;font-size:11px;cursor:pointer;font-family:var(--font-ui);transition:all .15s}
+.toggle-btn.active{background:var(--accent);color:#fff;border-color:var(--accent-glow)}
+.toggle-btn:hover:not(.active){border-color:var(--accent);color:var(--text-bright)}
+.sidebar-scroll{overflow-y:auto;flex:1}
+.sidebar-scroll::-webkit-scrollbar{width:4px}
+.sidebar-scroll::-webkit-scrollbar-track{background:var(--bg)}
+.sidebar-scroll::-webkit-scrollbar-thumb{background:var(--border-lite)}
+
+.right-content{flex:1;overflow-y:auto;padding:10px 14px}
+.right-content::-webkit-scrollbar{width:5px}
+.right-content::-webkit-scrollbar-track{background:var(--bg)}
+.right-content::-webkit-scrollbar-thumb{background:var(--border-lite)}
+
+.ir-table{width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:11px}
+.ir-table th{background:#0d1829;color:var(--text-dim);padding:4px 6px;text-align:left;border-bottom:1px solid var(--border);position:sticky;top:0;font-size:10px;letter-spacing:.04em;text-transform:uppercase}
+.ir-table td{padding:3px 6px;border-bottom:1px solid #0e1a28;white-space:nowrap}
+.ir-table tr:hover td{background:#111e30}
+.col-symbol{color:var(--text-bright);font-weight:bold}
+.col-ir{text-align:right}
+.col-zone{text-align:center}
+.zone-badge{display:inline-block;padding:1px 5px;font-size:10px;font-weight:bold;border-radius:2px;color:#000}
+
+.histo-wrap{margin-bottom:14px}
+.section-title{font-weight:bold;font-size:13px;color:var(--text-bright);text-align:center;margin-bottom:6px;letter-spacing:.03em}
+.histo-svg-box{background:var(--panel);border:1px solid var(--border);overflow:hidden}
+
+.boxed-title{border:1px solid var(--border-lite);text-align:center;padding:6px 20px;font-weight:bold;font-size:13px;color:var(--text-bright);margin:14px 0 10px;background:var(--panel);letter-spacing:.03em}
+
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.toggle-wrap{background:var(--panel);border:1px solid var(--border)}
+.toggle-header{background:var(--panel-alt);border-bottom:1px solid var(--border);padding:6px 10px;display:flex;align-items:center;justify-content:space-between}
+.toggle-title{font-weight:bold;font-size:12px;color:var(--text-bright)}
+.scroll-table{max-height:340px;overflow-y:auto}
+.scroll-table::-webkit-scrollbar{width:4px}
+.scroll-table::-webkit-scrollbar-track{background:var(--bg)}
+.scroll-table::-webkit-scrollbar-thumb{background:var(--border-lite)}
+
+#histo-tip{position:fixed;background:#0d1829;border:1px solid #3090d8;color:#ddeeff;font-family:'Courier New',monospace;font-size:11px;padding:5px 9px;pointer-events:none;display:none;z-index:999;white-space:nowrap;border-radius:2px;box-shadow:0 2px 12px rgba(0,0,0,0.6)}
+</style>
+</head>
+<body>
+
+<div id="histo-tip"></div>
+
+<!-- HEADER GX.1 -->
+<div class="header-bar">
+  <button class="btn-nav" onclick="history.back()">◀ Back</button>
+  <input class="search-box" type="text" placeholder="Search ticker…" id="searchInput"
+    onkeydown="if(event.key==='Enter'){var q=this.value.trim().toUpperCase();if(q)alert('Search: '+q);}">
+  <button class="btn-nav" onclick="var q=document.getElementById('searchInput').value.trim().toUpperCase();if(q)alert('Search: '+q);">Search</button>
+</div>
+
+<!-- SPONSOR NAV GX.2 -->
+<div class="sponsor-nav">
+  <a href="ishares.html">iShares</a>
+  <a href="statestreet.html">State Street</a>
+  <a href="invesco.html">Invesco</a>
+  <a href="firsttrust.html">First Trust</a>
+  <a href="vanguard.html">Vanguard</a>
+  <a href="vaneck.html">Van Eck</a>
+  <a href="proshares.html">ProShares</a>
+  <a href="others.html">Others</a>
+  <a href="globx.html" class="active">Global X</a>
+</div>
+
+<!-- PAGE TITLE + DESCRIPTION GX.3 -->
+<div class="page-title-block">
+  <div class="page-title">GlobalX ETFs</div>
+</div>
+<div class="desc-block">
+  <div class="desc-text collapsed" id="descText">
+    Global X was founded in 2008 with the mission of listening to and empowering clients to invest wisely in unexplored and intelligent solutions. The firm's product lineup includes more than 75 ETF strategies designed to provide investors with access to a diverse range of investment opportunities. As of August 2025, Global X manages over $50 billion in assets across ETFs listed worldwide. Global X Management Company, LLC serves as investment advisor to the Global X Funds and is an indirect, wholly-owned subsidiary of Mirae Asset Global Investments Co., Ltd. For select actively managed strategies, the firm utilizes sub-advisory relationships with Mirae Asset Global Investments (USA) LLC and Mirae Asset Global Investments (Hong Kong) Limited, leveraging specialized regional expertise and research capabilities across global markets. The firm is distinguished for its thematic growth, income, and international access ETFs, while also offering core, commodity, and alpha funds to suit a wide range of investment objectives. Global X's investment philosophy emphasizes identifying trends across technology, income strategies, and emerging economies before they become mainstream. The firm employs a team of more than 200 financial professionals dedicated to developing intelligently designed investment strategies. Global X is headquartered at 605 3rd Avenue, 43rd Floor, New York, NY. The funds are distributed by SEI Investments Distribution Co., which is not affiliated with Global X Management Company, LLC or Mirae Asset Global Investments. Information gathered from company website.
+  </div>
+  <button class="desc-toggle" id="descBtn" onclick="toggleDesc()">▼ Show More</button>
+</div>
+
+<!-- MAIN BODY -->
+<div class="main-body">
+
+  <!-- SIDEBAR GX.4 -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <span class="sidebar-title">GlobalX ETFs</span>
+      <div class="toggle-btns">
+        <button class="toggle-btn active" data-group="all" data-period="90" onclick="handleToggle(this)">90 IR</button>
+        <button class="toggle-btn"        data-group="all" data-period="10" onclick="handleToggle(this)">10 IR</button>
+      </div>
+    </div>
+    <div class="sidebar-scroll">
+      <table class="ir-table">
+        <thead><tr><th>Tick</th><th>Name</th><th>IR</th><th>Zn</th></tr></thead>
+        <tbody id="all-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- RIGHT CONTENT -->
+  <div class="right-content">
+
+    <!-- GX.5 HISTOGRAM -->
+    <div class="histo-wrap">
+      <div class="section-title">GlobalX ETFs — 90-day Implied Risk Histogram</div>
+      <div class="histo-svg-box">
+        <svg id="mainHisto" viewBox="0 0 1060 345" width="100%"
+             preserveAspectRatio="xMidYMid meet" style="display:block;"></svg>
+      </div>
+    </div>
+
+    <!-- GX.6 BOXED TITLE -->
+    <div class="boxed-title">GlobalX ETFs With Members and Without Members</div>
+
+    <!-- GX.7 & GX.8 -->
+    <div class="two-col">
+      <div class="toggle-wrap">
+        <div class="toggle-header">
+          <span class="toggle-title">GlobalX ETFs With Members</span>
+          <div class="toggle-btns">
+            <button class="toggle-btn active" data-group="with" data-period="90" onclick="handleToggle(this)">90 IR</button>
+            <button class="toggle-btn"        data-group="with" data-period="10" onclick="handleToggle(this)">10 IR</button>
+          </div>
+        </div>
+        <div class="scroll-table">
+          <table class="ir-table">
+            <thead><tr><th>Ticker</th><th>Name</th><th>IR</th><th>Zn</th></tr></thead>
+            <tbody id="with-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="toggle-wrap">
+        <div class="toggle-header">
+          <span class="toggle-title">GlobalX ETFs Without Members</span>
+          <div class="toggle-btns">
+            <button class="toggle-btn active" data-group="without" data-period="90" onclick="handleToggle(this)">90 IR</button>
+            <button class="toggle-btn"        data-group="without" data-period="10" onclick="handleToggle(this)">10 IR</button>
+          </div>
+        </div>
+        <div class="scroll-table">
+          <table class="ir-table">
+            <thead><tr><th>Ticker</th><th>Name</th><th>IR</th><th>Zn</th></tr></thead>
+            <tbody id="without-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════════════
+const ALL_DATA = [
+  {t:'BTRN',name:'Bitcoin Trend Strategy ETF',         ir90: 82,ir10: 75},
+  {t:'COMD',name:'Commodity Strategy ETF',             ir90: 71,ir10: 65},
+  {t:'ARGT',name:'MSCI Argentina ETF',                 ir90: 55,ir10: 48},
+  {t:'GREK',name:'MSCI Greece ETF',                    ir90: 44,ir10: 52},
+  {t:'COLO',name:'MSCI Colombia ETF',                  ir90: 38,ir10: 42},
+  {t:'NORW',name:'MSCI Norway ETF',                    ir90: 50,ir10: 58},
+  {t:'DJIA',name:'Dow 30 Covered Call ETF',            ir90: 28,ir10: 22},
+  {t:'XYLD',name:'S&P 500 Covered Call ETF',           ir90: 22,ir10: 15},
+  {t:'QYLD',name:'Nasdaq Covered Call ETF',            ir90: 15,ir10:  8},
+  {t:'RYLD',name:'Russell 2000 Covered Call Index',    ir90:  8,ir10: 12},
+  {t:'BCCC',name:'Bitcoin Covered Call ETF',           ir90: 76,ir10: 85},
+  {t:'BITS',name:'Blockchain & Bitcoin Strategy ETF',  ir90: 62,ir10: 68},
+  {t:'COPX',name:'Copper Mines ETF',                   ir90: 42,ir10: 35},
+  {t:'BOTZ',name:'Robotics & Artificial Intelligence ETF',ir90:-15,ir10:-22},
+  {t:'LIT', name:'Lithium & Battery Technology ETF',   ir90:-38,ir10:-45},
+  {t:'URA', name:'Uranium ETF',                        ir90: 35,ir10: 28},
+  {t:'COPX',name:'Copper Miners ETF',                  ir90: 45,ir10: 38},
+  {t:'SIL', name:'Silver Miners ETF',                  ir90:-52,ir10:-58},
+  {t:'GOEX',name:'Gold Explorers ETF',                 ir90:-42,ir10:-35},
+  {t:'RNRG',name:'Renewable Energy Producers ETF',     ir90:-25,ir10:-18},
+  {t:'HERO',name:'Video Games & ESports ETF',          ir90:-12,ir10: -8},
+  {t:'HYDR',name:'Hydrogen ETF',                       ir90:-48,ir10:-55},
+  {t:'RSSL',name:'Russell 2000 ETF',                   ir90: 18,ir10: 25},
+  {t:'AIQ', name:'AI & Technology ETF',                ir90:-62,ir10:-68},
+  {t:'DTCR',name:'Data Center & Digital Infra ETF',    ir90:-72,ir10:-65},
+  {t:'BUG', name:'Cybersecurity ETF',                  ir90:-82,ir10:-88},
+  {t:'DRIV',name:'Autonomous & Electric Vehicles ETF', ir90:-68,ir10:-75},
+  {t:'BKCH',name:'Blockchain ETF',                     ir90: 88,ir10: 82},
+  {t:'FINX',name:'Fintech ETF',                        ir90: -5,ir10:-12},
+  {t:'CLOU',name:'Cloud Computing ETF',                ir90:-28,ir10:-35},
+  {t:'SNSR',name:'Internet of Things ETF',             ir90: 12,ir10: 18},
+  {t:'SOCL',name:'Social Media ETF',                   ir90:-18,ir10:-25},
+  {t:'KRMA',name:'Conscious Companies ETF',            ir90: 32,ir10: 28},
+  {t:'MILN',name:'Millennial Consumer ETF',            ir90:  5,ir10:  8},
+  {t:'AGNG',name:'Aging Population ETF',               ir90: 48,ir10: 42},
+  {t:'GNOM',name:'Genomics & Biotechnology ETF',       ir90:-35,ir10:-42},
+  {t:'HEAL',name:'HealthTech ETF',                     ir90:-22,ir10:-28},
+  {t:'AQWA',name:'Clean Water ETF',                    ir90: 65,ir10: 58},
+  {t:'CTEC',name:'CleanTech ETF',                      ir90:-32,ir10:-28},
+  {t:'CHPX',name:'AI Semiconductor & Quantum ETF',     ir90:-75,ir10:-82},
+  {t:'KROP',name:'AgTech & Food Innovation ETF',       ir90: 25,ir10: 18},
+  {t:'AUAU',name:'Gold Miners ETF',                    ir90: 68,ir10: 72},
+  {t:'GXDW',name:'Dorsey Wright Thematic ETF',         ir90: -8,ir10: -5},
+  {t:'SHLD',name:'Defense Tech ETF',                   ir90: 55,ir10: 48},
+  {t:'LNGX',name:'US Natural Gas ETF',                 ir90: 78,ir10: 85},
+  {t:'NYSX',name:'NYSE 100 ETF',                       ir90:-45,ir10:-52}
+];
+
+const WITH_TICKERS  = ['AIQ','DTCR','BUG','DRIV','BKCH','FINX','CLOU','SNSR','SOCL','KRMA','MILN','AGNG','GNOM','HEAL','AQWA','CTEC','CHPX','KROP','AUAU','GXDW','SHLD','LNGX','NYSX'];
+const WITH_DATA     = ALL_DATA.filter(d => WITH_TICKERS.includes(d.t));
+const WITHOUT_DATA  = ALL_DATA.filter(d => !WITH_TICKERS.includes(d.t));
+
+// ── Histogram slot data ──────────────────────────────────
+// 6 zones × 4 slots. Slot arrays are in VISUAL LEFT→RIGHT order.
+// Zones 1-3 (positive IR): slots run outermost→innermost (S4→S1)
+// Zones 4-6 (negative IR): slots run innermost→outermost (S1→S4)
+// Each entry: {tr: 3-char truncation, full: ticker, name, ir90}
+const HISTO_ZONES = [
+  { label:'Zone 1', range:'+99 to +67', color:'#e83535', bg:'rgba(232,53,53,0.07)',
+    slotLabels:['+91–99','+83–90','+75–82','+67–74'],
+    slots:[
+      [],
+      [{tr:'BKC',full:'BKCH',name:'Blockchain ETF',ir90:88}],
+      [{tr:'BCC',full:'BCCC',name:'Bitcoin Covered Call ETF',ir90:76},
+       {tr:'BTR',full:'BTRN',name:'Bitcoin Trend Strategy ETF',ir90:82},
+       {tr:'LNG',full:'LNGX',name:'US Natural Gas ETF',ir90:78}],
+      [{tr:'AUA',full:'AUAU',name:'Gold Miners ETF',ir90:68},
+       {tr:'COM',full:'COMD',name:'Commodity Strategy ETF',ir90:71}]
+    ]
+  },
+  { label:'Zone 2', range:'+66 to +34', color:'#e06020', bg:'rgba(224,96,32,0.07)',
+    slotLabels:['+59–66','+52–58','+43–51','+34–42'],
+    slots:[
+      [{tr:'AQW',full:'AQWA',name:'Clean Water ETF',ir90:65},
+       {tr:'BIT',full:'BITS',name:'Blockchain & Bitcoin Strategy ETF',ir90:62}],
+      [{tr:'ARG',full:'ARGT',name:'MSCI Argentina ETF',ir90:55},
+       {tr:'SHL',full:'SHLD',name:'Defense Tech ETF',ir90:55}],
+      [{tr:'AGN',full:'AGNG',name:'Aging Population ETF',ir90:48},
+       {tr:'COP',full:'COPX',name:'Copper Miners ETF',ir90:45},
+       {tr:'GRE',full:'GREK',name:'MSCI Greece ETF',ir90:44},
+       {tr:'NOR',full:'NORW',name:'MSCI Norway ETF',ir90:50}],
+      [{tr:'COL',full:'COLO',name:'MSCI Colombia ETF',ir90:38},
+       {tr:'COP',full:'COPX',name:'Copper Mines ETF',ir90:42},
+       {tr:'URA',full:'URA', name:'Uranium ETF',ir90:35}]
+    ]
+  },
+  { label:'Zone 3', range:'+33 to +1', color:'#c8a800', bg:'rgba(200,168,0,0.07)',
+    slotLabels:['+26–33','+18–25','+9–17','+1–8'],
+    slots:[
+      [{tr:'DJI',full:'DJIA',name:'Dow 30 Covered Call ETF',ir90:28},
+       {tr:'KRM',full:'KRMA',name:'Conscious Companies ETF',ir90:32}],
+      [{tr:'KRO',full:'KROP',name:'AgTech & Food Innovation ETF',ir90:25},
+       {tr:'RSS',full:'RSSL',name:'Russell 2000 ETF',ir90:18},
+       {tr:'XYL',full:'XYLD',name:'S&P 500 Covered Call ETF',ir90:22}],
+      [{tr:'QYL',full:'QYLD',name:'Nasdaq Covered Call ETF',ir90:15},
+       {tr:'SNS',full:'SNSR',name:'Internet of Things ETF',ir90:12}],
+      [{tr:'MIL',full:'MILN',name:'Millennial Consumer ETF',ir90:5},
+       {tr:'RYL',full:'RYLD',name:'Russell 2000 Covered Call Index',ir90:8}]
+    ]
+  },
+  { label:'Zone 4', range:'−1 to −33', color:'#7acc00', bg:'rgba(122,204,0,0.07)',
+    slotLabels:['−1–8','−9–17','−18–25','−26–33'],
+    slots:[
+      [{tr:'FIN',full:'FINX',name:'Fintech ETF',ir90:-5},
+       {tr:'GXD',full:'GXDW',name:'Dorsey Wright Thematic ETF',ir90:-8}],
+      [{tr:'BOT',full:'BOTZ',name:'Robotics & AI ETF',ir90:-15},
+       {tr:'HER',full:'HERO',name:'Video Games & ESports ETF',ir90:-12}],
+      [{tr:'HEA',full:'HEAL',name:'HealthTech ETF',ir90:-22},
+       {tr:'RNR',full:'RNRG',name:'Renewable Energy Producers ETF',ir90:-25},
+       {tr:'SOC',full:'SOCL',name:'Social Media ETF',ir90:-18}],
+      [{tr:'CLO',full:'CLOU',name:'Cloud Computing ETF',ir90:-28},
+       {tr:'CTE',full:'CTEC',name:'CleanTech ETF',ir90:-32}]
+    ]
+  },
+  { label:'Zone 5', range:'−34 to −66', color:'#22d860', bg:'rgba(34,216,96,0.07)',
+    slotLabels:['−34–42','−43–51','−52–58','−59–66'],
+    slots:[
+      [{tr:'GNO',full:'GNOM',name:'Genomics & Biotechnology ETF',ir90:-35},
+       {tr:'GOE',full:'GOEX',name:'Gold Explorers ETF',ir90:-42},
+       {tr:'LIT',full:'LIT', name:'Lithium & Battery Tech ETF',ir90:-38}],
+      [{tr:'HYD',full:'HYDR',name:'Hydrogen ETF',ir90:-48},
+       {tr:'NYS',full:'NYSX',name:'NYSE 100 ETF',ir90:-45}],
+      [{tr:'SIL',full:'SIL', name:'Silver Miners ETF',ir90:-52}],
+      [{tr:'AIQ',full:'AIQ', name:'AI & Technology ETF',ir90:-62}]
+    ]
+  },
+  { label:'Zone 6', range:'−67 to −99', color:'#00d4a0', bg:'rgba(0,212,160,0.07)',
+    slotLabels:['−67–74','−75–82','−83–90','−91–99'],
+    slots:[
+      [{tr:'CHP',full:'CHPX',name:'AI Semiconductor & Quantum ETF',ir90:-75},
+       {tr:'DRI',full:'DRIV',name:'Autonomous & Electric Vehicles ETF',ir90:-68},
+       {tr:'DTC',full:'DTCR',name:'Data Center & Digital Infra ETF',ir90:-72}],
+      [{tr:'BUG',full:'BUG', name:'Cybersecurity ETF',ir90:-82}],
+      [],
+      []
+    ]
+  }
+];
+
+// ── Zone / IR utilities ──────────────────────────────────
+function irToZone(ir){
+  if(ir>=67)return 1; if(ir>=34)return 2; if(ir>=1)return 3;
+  if(ir>=-33)return 4; if(ir>=-66)return 5; return 6;
+}
+const ZC={1:'#e83535',2:'#e06020',3:'#c8a800',4:'#7acc00',5:'#22d860',6:'#00d4a0'};
+function zoneBadge(z){return`<span class="zone-badge" style="background:${ZC[z]};color:#000">Z${z}</span>`}
+function irColor(ir){return ir>0?'#22d860':ir<0?'#e83535':'#b8cce0'}
+
+// ── Toggle table ─────────────────────────────────────────
+function renderToggleTable(gid,period){
+  const map={all:ALL_DATA,with:WITH_DATA,without:WITHOUT_DATA};
+  const data=map[gid]; if(!data)return;
+  const f=period==='90'?'ir90':'ir10';
+  const sorted=[...data].sort((a,b)=>b[f]-a[f]);
+  const tbody=document.getElementById(`${gid}-tbody`); if(!tbody)return;
+  tbody.innerHTML=sorted.map(d=>{
+    const ir=d[f],z=irToZone(ir);
+    const nm=d.name.length>22?d.name.slice(0,22)+'…':d.name;
+    return`<tr>
+      <td class="col-symbol">${d.t}</td>
+      <td style="color:var(--text-dim);font-size:10px" title="${d.name}">${nm}</td>
+      <td class="col-ir" style="color:${irColor(ir)}">${ir>0?'+':''}${ir}</td>
+      <td class="col-zone">${zoneBadge(z)}</td>
+    </tr>`;
+  }).join('');
+}
+function handleToggle(btn){
+  const{group,period}=btn.dataset;
+  btn.closest('.toggle-btns').querySelectorAll('.toggle-btn')
+     .forEach(b=>b.classList.toggle('active',b===btn));
+  renderToggleTable(group,period);
+}
+
+// ── Description ──────────────────────────────────────────
+function toggleDesc(){
+  const t=document.getElementById('descText'),b=document.getElementById('descBtn');
+  if(t.classList.contains('collapsed')){t.classList.remove('collapsed');b.textContent='▲ Show Less';}
+  else{t.classList.add('collapsed');b.textContent='▼ Show More';}
+}
+
+// ── HISTOGRAM ────────────────────────────────────────────
+function buildHistogram(){
+  // Geometry
+  const W=1060, H=345;
+  const OW=55;            // OOB panel width each side
+  const BX=OW;            // histogram body start x
+  const BW=W-2*OW;        // body width  950
+  const ZW=BW/6;          // zone width  158.33
+  const SW=ZW/4;          // slot width   39.58
+  const BY=258;           // baseline y
+  const SH=13;            // symbol row height px
+  const SFS=9;            // symbol font-size
+  const BELL_A=168;       // bell amplitude above the floor
+  const BELL_FLOOR=16;    // minimum height above baseline (curve never touches)
+  const BELL_SIG=ZW;      // 1 zone = 1 sigma
+  const BCX=BX+BW/2;      // bell centre x = 530 (Zone 3/4 boundary)
+
+  // Label y-positions below baseline
+  const LY_SLOT  = BY+14;
+  const LY_RANGE = BY+27;
+  const LY_ZONE  = BY+40;
+
+  let s='';
+
+  // ── Defs ──
+  s+=`<defs>
+    <filter id="glow"><feGaussianBlur stdDeviation="2.8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softglow"><feGaussianBlur stdDeviation="1.5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>`;
+
+  // ── OOB panel backgrounds ──
+  s+=`<rect x="0" y="0" width="${OW}" height="${H}" fill="rgba(0,0,0,0.3)"/>`;
+  s+=`<rect x="${BX+BW}" y="0" width="${OW}" height="${H}" fill="rgba(0,0,0,0.3)"/>`;
+
+  // ── Zone backgrounds ──
+  for(let z=0;z<6;z++){
+    const zx=BX+z*ZW;
+    s+=`<rect x="${zx.toFixed(1)}" y="0" width="${ZW.toFixed(1)}" height="${BY}" fill="${HISTO_ZONES[z].bg}"/>`;
+  }
+
+  // ── Zone dividers (solid) ──
+  for(let z=0;z<=6;z++){
+    const x=(BX+z*ZW).toFixed(1);
+    const op=(z===0||z===6)?'0.45':'0.22';
+    const sw=(z===0||z===6)?1.5:1;
+    s+=`<line x1="${x}" y1="0" x2="${x}" y2="${BY}" stroke="rgba(255,255,255,${op})" stroke-width="${sw}"/>`;
+  }
+
+  // ── Slot dividers (dashed, very faint) ──
+  for(let z=0;z<6;z++){
+    for(let sl=1;sl<4;sl++){
+      const x=(BX+z*ZW+sl*SW).toFixed(1);
+      s+=`<line x1="${x}" y1="8" x2="${x}" y2="${BY}" stroke="rgba(255,255,255,0.055)" stroke-width="0.5" stroke-dasharray="3,6"/>`;
+    }
+  }
+
+  // ── Baseline ──
+  s+=`<line x1="0" y1="${BY}" x2="${W}" y2="${BY}" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>`;
+
+  // ── Bell curve (Gaussian) ──────────────────────────────
+  // f(x) = BELL_A × exp(-((x-BCX)²)/(2×BELL_SIG²))
+  // y_on_svg = BY - f(x)
+  let curvePts='';
+  for(let px=BX;px<=BX+BW;px+=2){
+    const dx=px-BCX;
+    const fy=BY - (BELL_A*Math.exp(-(dx*dx)/(2*BELL_SIG*BELL_SIG)) + BELL_FLOOR);
+    curvePts+=(px===BX?`M${px.toFixed(1)},${fy.toFixed(1)}`:`L${px.toFixed(1)},${fy.toFixed(1)}`);
+  }
+  // Halo
+  s+=`<path d="${curvePts}" fill="none" stroke="rgba(120,185,255,0.14)" stroke-width="8"/>`;
+  // Main dashed arc
+  s+=`<path d="${curvePts}" fill="none" stroke="rgba(155,210,255,0.72)" stroke-width="1.6" stroke-dasharray="8,4" filter="url(#glow)"/>`;
+  // Bright thin overlay
+  s+=`<path d="${curvePts}" fill="none" stroke="rgba(205,235,255,0.38)" stroke-width="0.8" stroke-dasharray="8,4"/>`;
+
+  // ── Symbols ───────────────────────────────────────────
+  for(let z=0;z<6;z++){
+    const zone=HISTO_ZONES[z];
+    const color=zone.color;
+    const zx=BX+z*ZW;
+    for(let sl=0;sl<4;sl++){
+      const syms=zone.slots[sl];
+      if(!syms||syms.length===0)continue;
+      const scx=(zx+sl*SW+SW/2).toFixed(1);
+      const n=syms.length;
+      // Sort alphabetically; index 0 = top of stack = smallest y
+      const sorted=[...syms].sort((a,b)=>a.tr.localeCompare(b.tr));
+      sorted.forEach((sym,i)=>{
+        const sy=(BY-(n-i)*SH+SH*0.78).toFixed(1);
+        const sign=sym.ir90>0?'+':'';
+        const tip=`${sym.full} — ${sym.name}  |  90-IR: ${sign}${sym.ir90}  |  ${zone.label}`;
+        s+=`<text x="${scx}" y="${sy}"
+          text-anchor="middle"
+          font-family="'Courier New',monospace"
+          font-size="${SFS}"
+          font-weight="bold"
+          fill="${color}"
+          cursor="pointer"
+          class="hsym"
+          data-tip="${tip}"
+          filter="url(#softglow)">${sym.tr}</text>`;
+      });
+    }
+  }
+
+  // ── Bottom labels ────────────────────────────────────────
+  for(let z=0;z<6;z++){
+    const zone=HISTO_ZONES[z];
+    const zx=BX+z*ZW;
+    const zcx=(zx+ZW/2).toFixed(1);
+
+    // Slot ranges (one tiny label per slot)
+    for(let sl=0;sl<4;sl++){
+      const sx=(zx+sl*SW+SW/2).toFixed(1);
+      s+=`<text x="${sx}" y="${LY_SLOT}" text-anchor="middle" font-family="'Courier New',monospace" font-size="6.5" fill="rgba(255,255,255,0.28)">${zone.slotLabels[sl]}</text>`;
+    }
+    // Zone IR range
+    s+=`<text x="${zcx}" y="${LY_RANGE}" text-anchor="middle" font-family="'Courier New',monospace" font-size="8.5" fill="rgba(255,255,255,0.48)">${zone.range}</text>`;
+    // Zone label (bold, colored)
+    s+=`<text x="${zcx}" y="${LY_ZONE}" text-anchor="middle" font-family="'Trebuchet MS',sans-serif" font-size="10.5" font-weight="bold" fill="${zone.color}">${zone.label}</text>`;
+  }
+
+  // ── OOB labels ───────────────────────────────────────────
+  const OL=OW/2, OR=BX+BW+OW/2;
+  // Left
+  s+=`<text x="${OL}" y="20" text-anchor="middle" font-family="'Trebuchet MS',sans-serif" font-size="8.5" font-weight="bold" fill="#e83535">OOB</text>`;
+  s+=`<text x="${OL}" y="32" text-anchor="middle" font-family="'Trebuchet MS',sans-serif" font-size="8" fill="#e83535" opacity="0.7">Weak</text>`;
+  s+=`<text x="${OL}" y="${BY-8}" text-anchor="middle" font-family="'Courier New',monospace" font-size="12" font-weight="bold" fill="#e83535">[0]</text>`;
+  s+=`<text x="${OL}" y="${LY_RANGE}" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="rgba(232,53,53,0.45)">≥+99</text>`;
+  // Right
+  s+=`<text x="${OR}" y="20" text-anchor="middle" font-family="'Trebuchet MS',sans-serif" font-size="8.5" font-weight="bold" fill="#00d4a0">OOB</text>`;
+  s+=`<text x="${OR}" y="32" text-anchor="middle" font-family="'Trebuchet MS',sans-serif" font-size="8" fill="#00d4a0" opacity="0.7">Strong</text>`;
+  s+=`<text x="${OR}" y="${BY-8}" text-anchor="middle" font-family="'Courier New',monospace" font-size="12" font-weight="bold" fill="#00d4a0">[0]</text>`;
+  s+=`<text x="${OR}" y="${LY_RANGE}" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="rgba(0,212,160,0.45)">≤−99</text>`;
+
+  // ── Direction legend ─────────────────────────────────────
+  s+=`<text x="${BX+8}" y="${H-5}" font-family="'Trebuchet MS',sans-serif" font-size="7.5" fill="rgba(232,53,53,0.4)">← Weak / Oversold</text>`;
+  s+=`<text x="${BX+BW-8}" y="${H-5}" text-anchor="end" font-family="'Trebuchet MS',sans-serif" font-size="7.5" fill="rgba(0,212,160,0.4)">Overbought / Strong →</text>`;
+
+  document.getElementById('mainHisto').innerHTML=s;
+  attachTooltips();
+}
+
+// ── Tooltip ──────────────────────────────────────────────
+function attachTooltips(){
+  const tip=document.getElementById('histo-tip');
+  document.querySelectorAll('.hsym').forEach(el=>{
+    el.addEventListener('mouseenter',e=>{tip.textContent=el.dataset.tip;tip.style.display='block';moveTip(e)});
+    el.addEventListener('mousemove',moveTip);
+    el.addEventListener('mouseleave',()=>tip.style.display='none');
+  });
+  function moveTip(e){tip.style.left=(e.clientX+14)+'px';tip.style.top=(e.clientY-8)+'px'}
+}
+
+// ── Init ────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded',()=>{
+  renderToggleTable('all','90');
+  renderToggleTable('with','90');
+  renderToggleTable('without','90');
+  buildHistogram();
+});
+</script>
+</body>
+</html>

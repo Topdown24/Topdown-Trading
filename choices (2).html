@@ -1,0 +1,1166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio Choices — Top Down Trading</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:          #08111e;
+  --panel:       #0d1829;
+  --panel-alt:   #0a1420;
+  --border:      #1a2d44;
+  --border-lite: #243c58;
+  --text:        #ddeeff;
+  --dim:         #5a7a9a;
+  --accent:      #3090d8;
+  --gold:        #c9a227;
+  --z1: #00cc55; --z2: #88cc44; --z3: #7a9aaa;
+  --z4: #aa9a7a; --z5: #ddcc00; --z6: #e83535;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: 'Rajdhani', sans-serif; overflow: hidden; }
+
+/* ══ PATTERN B HEADER ══ */
+.header-block { position: sticky; top: 0; z-index: 100; }
+.top-nav {
+  height: 44px; background: var(--panel-alt);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 16px;
+}
+.nav-back {
+  background: var(--panel); border: 1px solid var(--border-lite);
+  color: var(--dim); font-family: 'Rajdhani', sans-serif;
+  font-size: 12px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; padding: 5px 14px;
+  cursor: pointer; transition: all .15s;
+}
+.nav-back:hover { border-color: var(--accent); color: var(--text); }
+.page-title-bar {
+  height: 32px; background: var(--panel);
+  border-bottom: 2px solid var(--border-lite);
+  display: flex; align-items: center; justify-content: center;
+}
+.page-title-text {
+  font-size: 15px; font-weight: 700; color: var(--text);
+  letter-spacing: .06em; text-transform: uppercase;
+}
+
+/* ══ SHELL ══ */
+.shell { height: calc(100vh - 76px); overflow-y: auto; }
+.shell::-webkit-scrollbar       { width: 6px; }
+.shell::-webkit-scrollbar-track { background: #08111e; }
+.shell::-webkit-scrollbar-thumb { background: #243c58; border-radius: 3px; }
+
+/* ══ PAGE EXPLANATION (PPC.2) ══ */
+.page-explain {
+  text-align: center;
+  padding: 28px 60px 24px;
+  border-bottom: 2px solid var(--border-lite);
+  background: var(--panel-alt);
+}
+.page-explain-title {
+  font-size: 20px; font-weight: 700; color: var(--gold);
+  letter-spacing: .06em; margin-bottom: 16px;
+}
+.page-explain-intro {
+  font-size: 14px; font-weight: 700; color: var(--text);
+  margin-bottom: 14px; letter-spacing: .02em;
+}
+.step-list { list-style: none; display: inline-block; text-align: left; }
+.step-list li {
+  font-size: 13px; font-weight: 700; color: var(--dim);
+  padding: 4px 0; letter-spacing: .01em;
+}
+.step-list li strong { color: var(--text); }
+
+/* ══ STEP SECTIONS ══ */
+.step-section {
+  padding: 32px 60px 28px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Step explanation lines */
+.step-explain { text-align: center; margin-bottom: 24px; }
+.step-line1 {
+  display: block; font-size: 16px; font-weight: 700; color: var(--text);
+  letter-spacing: .03em; margin-bottom: 7px; line-height: 1.35;
+}
+.step-line2 {
+  display: block; font-size: 13px; font-weight: 600; color: var(--dim);
+  line-height: 1.55; max-width: 700px; margin: 0 auto;
+}
+
+/* Step heading with completion indicator */
+.step-head {
+  display: flex; align-items: center; justify-content: center;
+  gap: 10px; margin-bottom: 20px;
+}
+.step-title {
+  font-size: 15px; font-weight: 700; color: var(--text);
+  letter-spacing: .04em; text-transform: uppercase; text-align: center;
+}
+.step-title small {
+  display: block; font-size: 12px; font-weight: 600; color: var(--dim);
+  text-transform: none; letter-spacing: .02em; margin-top: 3px;
+}
+.step-check {
+  font-family: 'Courier New', monospace; font-size: 11px;
+  color: var(--z1); letter-spacing: .06em;
+  opacity: 0; transition: opacity .5s;
+}
+.step-check.show { opacity: 1; }
+
+/* Interactive container */
+.choice-box {
+  background: var(--panel);
+  border: 1px solid var(--border-lite);
+  padding: 20px 24px;
+  max-width: 680px;
+  margin: 0 auto;
+}
+.box-explain {
+  font-size: 13px; font-weight: 600; color: var(--dim);
+  text-align: center; margin-top: 12px; line-height: 1.5;
+  max-width: 680px; margin-left: auto; margin-right: auto;
+}
+
+/* ══ STEP 1: MONIKER ══ */
+
+/* Chooser type selection */
+.chooser-row { display: flex; gap: 10px; justify-content: center; }
+.chooser-btn {
+  flex: 1; max-width: 210px; padding: 14px 12px;
+  background: var(--panel-alt); border: 1px solid var(--border-lite);
+  color: var(--dim); font-family: 'Rajdhani', sans-serif;
+  font-size: 12px; font-weight: 700; letter-spacing: .05em;
+  text-align: center; cursor: pointer; transition: all .2s; text-transform: uppercase;
+  line-height: 1.5;
+}
+.chooser-btn:hover { border-color: var(--accent); color: var(--text); }
+.chooser-btn.active { border-color: var(--gold); color: var(--gold); background: rgba(201,162,39,0.06); }
+
+/* Word selection rows — revealed sequentially */
+.word-section { margin-top: 20px; display: none; }
+.word-section.visible { display: block; animation: fadeIn .3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+.word-section-label {
+  font-size: 10px; font-weight: 700; color: var(--accent);
+  letter-spacing: .10em; text-transform: uppercase;
+  margin-bottom: 10px; text-align: center;
+}
+.word-row { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.word-btn {
+  padding: 6px 15px; background: var(--panel-alt);
+  border: 1px solid var(--border-lite); color: var(--dim);
+  font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 600;
+  border-radius: 20px; cursor: pointer; transition: all .18s; letter-spacing: .03em;
+}
+.word-btn:hover { border-color: var(--accent); color: var(--text); }
+.word-btn.selected { background: #2a7abf; border-color: #3090d8; color: #fff; }
+
+/* Moniker result box */
+.moniker-result { margin-top: 22px; display: none; }
+.moniker-result.visible { display: block; animation: fadeIn .3s ease; }
+.moniker-result-inner {
+  padding: 18px 20px;
+  background: var(--panel-alt);
+  border: 1px solid var(--gold);
+  text-align: center;
+}
+.moniker-display {
+  font-size: 24px; font-weight: 700; color: var(--gold);
+  letter-spacing: .06em; margin-bottom: 4px;
+}
+.moniker-symbol {
+  font-family: 'Courier New', monospace;
+  font-size: 12px; color: var(--dim); margin-bottom: 16px;
+}
+.moniker-actions { display: flex; gap: 10px; justify-content: center; }
+.lock-btn {
+  padding: 8px 28px; background: rgba(0,204,85,0.10);
+  border: 1px solid var(--z1); color: var(--z1);
+  font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; cursor: pointer; transition: all .15s;
+}
+.lock-btn:hover { background: rgba(0,204,85,0.22); }
+.retry-btn {
+  padding: 8px 28px; background: transparent;
+  border: 1px solid var(--border-lite); color: var(--dim);
+  font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; cursor: pointer; transition: all .15s;
+}
+.retry-btn:hover { border-color: var(--accent); color: var(--text); }
+.taken-msg {
+  font-family: 'Courier New', monospace; font-size: 11px;
+  color: var(--z6); text-align: center; margin-top: 10px; display: none;
+}
+
+/* Locked moniker display */
+.moniker-locked {
+  display: none; align-items: center; justify-content: center;
+  gap: 14px; padding: 14px; background: var(--panel-alt);
+  border: 1px solid var(--gold);
+}
+.moniker-locked.visible { display: flex; }
+.moniker-locked-name { font-size: 18px; font-weight: 700; color: var(--gold); letter-spacing: .05em; }
+.moniker-locked-sym { font-family: 'Courier New', monospace; font-size: 12px; color: var(--dim); }
+.change-btn {
+  padding: 5px 12px; background: transparent;
+  border: 1px solid var(--border-lite); color: var(--dim);
+  font-family: 'Rajdhani', sans-serif; font-size: 11px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; cursor: pointer; transition: all .15s;
+}
+.change-btn:hover { border-color: var(--accent); color: var(--text); }
+
+/* ══ STEP 2: BACKGROUND ══ */
+.bg-row { display: flex; gap: 16px; justify-content: center; }
+.bg-btn {
+  flex: 1; max-width: 200px; padding: 24px 16px;
+  background: var(--panel-alt); border: 1px solid var(--border-lite);
+  color: var(--dim); font-family: 'Rajdhani', sans-serif;
+  font-size: 24px; font-weight: 700; letter-spacing: .08em;
+  text-align: center; cursor: pointer; transition: all .2s;
+}
+.bg-btn:hover { border-color: var(--accent); color: var(--text); }
+.bg-btn.active {
+  border-color: var(--accent); color: var(--text);
+  background: rgba(48,144,216,0.10);
+  box-shadow: 0 0 20px rgba(48,144,216,0.10);
+}
+.bg-btn small {
+  display: block; font-size: 11px; font-weight: 600; color: var(--dim);
+  margin-top: 5px; letter-spacing: .04em; text-transform: uppercase;
+}
+.bg-btn.active small { color: var(--dim); }
+
+/* ══ STEPS 3 & 4: SYMBOL INPUT ══ */
+.sym-input-row { display: flex; gap: 8px; margin-bottom: 10px; }
+.sym-input {
+  width: 160px; background: var(--panel-alt);
+  border: 1px solid var(--border-lite); color: var(--text);
+  font-family: 'Courier New', monospace; font-size: 14px;
+  font-weight: bold; letter-spacing: .08em;
+  padding: 8px 12px; text-transform: uppercase; outline: none;
+  transition: border-color .15s;
+}
+.sym-input::placeholder { color: var(--dim); font-weight: normal; font-size: 12px; letter-spacing: .02em; text-transform: none; }
+.sym-input:focus { border-color: var(--accent); }
+.add-btn {
+  padding: 8px 20px; background: rgba(48,144,216,0.12);
+  border: 1px solid var(--accent); color: var(--accent);
+  font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; cursor: pointer; transition: all .15s;
+}
+.add-btn:hover { background: rgba(48,144,216,0.24); color: var(--text); }
+.input-error {
+  font-family: 'Courier New', monospace; font-size: 11px;
+  color: var(--z6); min-height: 16px; margin-bottom: 8px;
+}
+
+/* Symbol chips */
+.chips-grid {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px;
+}
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--panel-alt); border: 1px solid var(--border-lite);
+  padding: 5px 10px; font-family: 'Courier New', monospace;
+  font-size: 12px; font-weight: bold; color: var(--text); letter-spacing: .05em;
+}
+.chip-num { font-size: 9px; color: var(--dim); font-weight: normal; letter-spacing: .02em; }
+.chip-x {
+  background: none; border: none; color: var(--dim);
+  font-size: 14px; line-height: 1; cursor: pointer;
+  padding: 0; font-family: inherit; transition: color .15s;
+}
+.chip-x:hover { color: var(--z6); }
+.slot-empty {
+  display: inline-flex; align-items: center;
+  background: transparent; border: 1px dashed #1a2d44;
+  padding: 5px 10px; font-family: 'Courier New', monospace;
+  font-size: 12px; color: #1e3352; letter-spacing: .04em;
+  pointer-events: none;
+}
+
+/* Research index reference below issue box */
+.ref-row {
+  margin-top: 12px; padding-top: 10px;
+  border-top: 1px solid var(--border);
+  font-family: 'Courier New', monospace; font-size: 11px; color: var(--dim);
+}
+.ref-label { font-size: 9px; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 5px; }
+.ref-syms { display: flex; flex-wrap: wrap; gap: 10px; }
+.ref-sym { color: var(--text); font-weight: bold; }
+
+/* ══ STEP 5: SHARING ══ */
+.share-row { display: flex; justify-content: center; }
+.share-btn {
+  flex: 1; max-width: 220px; padding: 20px 16px;
+  background: var(--panel-alt); border: 1px solid var(--border-lite);
+  color: var(--dim); font-family: 'Rajdhani', sans-serif;
+  font-size: 16px; font-weight: 700; letter-spacing: .06em;
+  text-align: center; cursor: pointer; transition: all .2s; text-transform: uppercase;
+}
+.share-btn:first-child { border-right: none; }
+.share-btn small { display: block; font-size: 11px; font-weight: 600; margin-top: 5px; text-transform: none; letter-spacing: .02em; opacity: 0.75; }
+.share-btn:hover { border-color: var(--accent); color: var(--text); }
+.share-btn.active-yes { background: rgba(0,204,85,0.09); border-color: var(--z1); color: var(--z1); }
+.share-btn.active-yes small { color: var(--z1); opacity: 0.7; }
+.share-btn.active-no  { background: rgba(90,122,154,0.09); border-color: var(--border-lite); color: var(--dim); }
+
+/* ══ CONGRATULATIONS ══ */
+.congrats-section {
+  padding: 36px 60px 48px; text-align: center;
+  background: var(--panel-alt); border-top: 2px solid var(--border-lite);
+}
+.congrats-title {
+  font-size: 20px; font-weight: 700; color: var(--gold);
+  letter-spacing: .04em; margin-bottom: 14px;
+}
+.congrats-text {
+  font-size: 15px; font-weight: 600; color: var(--dim);
+  line-height: 1.65; max-width: 620px; margin: 0 auto 22px;
+}
+.congrats-btn {
+  padding: 10px 32px; background: rgba(201,162,39,0.10);
+  border: 1px solid var(--gold); color: var(--gold);
+  font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; cursor: pointer; transition: all .15s;
+}
+.congrats-btn:hover { background: rgba(201,162,39,0.22); }
+/* Congrats dims until all 5 steps are done */
+.congrats-section.pending .congrats-title { color: var(--dim); }
+.congrats-section.pending .congrats-text  { color: #2a4055; }
+.congrats-section.pending .congrats-btn   { border-color: var(--border-lite); color: var(--dim); pointer-events: none; }
+
+/* Utility */
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER — Pattern B ══ -->
+<div class="header-block">
+  <nav class="top-nav">
+    <button class="nav-back" onclick="navTo('portfolio.html','portfolioPage')">← Back</button>
+  </nav>
+  <div class="page-title-bar">
+    <span class="page-title-text">Personal Portfolio Choices</span>
+  </div>
+</div>
+
+<div class="shell">
+
+  <!-- ══ PPC.2 — Page Explanation ══ -->
+  <div class="page-explain">
+    <div class="page-explain-title">Personal Portfolio Choices</div>
+    <div class="page-explain-intro">Complete these five steps to personalize your Personal Portfolio</div>
+    <ul class="step-list">
+      <li><strong>Step 1 — Portfolio Moniker</strong> — Name your Personal Portfolio by making three choices from our special pull-down menus</li>
+      <li><strong>Step 2 — Histogram Background</strong> — Choose OEX or NDX as the background index for your Personal Portfolio Histogram</li>
+      <li><strong>Step 3 — Research ETFs and Indexes</strong> — Make up to six ETF or Index choices to follow for personal sector research</li>
+      <li><strong>Step 4 — Portfolio Issues</strong> — Make up to ten Issue or Index choices to add to your Personal Portfolio Tracker</li>
+      <li><strong>Step 5 — Portfolio Sharing</strong> — Choose whether or not to share your Portfolio with the Portfolio Community</li>
+    </ul>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       STEP 1 — MONIKER (PPC.7 + PPC.8)
+       Moved first per design decision — client names portfolio
+       before making any selections.
+       ══════════════════════════════════════════════════════════ -->
+  <div class="step-section" id="sec-moniker">
+    <!-- PPC.7: Explanation -->
+    <div class="step-explain">
+      <span class="step-line1">Step 1. Choose your three-word Portfolio Moniker from our special selection menus.</span>
+      <span class="step-line2">Once you make a selection, the next menu will appear. Your new Portfolio Moniker will debut as the new name of your My Portfolio page.</span>
+    </div>
+
+    <!-- PPC.8: Moniker Picker -->
+    <div class="step-head">
+      <div class="step-title">
+        Choose Your Personal Portfolio Moniker
+        <small>Pick a style, then choose one word from each category</small>
+      </div>
+      <span class="step-check" id="check-moniker">✓ SAVED</span>
+    </div>
+
+    <div class="choice-box" id="moniker-picker">
+
+      <!-- Chooser type buttons -->
+      <div id="chooser-select">
+        <div class="word-section-label">Which style fits you?</div>
+        <div class="chooser-row">
+          <button class="chooser-btn" data-chooser="1" onclick="selectChooser(1)">
+            Colors<br>Animals<br>Stones
+          </button>
+          <button class="chooser-btn" data-chooser="2" onclick="selectChooser(2)">
+            Forces<br>Predators<br>Metals
+          </button>
+          <button class="chooser-btn" data-chooser="3" onclick="selectChooser(3)">
+            Celestial<br>Warriors<br>Gems
+          </button>
+        </div>
+      </div>
+
+      <!-- Word 1 (revealed after chooser selected) -->
+      <div class="word-section" id="word-sec-0">
+        <div class="word-section-label" id="word-label-0">Choose your first word</div>
+        <div class="word-row" id="word-row-0"></div>
+      </div>
+
+      <!-- Word 2 (revealed after Word 1 selected) -->
+      <div class="word-section" id="word-sec-1">
+        <div class="word-section-label" id="word-label-1">Choose your second word</div>
+        <div class="word-row" id="word-row-1"></div>
+      </div>
+
+      <!-- Word 3 (revealed after Word 2 selected) -->
+      <div class="word-section" id="word-sec-2">
+        <div class="word-section-label" id="word-label-2">Choose your third word</div>
+        <div class="word-row" id="word-row-2"></div>
+      </div>
+
+      <!-- Result (revealed after all three words selected) -->
+      <div class="moniker-result" id="moniker-result">
+        <div class="moniker-result-inner">
+          <div class="moniker-display" id="moniker-display"></div>
+          <div class="moniker-symbol" id="moniker-sym-display"></div>
+          <div class="moniker-actions">
+            <button class="lock-btn" onclick="lockMoniker()">Lock It In</button>
+            <button class="retry-btn" onclick="resetMoniker()">Start Over</button>
+          </div>
+          <div class="taken-msg" id="taken-msg">Already claimed — please start over and try a different combination.</div>
+        </div>
+      </div>
+
+      <!-- Locked display (shown after Lock It In) -->
+      <div class="moniker-locked" id="moniker-locked">
+        <div>
+          <div class="moniker-locked-name" id="moniker-locked-name"></div>
+          <div class="moniker-locked-sym" id="moniker-locked-sym"></div>
+        </div>
+        <button class="change-btn" onclick="resetMoniker()">Change</button>
+      </div>
+
+    </div><!-- /moniker-picker -->
+  </div><!-- /step 1 -->
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       STEP 2 — BACKGROUND INDEX (PPC.3 + PPC.4)
+       ══════════════════════════════════════════════════════════ -->
+  <div class="step-section" id="sec-background">
+    <!-- PPC.3: Explanation -->
+    <div class="step-explain">
+      <span class="step-line1">Step 2. Select the background index for your Personal Portfolio Histogram.</span>
+      <span class="step-line2">The background fills your histogram with 100 member stocks behind your personal selections, giving your portfolio context against a real market index. OEX is the S&amp;P 100. NDX is the NASDAQ 100.</span>
+    </div>
+
+    <!-- PPC.4: Selector -->
+    <div class="step-head">
+      <div class="step-title">Choose Your Personal Portfolio Histogram Background</div>
+      <span class="step-check" id="check-bg">✓ SAVED</span>
+    </div>
+
+    <div class="choice-box">
+      <div class="bg-row">
+        <button class="bg-btn" id="bg-oex" onclick="selectBg('OEX')">
+          OEX
+          <small>S&amp;P 100 · 100 Members</small>
+        </button>
+        <button class="bg-btn" id="bg-ndx" onclick="selectBg('NDX')">
+          NDX
+          <small>NASDAQ 100 · 100 Members</small>
+        </button>
+      </div>
+    </div>
+  </div><!-- /step 2 -->
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       STEP 3 — RESEARCH INDEXES (PPC.5 + PPC.6)
+       ══════════════════════════════════════════════════════════ -->
+  <div class="step-section" id="sec-indexes">
+    <!-- PPC.5: Explanation -->
+    <div class="step-explain">
+      <span class="step-line1">Step 3. Select as many as six (6) ETF or Index choices to appear on your Personal Portfolio page.</span>
+      <span class="step-line2">Choose ETFs or Indexes that contain the members of your Personal Portfolio. These appear in your Personal Histogram for context but are not added to your Personal Tracker.</span>
+    </div>
+
+    <!-- PPC.6: Index input -->
+    <div class="step-head">
+      <div class="step-title">
+        Choose Your Personal Portfolio ETFs and Indexes
+        <small>Sector research section of your My Portfolio page</small>
+      </div>
+      <span class="step-check" id="check-idx">✓ SAVED</span>
+    </div>
+
+    <div class="choice-box">
+      <div class="sym-input-row">
+        <input class="sym-input" id="idx-input" type="text" maxlength="5"
+               placeholder="Enter symbol…"
+               onkeydown="if(event.key==='Enter')addIndex()">
+        <button class="add-btn" onclick="addIndex()">Add</button>
+      </div>
+      <div class="input-error" id="idx-error"></div>
+      <div class="chips-grid" id="idx-chips"></div>
+    </div>
+
+    <div class="box-explain">
+      Enter an Index or ETF symbol to follow as sector research for your Personal Portfolio. Limit of 6.
+      These entries appear in your Personal Histogram and on your My Portfolio Sector section, but are
+      not added to the Personal Portfolio Tracker.
+    </div>
+  </div><!-- /step 3 -->
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       STEP 4 — PORTFOLIO ISSUES (PPC.9 + PPC.10)
+       ══════════════════════════════════════════════════════════ -->
+  <div class="step-section" id="sec-issues">
+    <!-- PPC.9: Explanation -->
+    <div class="step-explain">
+      <span class="step-line1">Step 4. Select as many as 10 equities, ETFs or indexes to appear on your Personal Portfolio page for research.</span>
+      <span class="step-line2">Your choices appear immediately as research — you can study the 90/10 chart and IR readings before committing. Nothing enters your Portfolio Tracker until you click Buy on your My Portfolio page. At that point the position opens at that day's closing price and your Buy IR is recorded. Your research choices remain visible after you Buy or Sell, so you can keep watching the IR cycle and decide when to re-enter.</span>
+    </div>
+
+    <!-- PPC.10: Issue input -->
+    <div class="step-head">
+      <div class="step-title">
+        Choose Your Personal Portfolio Issues
+        <small>Stock research section of your My Portfolio page</small>
+      </div>
+      <span class="step-check" id="check-iss">✓ SAVED</span>
+    </div>
+
+    <div class="choice-box">
+      <div class="sym-input-row">
+        <input class="sym-input" id="iss-input" type="text" maxlength="5"
+               placeholder="Enter symbol…"
+               onkeydown="if(event.key==='Enter')addIssue()">
+        <button class="add-btn" onclick="addIssue()">Add</button>
+      </div>
+      <div class="input-error" id="iss-error"></div>
+
+      <!-- Numbered chips #1–#10 (matching portfolio.html card numbering) -->
+      <div class="chips-grid" id="iss-chips"></div>
+
+      <!-- Reference: current research indexes shown for context (read-only) -->
+      <div class="ref-row" id="iss-ref-row">
+        <div class="ref-label">Your research indexes (for reference)</div>
+        <div class="ref-syms" id="iss-ref-syms"></div>
+      </div>
+    </div>
+
+    <div class="box-explain">
+      Enter an equity, ETF, or index symbol to add to your Personal Portfolio page for research. Limit of 10.
+      Your choices appear as white symbols in your Personal Histogram and as chart cards in the Stock section
+      of your My Portfolio page — for research only. Nothing is tracked until you click Buy on that page.
+    </div>
+  </div><!-- /step 4 -->
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       STEP 5 — SHARING (PPT.11 + PPT.12)
+       ══════════════════════════════════════════════════════════ -->
+  <div class="step-section" id="sec-sharing">
+    <!-- PPT.11: Explanation -->
+    <div class="step-explain">
+      <span class="step-line1">Step 5. Choose whether or not to share your Portfolio with the Portfolio Community.</span>
+      <span class="step-line2">If you choose Share, your portfolio will be identified only by your Portfolio Moniker — which is known only by you. Sharing activates the Portfolio Community button on your My Portfolio page.</span>
+    </div>
+
+    <!-- PPT.12: Share toggle -->
+    <div class="step-head">
+      <div class="step-title">Portfolio Community Page</div>
+      <span class="step-check" id="check-share">✓ SAVED</span>
+    </div>
+
+    <div class="choice-box" style="padding:0">
+      <div class="share-row">
+        <button class="share-btn" id="share-yes" onclick="setSharing(true)">
+          Share
+          <small>Activates Portfolio Community — your portfolio is identified by Moniker only</small>
+        </button>
+        <button class="share-btn" id="share-no" onclick="setSharing(false)">
+          Don't Share
+          <small>Portfolio Community button remains inactive on your My Portfolio page</small>
+        </button>
+      </div>
+    </div>
+  </div><!-- /step 5 -->
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       PPT.13 — CONGRATULATIONS
+       Dims until all five steps are complete.
+       ══════════════════════════════════════════════════════════ -->
+  <div class="congrats-section pending" id="congrats">
+    <div class="congrats-title">Congratulations!</div>
+    <div class="congrats-text">
+      If you completed all five steps, you're ready to follow your own Personal Portfolio
+      on your Portfolio Tracker page and compare your portfolio choices with other members
+      on the Personal Portfolio Community page.
+    </div>
+    <button class="congrats-btn" onclick="navTo('tracker.html','trackerPage')">
+      Go to Portfolio Tracker
+    </button>
+  </div>
+
+</div><!-- /shell -->
+
+
+<!-- ════════════════════════════════════════════════════════════
+     SCRIPTS
+     ════════════════════════════════════════════════════════════ -->
+<script>
+/* ════════════════════════════════════════════════════════════
+   WORD LISTS
+   Three chooser sets. Each word has a display name (w) and a
+   unique single-character code (c) within its category.
+   Symbols are assembled from codes: word1.c + word2.c + word3.c.
+   All codes within each category are unique → all 1,000
+   combinations per chooser produce unique 3-character symbols.
+   ════════════════════════════════════════════════════════════ */
+const CHOOSERS = {
+  1: {
+    name: 'Colors · Animals · Stones',
+    cats: ['Color', 'Animal', 'Stone'],
+    words: [
+      /* Colors  — codes: R B G Y P O K N X W */
+      [{w:'Red',c:'R'},{w:'Blue',c:'B'},{w:'Green',c:'G'},{w:'Yellow',c:'Y'},{w:'Purple',c:'P'},
+       {w:'Orange',c:'O'},{w:'Pink',c:'K'},{w:'Brown',c:'N'},{w:'Black',c:'X'},{w:'White',c:'W'}],
+      /* Animals — codes: E T F L W H J C A D */
+      [{w:'Eagle',c:'E'},{w:'Tiger',c:'T'},{w:'Falcon',c:'F'},{w:'Lion',c:'L'},{w:'Wolf',c:'W'},
+       {w:'Hawk',c:'H'},{w:'Jaguar',c:'J'},{w:'Cobra',c:'C'},{w:'Panther',c:'A'},{w:'Dragon',c:'D'}],
+      /* Stones  — codes: D R E S O T G P M X */
+      [{w:'Diamond',c:'D'},{w:'Ruby',c:'R'},{w:'Emerald',c:'E'},{w:'Sapphire',c:'S'},{w:'Opal',c:'O'},
+       {w:'Topaz',c:'T'},{w:'Garnet',c:'G'},{w:'Pearl',c:'P'},{w:'Amber',c:'M'},{w:'Onyx',c:'X'}]
+    ]
+  },
+  2: {
+    name: 'Forces · Predators · Metals',
+    cats: ['Force', 'Predator', 'Metal'],
+    words: [
+      /* Forces    — codes: F S T A L D Z R U X */
+      [{w:'Fire',c:'F'},{w:'Storm',c:'S'},{w:'Thunder',c:'T'},{w:'Arctic',c:'A'},{w:'Solar',c:'L'},
+       {w:'Tidal',c:'D'},{w:'Blaze',c:'Z'},{w:'Frost',c:'R'},{w:'Surge',c:'U'},{w:'Apex',c:'X'}],
+      /* Predators — codes: S O V C R L G N W B */
+      [{w:'Shark',c:'S'},{w:'Osprey',c:'O'},{w:'Viper',c:'V'},{w:'Cheetah',c:'C'},{w:'Raptor',c:'R'},
+       {w:'Lynx',c:'L'},{w:'Grizzly',c:'G'},{w:'Condor',c:'N'},{w:'Wolverine',c:'W'},{w:'Barracuda',c:'B'}],
+      /* Metals    — codes: G V P B T C K I H E */
+      [{w:'Gold',c:'G'},{w:'Silver',c:'V'},{w:'Platinum',c:'P'},{w:'Bronze',c:'B'},{w:'Titanium',c:'T'},
+       {w:'Copper',c:'C'},{w:'Cobalt',c:'K'},{w:'Iridium',c:'I'},{w:'Rhodium',c:'H'},{w:'Steel',c:'E'}]
+    ]
+  },
+  3: {
+    name: 'Celestial · Warriors · Gems',
+    cats: ['Celestial', 'Warrior', 'Gem'],
+    words: [
+      /* Celestial — codes: N S L C Z E A O M U */
+      [{w:'Nova',c:'N'},{w:'Solar',c:'S'},{w:'Lunar',c:'L'},{w:'Comet',c:'C'},{w:'Zenith',c:'Z'},
+       {w:'Eclipse',c:'E'},{w:'Aurora',c:'A'},{w:'Orbit',c:'O'},{w:'Cosmos',c:'M'},{w:'Pulsar',c:'U'}],
+      /* Warriors  — codes: K S V P R N G D E W */
+      [{w:'Knight',c:'K'},{w:'Samurai',c:'S'},{w:'Viking',c:'V'},{w:'Spartan',c:'P'},{w:'Ranger',c:'R'},
+       {w:'Ninja',c:'N'},{w:'Gladiator',c:'G'},{w:'Archer',c:'D'},{w:'Sentinel',c:'E'},{w:'Paladin',c:'W'}],
+      /* Gems      — codes: J Q A C L Z G I B X */
+      [{w:'Jade',c:'J'},{w:'Quartz',c:'Q'},{w:'Jasper',c:'A'},{w:'Citrine',c:'C'},{w:'Lapis',c:'L'},
+       {w:'Zircon',c:'Z'},{w:'Agate',c:'G'},{w:'Spinel',c:'I'},{w:'Beryl',c:'B'},{w:'Onyx',c:'X'}]
+    ]
+  }
+};
+
+/* ════════════════════════════════════════════════════════════
+   STATE
+   ════════════════════════════════════════════════════════════ */
+let mChooser  = null;          // 1 | 2 | 3
+let mWords    = [null,null,null]; // [{w,c}, {w,c}, {w,c}]
+let mLocked   = false;         // true after Lock It In
+
+let bgChoice        = null;   // 'OEX' | 'NDX'
+let researchIndexes = [];     // string[], max 6
+let portfolioIssues = [];     // string[], max 10
+let sharingChoice   = null;   // true | false
+
+/* ════════════════════════════════════════════════════════════
+   STORAGE UTILITIES
+   ════════════════════════════════════════════════════════════ */
+
+/*
+ * CONNECT POINT CP-D (wiring pass — server-side):
+ * takenMonikers is stored in localStorage for the static build.
+ * On the live platform, replace the localStorage check with a
+ * server call: POST /api/claim-moniker → {available: bool}
+ * The fullId format is '{chooser}-{sym}' e.g. '1-GFT'
+ */
+function getTakenMonikers() {
+  try { return JSON.parse(localStorage.getItem('takenMonikers') || '[]'); }
+  catch(e) { return []; }
+}
+function claimMoniker(fullId) {
+  const taken = getTakenMonikers();
+  if (!taken.includes(fullId)) {
+    taken.push(fullId);
+    try { localStorage.setItem('takenMonikers', JSON.stringify(taken)); } catch(e) {}
+  }
+}
+function isMonikerTaken(fullId) {
+  return getTakenMonikers().includes(fullId);
+}
+function releaseMoniker(fullId) {
+  /* Called when user hits Change — frees the old claim so others can use it */
+  const taken = getTakenMonikers().filter(id => id !== fullId);
+  try { localStorage.setItem('takenMonikers', JSON.stringify(taken)); } catch(e) {}
+}
+
+/*
+ * CONNECT POINT CP-A (wiring pass):
+ * saveChoices() is the single write point. portfolio.html,
+ * tracker.html, and front.html (via pfHistoData) all read from
+ * the 'portfolioChoices' key.
+ *
+ * What each consumer reads:
+ *   portfolio.html  → name (Element 6.4), background, researchIndexes,
+ *                     portfolioIssues (white histogram symbols), sharing (Community btn)
+ *   tracker.html    → portfolioIssues, moniker.symbol (portfolio score ID)
+ *   community.html  → sharing flag + moniker.symbol
+ *   front.html      → via pfHistoData (already wired in connection script)
+ *
+ * CONNECT POINT CP-B:
+ *   After saving, dispatch a StorageEvent-compatible signal so
+ *   portfolio.html can refresh if open in another tab.
+ */
+function saveChoices() {
+  const monikerData = mLocked && mWords[0] ? {
+    chooser:  mChooser,
+    word1:    mWords[0].w,
+    word2:    mWords[1].w,
+    word3:    mWords[2].w,
+    symbol:   mWords[0].c + mWords[1].c + mWords[2].c,
+    fullId:   `${mChooser}-${mWords[0].c}${mWords[1].c}${mWords[2].c}`,
+    display:  `${mWords[0].w} ${mWords[1].w} ${mWords[2].w}`
+  } : null;
+
+  /* Portfolio name: moniker display name, or fallback to first name from registration.
+     CONNECT POINT CP-B-NAME (wiring pass):
+       Replace fallback string with registrant's first name read from user session/profile. */
+  const portfolioName = monikerData
+    ? `${monikerData.display} (${monikerData.symbol})`
+    : "William's Portfolio";  // ← CONNECT POINT CP-B-NAME
+
+  const data = {
+    moniker:         monikerData,
+    portfolioName:   portfolioName,
+    background:      bgChoice,
+    researchIndexes: [...researchIndexes],
+    portfolioIssues: [...portfolioIssues],
+    sharing:         sharingChoice,
+    lastUpdated:     new Date().toISOString()
+  };
+
+  try {
+    localStorage.setItem('portfolioChoices', JSON.stringify(data));
+  } catch(e) {
+    console.warn('portfolioChoices save failed:', e);
+  }
+
+  updateCongratsStatus();
+
+  /* CONNECT POINT CP-C (wiring pass):
+     When sharing changes, portfolio.html should update Community button state.
+     On the live platform this is handled by the StorageEvent listener already
+     present in portfolio.html's script. The static stub fires a manual event. */
+}
+
+function loadChoices() {
+  try {
+    const raw = localStorage.getItem('portfolioChoices');
+    if (!raw) return;
+    const d = JSON.parse(raw);
+    bgChoice        = d.background      || null;
+    researchIndexes = d.researchIndexes || [];
+    portfolioIssues = d.portfolioIssues || [];
+    sharingChoice   = d.sharing !== undefined ? d.sharing : null;
+    if (d.moniker) {
+      mChooser  = d.moniker.chooser;
+      mLocked   = true;
+      const ch  = CHOOSERS[mChooser];
+      mWords[0] = ch.words[0].find(w => w.w === d.moniker.word1) || null;
+      mWords[1] = ch.words[1].find(w => w.w === d.moniker.word2) || null;
+      mWords[2] = ch.words[2].find(w => w.w === d.moniker.word3) || null;
+    }
+  } catch(e) {
+    console.warn('portfolioChoices load failed:', e);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   MONIKER STEP (PPC.8)
+   ════════════════════════════════════════════════════════════ */
+function selectChooser(id) {
+  mChooser = id;
+  mWords   = [null, null, null];
+
+  /* Highlight active chooser button */
+  document.querySelectorAll('.chooser-btn').forEach(b => {
+    b.classList.toggle('active', +b.dataset.chooser === id);
+  });
+
+  /* Hide word rows + result */
+  [0,1,2].forEach(i => {
+    document.getElementById(`word-sec-${i}`).classList.remove('visible');
+  });
+  document.getElementById('moniker-result').classList.remove('visible');
+  document.getElementById('moniker-locked').classList.remove('visible');
+
+  /* Render Word 1 row */
+  renderWordRow(0);
+  document.getElementById(`word-sec-0`).classList.add('visible');
+  document.getElementById(`word-label-0`).textContent =
+    `Choose your ${CHOOSERS[id].cats[0]}`;
+}
+
+function renderWordRow(idx) {
+  const ch   = CHOOSERS[mChooser];
+  const row  = document.getElementById(`word-row-${idx}`);
+  row.innerHTML = ch.words[idx].map(wd => `
+    <button class="word-btn ${mWords[idx]?.w===wd.w?'selected':''}"
+            onclick="selectWord(${idx},'${wd.w}','${wd.c}')">
+      ${wd.w}
+    </button>
+  `).join('');
+}
+
+function selectWord(idx, word, code) {
+  mWords[idx] = { w: word, c: code };
+
+  /* Re-render this row to show selection */
+  renderWordRow(idx);
+
+  const nextIdx = idx + 1;
+  if (nextIdx < 3) {
+    /* Reveal next word row */
+    renderWordRow(nextIdx);
+    document.getElementById(`word-sec-${nextIdx}`).classList.add('visible');
+    document.getElementById(`word-label-${nextIdx}`).textContent =
+      `Choose your ${CHOOSERS[mChooser].cats[nextIdx]}`;
+    /* Hide any rows beyond next (in case of re-selection) */
+    for (let i = nextIdx + 1; i < 3; i++) {
+      document.getElementById(`word-sec-${i}`).classList.remove('visible');
+      mWords[i] = null;
+    }
+    document.getElementById('moniker-result').classList.remove('visible');
+  } else {
+    /* All three selected — show result */
+    showMonikerResult();
+  }
+}
+
+function showMonikerResult() {
+  const sym     = mWords[0].c + mWords[1].c + mWords[2].c;
+  const display = `${mWords[0].w} ${mWords[1].w} ${mWords[2].w}`;
+  const fullId  = `${mChooser}-${sym}`;
+
+  document.getElementById('moniker-display').textContent = display;
+  document.getElementById('moniker-sym-display').textContent = `Symbol: (${sym})`;
+  document.getElementById('taken-msg').style.display = 'none';
+  document.getElementById('moniker-result').classList.add('visible');
+}
+
+function lockMoniker() {
+  const sym    = mWords[0].c + mWords[1].c + mWords[2].c;
+  const fullId = `${mChooser}-${sym}`;
+
+  if (isMonikerTaken(fullId)) {
+    document.getElementById('taken-msg').style.display = 'block';
+    return;
+  }
+
+  claimMoniker(fullId);
+  mLocked = true;
+
+  const display = `${mWords[0].w} ${mWords[1].w} ${mWords[2].w}`;
+  document.getElementById('moniker-locked-name').textContent = `${display}`;
+  document.getElementById('moniker-locked-sym').textContent  = `(${sym})`;
+
+  /* Hide picker, show locked display */
+  document.getElementById('chooser-select').classList.add('hidden');
+  [0,1,2].forEach(i => document.getElementById(`word-sec-${i}`).classList.remove('visible'));
+  document.getElementById('moniker-result').classList.remove('visible');
+  document.getElementById('moniker-locked').classList.add('visible');
+
+  showCheck('check-moniker');
+  saveChoices();
+}
+
+function resetMoniker() {
+  /* Release old claim if one exists */
+  if (mLocked && mWords[0] && mWords[1] && mWords[2]) {
+    const oldFullId = `${mChooser}-${mWords[0].c}${mWords[1].c}${mWords[2].c}`;
+    releaseMoniker(oldFullId);
+  }
+
+  mChooser = null; mWords = [null,null,null]; mLocked = false;
+
+  document.getElementById('chooser-select').classList.remove('hidden');
+  document.querySelectorAll('.chooser-btn').forEach(b => b.classList.remove('active'));
+  [0,1,2].forEach(i => {
+    const sec = document.getElementById(`word-sec-${i}`);
+    sec.classList.remove('visible');
+    document.getElementById(`word-row-${i}`).innerHTML = '';
+  });
+  document.getElementById('moniker-result').classList.remove('visible');
+  document.getElementById('moniker-locked').classList.remove('visible');
+  document.getElementById('check-moniker').classList.remove('show');
+
+  saveChoices();
+}
+
+/* ════════════════════════════════════════════════════════════
+   BACKGROUND STEP (PPC.4)
+   ════════════════════════════════════════════════════════════ */
+function selectBg(choice) {
+  bgChoice = choice;
+  document.getElementById('bg-oex').classList.toggle('active', choice === 'OEX');
+  document.getElementById('bg-ndx').classList.toggle('active', choice === 'NDX');
+  showCheck('check-bg');
+
+  /*
+   * CONNECT POINT CP-A-BG (wiring pass):
+   * After saving, portfolio.html should reload the histogram
+   * with the new background member list. On the live platform this
+   * triggers portfolio.html's buildHistogram() via StorageEvent.
+   */
+  saveChoices();
+}
+
+/* ════════════════════════════════════════════════════════════
+   RESEARCH INDEXES STEP (PPC.6)
+   ════════════════════════════════════════════════════════════ */
+function addIndex() {
+  const input = document.getElementById('idx-input');
+  const sym   = input.value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+  const errEl = document.getElementById('idx-error');
+  errEl.textContent = '';
+
+  if (!sym) { errEl.textContent = 'Please enter a symbol.'; return; }
+  if (sym.length > 5) { errEl.textContent = 'Symbols are 1–5 characters.'; return; }
+  if (researchIndexes.length >= 6) { errEl.textContent = 'You have reached your limit of 6 research indexes.'; return; }
+  if (researchIndexes.includes(sym)) { errEl.textContent = 'Already in your research list — try a different symbol.'; return; }
+  if (portfolioIssues.includes(sym)) { errEl.textContent = 'That symbol is already in your Portfolio Issues list.'; return; }
+
+  /*
+   * CONNECT POINT CP-A-IDX-VALIDATE (wiring pass — server-side):
+   * Replace the format-only check above with a lookup against
+   * the valid index/ETF symbol list in the database.
+   * Invalid symbols → 'Symbol not recognized — try again'
+   * Equity-only symbols → error is removed (all types now allowed in research)
+   */
+
+  researchIndexes.push(sym);
+  input.value = '';
+  renderIndexChips();
+  renderIssueRef();
+  if (researchIndexes.length > 0) showCheck('check-idx');
+  saveChoices();
+}
+
+function removeIndex(sym) {
+  researchIndexes = researchIndexes.filter(s => s !== sym);
+  renderIndexChips();
+  renderIssueRef();
+  if (researchIndexes.length === 0) hideCheck('check-idx');
+  saveChoices();
+}
+
+function renderIndexChips() {
+  const container = document.getElementById('idx-chips');
+  const slots     = 6;
+  let html = '';
+  for (let i = 0; i < slots; i++) {
+    if (i < researchIndexes.length) {
+      const sym = researchIndexes[i];
+      html += `<div class="chip">
+        <span class="chip-num">${i+1}</span>
+        ${sym}
+        <button class="chip-x" onclick="removeIndex('${sym}')" title="Remove ${sym}">×</button>
+      </div>`;
+    } else {
+      html += `<div class="slot-empty">— empty —</div>`;
+    }
+  }
+  container.innerHTML = html;
+}
+
+/* ════════════════════════════════════════════════════════════
+   PORTFOLIO ISSUES STEP (PPC.10)
+   ════════════════════════════════════════════════════════════ */
+function addIssue() {
+  const input = document.getElementById('iss-input');
+  const sym   = input.value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+  const errEl = document.getElementById('iss-error');
+  errEl.textContent = '';
+
+  if (!sym) { errEl.textContent = 'Please enter a symbol.'; return; }
+  if (sym.length > 5) { errEl.textContent = 'Symbols are 1–5 characters.'; return; }
+  if (portfolioIssues.length >= 10) { errEl.textContent = 'You have reached your limit of 10 portfolio issues.'; return; }
+  if (portfolioIssues.includes(sym)) { errEl.textContent = 'Already in your portfolio — try a different symbol.'; return; }
+  if (researchIndexes.includes(sym)) { errEl.textContent = 'That symbol is in your Research Indexes list. Research indexes and portfolio issues are separate lists.'; return; }
+
+  /*
+   * CONNECT POINT CP-A-ISS-VALIDATE (wiring pass — server-side):
+   * Replace format-only check with symbol lookup against the combined
+   * issue + index list in the database.
+   * Invalid symbols → 'Symbol not recognized — try again'
+   *
+   * CONNECT POINT CP-A-ISS-SLOTS (wiring pass):
+   * If issue slot is empty on portfolio.html (card #N shows placeholder),
+   * inserting here should update that card after the StorageEvent fires.
+   * The card placeholder/replace popup described in design discussions
+   * is not needed from this page — it's needed on portfolio.html itself
+   * when the client initiates a swap from there.
+   */
+
+  portfolioIssues.push(sym);
+  input.value = '';
+  renderIssueChips();
+  if (portfolioIssues.length > 0) showCheck('check-iss');
+  saveChoices();
+}
+
+function removeIssue(sym) {
+  portfolioIssues = portfolioIssues.filter(s => s !== sym);
+  renderIssueChips();
+  if (portfolioIssues.length === 0) hideCheck('check-iss');
+  saveChoices();
+}
+
+function renderIssueChips() {
+  const container = document.getElementById('iss-chips');
+  const slots     = 10;
+  let html = '';
+  for (let i = 0; i < slots; i++) {
+    if (i < portfolioIssues.length) {
+      const sym = portfolioIssues[i];
+      html += `<div class="chip">
+        <span class="chip-num">#${i+1}</span>
+        ${sym}
+        <button class="chip-x" onclick="removeIssue('${sym}')" title="Remove ${sym}">×</button>
+      </div>`;
+    } else {
+      html += `<div class="slot-empty">#${i+1}</div>`;
+    }
+  }
+  container.innerHTML = html;
+}
+
+function renderIssueRef() {
+  /* Shows current research indexes below the issue input as read-only reference */
+  const container = document.getElementById('iss-ref-syms');
+  const refRow    = document.getElementById('iss-ref-row');
+  if (researchIndexes.length === 0) {
+    refRow.style.display = 'none';
+    return;
+  }
+  refRow.style.display = 'block';
+  container.innerHTML = [...researchIndexes].sort()
+    .map(s => `<span class="ref-sym">${s}</span>`).join('');
+}
+
+/* ════════════════════════════════════════════════════════════
+   SHARING STEP (PPT.12)
+   ════════════════════════════════════════════════════════════ */
+function setSharing(val) {
+  sharingChoice = val;
+  document.getElementById('share-yes').className =
+    'share-btn' + (val ? ' active-yes' : '');
+  document.getElementById('share-no').className =
+    'share-btn' + (!val ? ' active-no' : '');
+  showCheck('check-share');
+
+  /*
+   * CONNECT POINT CP-C (wiring pass):
+   * When sharing=true, portfolio.html's Community button should
+   * become fully active (opacity 1, solid border, clickable).
+   * The StorageEvent listener on portfolio.html fires automatically.
+   * On the live platform, also write sharing preference to user profile.
+   */
+  saveChoices();
+}
+
+/* ════════════════════════════════════════════════════════════
+   CONGRATULATIONS STATUS
+   Activates when all 5 steps are complete.
+   ════════════════════════════════════════════════════════════ */
+function updateCongratsStatus() {
+  const done = mLocked
+            && bgChoice !== null
+            && researchIndexes.length > 0
+            && portfolioIssues.length > 0
+            && sharingChoice !== null;
+
+  document.getElementById('congrats').classList.toggle('pending', !done);
+}
+
+/* ════════════════════════════════════════════════════════════
+   UI HELPERS
+   ════════════════════════════════════════════════════════════ */
+function showCheck(id) {
+  document.getElementById(id).classList.add('show');
+}
+function hideCheck(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+/* ════════════════════════════════════════════════════════════
+   RESTORE STATE FROM LOCALSTORAGE ON LOAD
+   ════════════════════════════════════════════════════════════ */
+function restoreUI() {
+  /* Background */
+  if (bgChoice) selectBg(bgChoice);
+
+  /* Research indexes */
+  renderIndexChips();
+  renderIssueRef();
+  if (researchIndexes.length > 0) showCheck('check-idx');
+
+  /* Portfolio issues */
+  renderIssueChips();
+  if (portfolioIssues.length > 0) showCheck('check-iss');
+
+  /* Sharing */
+  if (sharingChoice !== null) setSharing(sharingChoice);
+
+  /* Moniker — restore locked state */
+  if (mLocked && mWords[0] && mWords[1] && mWords[2]) {
+    const sym     = mWords[0].c + mWords[1].c + mWords[2].c;
+    const display = `${mWords[0].w} ${mWords[1].w} ${mWords[2].w}`;
+    document.getElementById('moniker-locked-name').textContent = display;
+    document.getElementById('moniker-locked-sym').textContent  = `(${sym})`;
+    document.getElementById('chooser-select').classList.add('hidden');
+    document.getElementById('moniker-locked').classList.add('visible');
+    showCheck('check-moniker');
+  }
+
+  updateCongratsStatus();
+}
+
+/* ════════════════════════════════════════════════════════════
+   NAVIGATION
+   ════════════════════════════════════════════════════════════ */
+function navTo(url, winName) {
+  if (window.innerWidth < 768) { location.href = url; }
+  else { window.open(url, winName); }
+}
+
+/* ── INIT ── */
+loadChoices();
+restoreUI();
+</script>
+</body>
+</html>

@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Stock — Top Down Trading</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+/* ─── VARIABLES ─── */
+:root {
+  --bg:       #08111e;
+  --panel:    #0d1829;
+  --panel-alt:#0a1420;
+  --border:   #1a2d44;
+  --border-li:#243c58;
+  --text:     #ddeeff;
+  --text-dim: #5a7a9a;
+  --pos:      #88cc44;
+  --neg:      #e83535;
+  --accent:   #3090d8;
+  --font-head:'Rajdhani', sans-serif;
+  --font-mono:'Courier New', monospace;
+  --z1:#00cc55; --z2:#88cc44; --z3:#7a9aaa;
+  --z4:#aa9a7a; --z5:#ddcc00; --z6:#e83535;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--font-head);}
+a{color:var(--accent);text-decoration:none;}
+a:hover{text-decoration:underline;}
+
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--border-li);border-radius:2px;}
+
+/* ─── HEADER ─── */
+.page-header{
+  position:fixed;top:0;left:0;right:0;z-index:100;
+  height:48px;background:var(--panel-alt);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;padding:0 14px;
+}
+.hamburger{
+  background:none;border:1px solid var(--border-li);color:var(--text-dim);
+  padding:5px 9px;cursor:pointer;border-radius:2px;font-size:16px;line-height:1;
+  transition:all .15s;
+}
+.hamburger:hover{border-color:var(--accent);color:var(--text);}
+.hdr-brand{
+  font-family:var(--font-head);font-size:20px;font-weight:700;
+  color:var(--text);letter-spacing:.04em;
+}
+.search-wrap{display:flex;align-items:center;}
+.search-input{
+  background:var(--panel);border:1px solid var(--border-li);border-right:none;
+  color:var(--text);font-family:var(--font-mono);font-size:11px;
+  padding:4px 9px;width:150px;outline:none;border-radius:2px 0 0 2px;
+}
+.search-input::placeholder{color:var(--text-dim);}
+.search-btn{
+  background:var(--panel);border:1px solid var(--border-li);border-left:none;
+  color:var(--text-dim);padding:4px 8px;cursor:pointer;border-radius:0 2px 2px 0;
+  font-size:13px;transition:color .15s;
+}
+.search-btn:hover{color:var(--accent);}
+
+/* ─── SLIDE-OUT MENU ─── */
+.menu-overlay{position:fixed;inset:0;background:rgba(0,0,0,.52);z-index:200;display:none;}
+.menu-overlay.open{display:block;}
+.slide-menu{
+  position:fixed;top:0;left:-270px;width:250px;height:100vh;
+  background:var(--panel-alt);border-right:1px solid var(--border);
+  z-index:201;transition:left .24s ease;overflow-y:auto;padding:14px 0 20px;
+}
+.slide-menu.open{left:0;}
+.menu-close{
+  position:absolute;top:12px;right:12px;background:none;border:none;
+  color:var(--text-dim);font-size:18px;cursor:pointer;
+}
+.menu-close:hover{color:var(--text);}
+.menu-section{
+  font-family:var(--font-head);font-size:9px;font-weight:700;
+  color:var(--text-dim);letter-spacing:.12em;text-transform:uppercase;
+  padding:12px 16px 4px;
+}
+.menu-divider{height:1px;background:var(--border);margin:8px 16px;}
+.menu-item{
+  display:block;padding:7px 16px;font-family:var(--font-head);font-size:14px;
+  font-weight:600;color:var(--text-dim);border-left:2px solid transparent;
+  transition:all .15s;
+}
+.menu-item:hover{color:var(--text);border-left-color:var(--accent);background:rgba(48,144,216,.07);}
+.menu-item.current{color:var(--text);border-left-color:var(--accent);background:rgba(48,144,216,.12);pointer-events:none;}
+.menu-item.lock{opacity:.38;pointer-events:none;}
+
+/* ─── PAGE CONTENT ─── */
+.page-content{padding-top:48px;padding-bottom:48px;}
+.inner{max-width:1440px;margin:0 auto;padding:0 16px;}
+
+/* ─── BREADCRUMB / 5.1 TITLE ─── */
+.breadcrumb-nav{
+  text-align:center;padding:18px 0 4px;
+  font-family:var(--font-head);font-size:13px;font-weight:600;
+  color:var(--text-dim);letter-spacing:.04em;
+}
+.breadcrumb-nav a{color:var(--text-dim);}
+.breadcrumb-nav a:hover{color:var(--accent);}
+.breadcrumb-nav .sep{margin:0 8px;}
+.page-title-block{
+  text-align:center;padding:6px 0 20px;
+  font-family:var(--font-head);font-size:30px;font-weight:700;letter-spacing:.05em;
+}
+.page-title-block a{color:var(--text-dim);}
+.page-title-block a:hover{color:var(--accent);}
+.page-title-block .sep{color:var(--text-dim);margin:0 10px;}
+.page-title-block .cur{color:var(--text);}
+
+/* ─── SECTION HEADER BLOCKS ─── */
+.section-hdr{text-align:center;margin:30px 0 16px;}
+.section-hdr-title{font-size:17px;font-weight:700;color:var(--text);letter-spacing:.03em;}
+.section-hdr-expl{font-size:13px;font-style:italic;color:var(--text-dim);margin-top:5px;line-height:1.4;}
+
+/* ─── TWO-COL GRID ─── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+
+/* ─── TOGGLE 1-WAY ─── */
+.t1w-block{display:flex;flex-direction:column;}
+.t1w-title-block{text-align:center;margin-bottom:6px;}
+.t1w-title-main{font-size:13px;font-weight:700;color:var(--text);letter-spacing:.02em;}
+.t1w-title-sub{font-size:12px;font-weight:400;color:var(--text-dim);margin-top:1px;}
+
+.t1w-wrap{background:var(--panel);border:1px solid var(--border);overflow:hidden;flex:1;}
+.t1w-hdr{
+  background:var(--panel-alt);border-bottom:1px solid var(--border);
+  padding:6px 10px;display:flex;align-items:center;justify-content:center;
+}
+.ws-btn{
+  background:var(--panel);border:1px solid var(--border-li);
+  color:var(--text-dim);font-family:var(--font-head);font-size:12px;font-weight:600;
+  padding:3px 16px;cursor:pointer;transition:all .15s;
+}
+.ws-btn:first-child{border-radius:2px 0 0 2px;border-right:none;}
+.ws-btn:last-child {border-radius:0 2px 2px 0;}
+.ws-btn.active{background:#2a7abf;border-color:var(--accent);color:#fff;}
+.ws-btn:hover:not(.active){border-color:var(--accent);color:var(--text);}
+
+.t1w-scroll{max-height:310px;overflow-y:auto;}
+.t1w-scroll::-webkit-scrollbar{width:4px;}
+.t1w-scroll::-webkit-scrollbar-track{background:var(--bg);}
+.t1w-scroll::-webkit-scrollbar-thumb{background:var(--border-li);border-radius:2px;}
+
+/* ─── IR TABLE (shared) ─── */
+.ir-table{width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:11px;}
+.ir-table th{
+  background:var(--panel);color:var(--text-dim);padding:4px 6px;text-align:left;
+  border-bottom:1px solid var(--border);position:sticky;top:0;
+  font-size:10px;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;
+}
+.ir-table th.sortable{cursor:pointer;user-select:none;}
+.ir-table th.sortable:hover{color:var(--text);}
+.ir-table th.sort-active{color:var(--accent);}
+.sort-arrow{font-size:10px;margin-left:3px;opacity:.5;}
+.sort-arrow.active{opacity:1;color:var(--accent);}
+.ir-table td{padding:3px 6px;border-bottom:1px solid #0e1a28;white-space:nowrap;}
+.ir-table tr:hover td{background:#111e30;}
+.col-sym{color:var(--text);font-weight:bold;cursor:pointer;}
+.col-sym:hover{color:var(--accent);text-decoration:underline;}
+.col-name{color:var(--text-dim);font-size:10px;}
+.col-ir{text-align:center;}
+.col-zone{text-align:center;}
+.col-3mo{text-align:center;font-size:10px;padding-left:14px !important;}
+.zone-badge{display:inline-block;padding:1px 5px;font-size:10px;font-weight:bold;border-radius:2px;color:#000;}
+.pos{color:var(--pos);}
+.neg{color:var(--neg);}
+.zer{color:#b8cce0;}
+
+/* ─── MOMENTUM BOXES ─── */
+.mo-block{display:flex;flex-direction:column;}
+.mo-title-block{text-align:center;margin-bottom:7px;}
+.mo-title-text{font-size:14px;font-weight:700;color:var(--text);letter-spacing:.02em;}
+.mo-list-wrap{background:var(--panel);border:1px solid var(--border);overflow:hidden;}
+.mo-list-scroll{max-height:310px;overflow-y:auto;}
+.mo-list-scroll::-webkit-scrollbar{width:4px;}
+.mo-list-scroll::-webkit-scrollbar-track{background:var(--bg);}
+.mo-list-scroll::-webkit-scrollbar-thumb{background:var(--border-li);border-radius:2px;}
+.mo-comment{
+  margin-top:8px;background:var(--panel);border:1px solid var(--border);
+  padding:10px 13px;font-family:var(--font-head);font-size:13px;
+  font-style:italic;color:var(--text-dim);line-height:1.55;
+}
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<header class="page-header">
+  <button class="hamburger" onclick="toggleMenu()">☰</button>
+  <div class="hdr-brand">↓ Top Down Trading</div>
+  <div class="search-wrap">
+    <input class="search-input" id="searchInput" type="text" placeholder="Search ticker…"
+           onkeydown="if(event.key==='Enter')doSearch()">
+    <button class="search-btn" onclick="doSearch()">⌕</button>
+  </div>
+</header>
+
+<!-- ══ SLIDE-OUT MENU ══ -->
+<div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
+<nav class="slide-menu" id="slideMenu">
+  <button class="menu-close" onclick="closeMenu()">✕</button>
+  <div class="menu-section">Information</div>
+  <a class="menu-item" href="about.html">About Us</a>
+  <a class="menu-item" href="zones.html">The Zone System</a>
+  <a class="menu-item" href="analysis.html">Stock Analysis</a>
+  <a class="menu-item lock" id="m-opt-info" href="options-info.html">Options Strategies</a>
+  <a class="menu-item" href="resources.html">Resources</a>
+  <a class="menu-item" href="contact.html">Contacts</a>
+  <div class="menu-divider"></div>
+  <div class="menu-section">Pages</div>
+  <a class="menu-item" href="portfolio.html">My Portfolio</a>
+  <a class="menu-item" href="front.html">Front Page</a>
+  <a class="menu-item" href="market.html">Market</a>
+  <a class="menu-item" href="sector.html">Sector</a>
+  <a class="menu-item current" href="stock.html">Stock</a>
+  <a class="menu-item lock" id="m-opt-page" href="options-page.html">Options</a>
+  <a class="menu-item lock" id="m-osg" href="game.html">Options Strategy Game</a>
+</nav>
+
+<!-- ══ PAGE CONTENT ══ -->
+<div class="page-content">
+<div class="inner">
+
+  <!-- ── ELEMENT 5.1 — Market → Sector → Stock title ── -->
+  <div class="breadcrumb-nav">
+    <a href="market.html">Market</a><span class="sep">→</span>
+    <a href="sector.html">Sector</a><span class="sep">→</span>
+    <span style="color:var(--text)">Stock</span>
+  </div>
+  <div class="page-title-block">
+    <a href="market.html">Market</a>
+    <span class="sep">→</span>
+    <a href="sector.html">Sector</a>
+    <span class="sep">→</span>
+    <span class="cur">Stock</span>
+  </div>
+
+  <!-- ── ELEMENT 5.2 — Stocks By Zone title ── -->
+  <div class="section-hdr">
+    <div class="section-hdr-title">Stocks By Zone — Weakest / Strongest</div>
+    <div class="section-hdr-expl">Follow the weakest and strongest issues in our database with an eye toward reversion to the mean opportunities</div>
+  </div>
+
+  <!-- ── ELEMENTS 5.3 – 5.14: Zone 1–6 paired toggles ── -->
+  <div class="two-col" id="zone1-row"></div>
+  <div class="two-col" id="zone2-row"></div>
+  <div class="two-col" id="zone3-row"></div>
+  <div class="two-col" id="zone4-row"></div>
+  <div class="two-col" id="zone5-row"></div>
+  <div class="two-col" id="zone6-row"></div>
+
+  <!-- ── ELEMENT 5.15 — S&P Major Indexes title ── -->
+  <div class="section-hdr" style="margin-top:36px;">
+    <div class="section-hdr-title">S&amp;P Major Indexes — Weakest / Strongest</div>
+    <div class="section-hdr-expl">Follow the weakest and strongest issues in the Major Indexes with an eye toward reversion to the mean opportunities</div>
+  </div>
+
+  <!-- ── ELEMENTS 5.16 – 5.21: SPX / MID / SML paired toggles ── -->
+  <div class="two-col" id="spx-row"></div>
+  <div class="two-col" id="mid-row"></div>
+  <div class="two-col" id="sml-row"></div>
+
+  <!-- ── ELEMENT 5.22 — Momentum Reversals title ── -->
+  <div class="section-hdr" style="margin-top:36px;">
+    <div class="section-hdr-title">Momentum Reversals Watchlist</div>
+    <div class="section-hdr-expl">Momentum Reversals occur when the 10-day momentum indicator adopts the opposite sign of the 90-day indicator.<br>
+    We track Momentum Reversals that occur at the extremes in Zone 1 (oversold) and Zone 6 (overbought).</div>
+  </div>
+
+  <!-- ── ELEMENTS 5.23 & 5.24 — Momentum boxes ── -->
+  <div class="two-col" id="mo-row"></div>
+
+</div><!-- /inner -->
+</div><!-- /page-content -->
+
+<script>
+/* ════════════════════════════════════════════
+   SEEDED RNG — deterministic demo data
+   ════════════════════════════════════════════ */
+function mkRng(seed) {
+  let s = seed >>> 0;
+  return () => { s = (Math.imul(s, 1664525) + 1013904223) >>> 0; return s / 4294967296; };
+}
+
+/* ════════════════════════════════════════════
+   TICKER POOL (100 representative stocks)
+   ════════════════════════════════════════════ */
+const TPOOL = [
+  ['AAPL','Apple Inc'],['MSFT','Microsoft Corp'],['GOOGL','Alphabet Inc'],['AMZN','Amazon.com'],
+  ['NVDA','NVIDIA Corp'],['META','Meta Platforms'],['TSLA','Tesla Inc'],['JPM','JPMorgan Chase'],
+  ['JNJ','Johnson & Johnson'],['V','Visa Inc'],['PG','Procter & Gamble'],['MA','Mastercard'],
+  ['HD','Home Depot'],['CVX','Chevron Corp'],['MRK','Merck & Co'],['ABBV','AbbVie Inc'],
+  ['LLY','Eli Lilly & Co'],['PFE','Pfizer Inc'],['KO','Coca-Cola Co'],['PEP','PepsiCo Inc'],
+  ['COST','Costco Wholesale'],['TMO','Thermo Fisher'],['DHR','Danaher Corp'],['MCD','McDonald\'s'],
+  ['WMT','Walmart Inc'],['DIS','Walt Disney Co'],['CRM','Salesforce Inc'],['ADBE','Adobe Inc'],
+  ['NFLX','Netflix Inc'],['INTC','Intel Corp'],['AMD','Advanced Micro Devices'],['QCOM','QUALCOMM'],
+  ['TXN','Texas Instruments'],['AVGO','Broadcom Inc'],['MU','Micron Technology'],['AMAT','Applied Materials'],
+  ['GS','Goldman Sachs'],['MS','Morgan Stanley'],['BAC','Bank of America'],['WFC','Wells Fargo'],
+  ['C','Citigroup Inc'],['BLK','BlackRock Inc'],['AXP','American Express'],['USB','US Bancorp'],
+  ['UNH','UnitedHealth Grp'],['CVS','CVS Health Corp'],['CI','Cigna Group'],['HUM','Humana Inc'],
+  ['XOM','Exxon Mobil'],['SLB','SLB Corp'],['EOG','EOG Resources'],['COP','ConocoPhillips'],
+  ['CAT','Caterpillar Inc'],['DE','Deere & Company'],['HON','Honeywell Intl'],['RTX','RTX Corp'],
+  ['LMT','Lockheed Martin'],['AMT','American Tower'],['PLD','Prologis Inc'],['NEE','NextEra Energy'],
+  ['DUK','Duke Energy Corp'],['T','AT&T Inc'],['VZ','Verizon Comm'],['TMUS','T-Mobile US'],
+  ['NKE','Nike Inc'],['SBUX','Starbucks Corp'],['MO','Altria Group'],['PM','Philip Morris'],
+  ['FCX','Freeport-McMoRan'],['NEM','Newmont Corp'],['FDX','FedEx Corp'],['UPS','United Parcel'],
+  ['DAL','Delta Air Lines'],['MRNA','Moderna Inc'],['BIIB','Biogen Inc'],['GILD','Gilead Sciences'],
+  ['REGN','Regeneron Pharma'],['ZM','Zoom Video Comm'],['SNOW','Snowflake Inc'],['PLTR','Palantir Tech'],
+  ['UBER','Uber Technologies'],['LYFT','Lyft Inc'],['ROKU','Roku Inc'],['SQ','Block Inc'],
+  ['PYPL','PayPal Holdings'],['COIN','Coinbase Global'],['RIVN','Rivian Automotive'],['F','Ford Motor Co'],
+  ['GM','General Motors'],['SHOP','Shopify Inc'],['SE','Sea Limited'],['MELI','MercadoLibre'],
+  ['NIO','NIO Inc'],['WBA','Walgreens Boots'],['DG','Dollar General'],['DLTR','Dollar Tree'],
+  ['EL','Estee Lauder'],['ULTA','Ulta Beauty'],['LULU','Lululemon Athletica'],['RL','Ralph Lauren'],
+  ['TJX','TJX Companies'],['ROST','Ross Stores'],['LVS','Las Vegas Sands'],['MGM','MGM Resorts'],
+];
+
+/* ════════════════════════════════════════════
+   ZONE SYSTEM
+   ════════════════════════════════════════════ */
+const ZONE_RANGES = {1:[67,99],2:[34,66],3:[1,33],4:[-33,-1],5:[-66,-34],6:[-99,-67]};
+const ZONE_COLORS = {1:'#00cc55',2:'#88cc44',3:'#7a9aaa',4:'#aa9a7a',5:'#ddcc00',6:'#e83535'};
+const ZONE_LABEL_COLORS = {1:'var(--z1)',2:'var(--z2)',3:'var(--z3)',4:'var(--z4)',5:'var(--z5)',6:'var(--z6)'};
+
+function irToZone(ir){
+  if(ir>=67)return 1;if(ir>=34)return 2;if(ir>=1)return 3;
+  if(ir>=-33)return 4;if(ir>=-66)return 5;return 6;
+}
+function clamp(v){return Math.max(-99,Math.min(99,Math.round(v)));}
+
+/* ════════════════════════════════════════════
+   DATA GENERATORS
+   ════════════════════════════════════════════ */
+function genZoneData(zoneNum, seedBase) {
+  const rng = mkRng(seedBase);
+  const [lo, hi] = ZONE_RANGES[zoneNum];
+  const range = Math.abs(hi - lo);
+  const positive = hi > 0;
+
+  // Shuffle pool deterministically
+  const pool = [...TPOOL].sort(() => rng() - 0.5).slice(0, 30);
+
+  // Weakest 15 — most extreme end of this zone
+  const weakest = pool.slice(0, 15).map(t => {
+    const ir = positive
+      ? clamp(hi - rng() * range * 0.44)   // near top of positive zone
+      : clamp(lo + rng() * range * 0.44);  // near bottom of negative zone
+    const mo3 = clamp(ir + (rng() - 0.5) * 24);
+    return {sym:t[0], name:t[1], ir, zone:zoneNum, mo3};
+  });
+  // Sort weakest: highest IR first (always — descending puts most extreme oversold at top)
+  weakest.sort((a, b) => b.ir - a.ir);
+
+  // Strongest 15 — boundary end of this zone
+  const strongest = pool.slice(15, 30).map(t => {
+    const ir = positive
+      ? clamp(lo + rng() * range * 0.44)   // near bottom of positive zone
+      : clamp(hi - rng() * range * 0.44);  // near top of negative zone
+    const mo3 = clamp(ir + (rng() - 0.5) * 24);
+    return {sym:t[0], name:t[1], ir, zone:zoneNum, mo3};
+  });
+  // Sort strongest: ascending (most negative IR first = most extreme overbought at top)
+  strongest.sort((a, b) => a.ir - b.ir);
+
+  return {weakest, strongest};
+}
+
+function genIndexData(seedBase) {
+  const rng = mkRng(seedBase);
+  const pool = [...TPOOL].sort(() => rng() - 0.5).slice(0, 30);
+
+  const weakest = pool.slice(0, 15).map(t => {
+    const ir = clamp(52 + rng() * 45);
+    const mo3 = clamp(ir + (rng() - 0.5) * 26);
+    return {sym:t[0], name:t[1], ir, zone:irToZone(ir), mo3};
+  }).sort((a,b) => b.ir - a.ir);
+
+  const strongest = pool.slice(15, 30).map(t => {
+    const ir = clamp(-52 - rng() * 45);
+    const mo3 = clamp(ir + (rng() - 0.5) * 26);
+    return {sym:t[0], name:t[1], ir, zone:irToZone(ir), mo3};
+  }).sort((a,b) => a.ir - b.ir);
+
+  return {weakest, strongest};
+}
+
+function genMoData(isBreakout, seed) {
+  const rng = mkRng(seed);
+  const pool = [...TPOOL].sort(() => rng() - 0.5).slice(0, 15);
+  return pool.map(t => {
+    let ir90, ir10;
+    if (isBreakout) {
+      ir90 = clamp(67 + rng() * 31);   // Zone 1: +67 to +98
+      ir10 = clamp(-2 - rng() * 30);   // Flipped negative
+    } else {
+      ir90 = clamp(-67 - rng() * 31);  // Zone 6: -67 to -98
+      ir10 = clamp(2 + rng() * 30);    // Flipped positive
+    }
+    return {sym:t[0], name:t[1], ir90, ir10};
+  }).sort((a, b) => isBreakout ? b.ir90 - a.ir90 : a.ir90 - b.ir90);
+}
+
+/* ════════════════════════════════════════════
+   PRE-GENERATE ALL DATA
+   ════════════════════════════════════════════ */
+const T1W = {};
+for (let z = 1; z <= 6; z++) {
+  T1W[`z${z}-90`] = genZoneData(z, z * 1000 + 90);
+  T1W[`z${z}-10`] = genZoneData(z, z * 1000 + 10);
+}
+T1W['spx-90'] = genIndexData(5090);
+T1W['spx-10'] = genIndexData(5010);
+T1W['mid-90'] = genIndexData(4090);
+T1W['mid-10'] = genIndexData(4010);
+T1W['sml-90'] = genIndexData(6090);
+T1W['sml-10'] = genIndexData(6010);
+
+const MO = {
+  breakout: genMoData(true,  9001),
+  pullback:  genMoData(false, 9002),
+};
+
+/* ════════════════════════════════════════════
+   STATE
+   ════════════════════════════════════════════ */
+const wsState   = {}; // id → 'weakest' | 'strongest'
+const sortState = {}; // id → 1 | -1
+
+/* ════════════════════════════════════════════
+   HELPERS
+   ════════════════════════════════════════════ */
+function irFmt(v)  { return (v > 0 ? '+' : '') + v; }
+function irCls(v)  { return v > 0 ? 'pos' : v < 0 ? 'neg' : 'zer'; }
+function truncNm(n){ return n.length > 20 ? n.slice(0,20)+'…' : n; }
+function zoneBadge(z){
+  return `<span class="zone-badge" style="background:${ZONE_COLORS[z]}">${z}</span>`;
+}
+
+/* ════════════════════════════════════════════
+   RENDER TOGGLE 1-WAY
+   ════════════════════════════════════════════ */
+function renderT1W(id) {
+  const mode = wsState[id]   || 'weakest';
+  const dir  = sortState[id] || 1;
+  const rows = [...T1W[id][mode]].sort((a,b) => (b.ir - a.ir) * dir);
+  const tbody = document.getElementById(id + '-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = rows.map(r => `<tr>
+    <td class="col-sym" onclick="goIssue('${r.sym}')">${r.sym}</td>
+    <td class="col-name">${truncNm(r.name)}</td>
+    <td class="col-ir"><span class="${irCls(r.ir)}">${irFmt(r.ir)}</span></td>
+    <td class="col-zone">${zoneBadge(r.zone)}</td>
+    <td class="col-3mo"><span class="${irCls(r.mo3)}">${irFmt(r.mo3)}</span></td>
+  </tr>`).join('');
+  const arr = document.getElementById(id + '-arr');
+  if (arr) { arr.textContent = dir === 1 ? '↓' : '↑'; }
+}
+
+function handleWkStr(btn) {
+  const id   = btn.dataset.id;
+  const mode = btn.dataset.mode;
+  wsState[id]   = mode;
+  sortState[id] = 1; // always reset to descending on mode switch (highest IR first)
+  btn.closest('.t1w-hdr').querySelectorAll('.ws-btn')
+     .forEach(b => b.classList.toggle('active', b === btn));
+  renderT1W(id);
+}
+
+function handleT1WSort(id) {
+  sortState[id] = (sortState[id] || 1) * -1;
+  renderT1W(id);
+}
+
+/* ════════════════════════════════════════════
+   RENDER MOMENTUM BOX
+   ════════════════════════════════════════════ */
+function renderMoBox(id, data) {
+  const tbody = document.getElementById(id + '-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = data.map(r => `<tr>
+    <td class="col-sym" onclick="goIssue('${r.sym}')">${r.sym}</td>
+    <td class="col-name">${truncNm(r.name)}</td>
+    <td class="col-ir"><span class="${irCls(r.ir90)}">${irFmt(r.ir90)}</span></td>
+    <td class="col-ir"><span class="${irCls(r.ir10)}">${irFmt(r.ir10)}</span></td>
+  </tr>`).join('');
+}
+
+/* ════════════════════════════════════════════
+   BUILD WIDGET HTML FACTORIES
+   ════════════════════════════════════════════ */
+function mkT1W(id, title1, title2, color) {
+  return `<div class="t1w-block">
+    <div class="t1w-title-block">
+      <div class="t1w-title-main" style="color:${color}">${title1}</div>
+      <div class="t1w-title-sub">${title2}</div>
+    </div>
+    <div class="t1w-wrap">
+      <div class="t1w-hdr">
+        <button class="ws-btn active" data-id="${id}" data-mode="weakest"   onclick="handleWkStr(this)">Weakest</button>
+        <button class="ws-btn"        data-id="${id}" data-mode="strongest" onclick="handleWkStr(this)">Strongest</button>
+      </div>
+      <div class="t1w-scroll">
+        <table class="ir-table">
+          <thead><tr>
+            <th>Ticker</th>
+            <th>Name</th>
+            <th class="sortable sort-active" id="${id}-th-ir" onclick="handleT1WSort('${id}')" style="text-align:center">
+              IR <span class="sort-arrow active" id="${id}-arr">↓</span>
+            </th>
+            <th style="text-align:center">Zn</th>
+            <th style="text-align:center;padding-left:14px">3Mo Ago</th>
+          </tr></thead>
+          <tbody id="${id}-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>`;
+}
+
+function mkMoBox(id, title, col90label, col10label) {
+  return `<div class="mo-block">
+    <div class="mo-title-block">
+      <div class="mo-title-text">${title}</div>
+    </div>
+    <div class="mo-list-wrap">
+      <div class="mo-list-scroll">
+        <table class="ir-table">
+          <thead><tr>
+            <th>Ticker</th>
+            <th>Name</th>
+            <th style="text-align:center">${col90label}</th>
+            <th style="text-align:center">${col10label}</th>
+          </tr></thead>
+          <tbody id="${id}-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="mo-comment" id="${id}-comment">Loading daily commentary…</div>
+  </div>`;
+}
+
+/* ════════════════════════════════════════════
+   INJECT ALL WIDGETS
+   ════════════════════════════════════════════ */
+// Zone rows 1–6 (Elements 5.3–5.14)
+const zoneCfg = [
+  {z:1, color:'var(--z1)'}, {z:2, color:'var(--z2)'}, {z:3, color:'var(--z3)'},
+  {z:4, color:'var(--z4)'}, {z:5, color:'var(--z5)'}, {z:6, color:'var(--z6)'}
+];
+zoneCfg.forEach(({z, color}) => {
+  const row = document.getElementById(`zone${z}-row`);
+  if (row) row.innerHTML =
+    mkT1W(`z${z}-90`, `Zone ${z} Stocks`, 'Ranked by 90 IR', color) +
+    mkT1W(`z${z}-10`, `Zone ${z} Stocks`, 'Ranked by 10 IR', color);
+});
+
+// Index rows (Elements 5.16–5.21)
+const idxCfg = [
+  {row:'spx-row', id90:'spx-90', id10:'spx-10', t1:'S&amp;P 500 (SPX)', color:'var(--accent)'},
+  {row:'mid-row', id90:'mid-90', id10:'mid-10', t1:'S&amp;P 400 (MID)', color:'var(--accent)'},
+  {row:'sml-row', id90:'sml-90', id10:'sml-10', t1:'S&amp;P 600 (SML)', color:'var(--accent)'},
+];
+idxCfg.forEach(({row, id90, id10, t1, color}) => {
+  const el = document.getElementById(row);
+  if (el) el.innerHTML =
+    mkT1W(id90, t1, 'Weak / Strong 90 IR', color) +
+    mkT1W(id10, t1, 'Weak / Strong 10 IR', color);
+});
+
+// Momentum boxes (Elements 5.23–5.24)
+const moRow = document.getElementById('mo-row');
+if (moRow) moRow.innerHTML =
+  mkMoBox('mo-breakout', 'Zone 1 Momentum Breakouts', '90 IR', '10 IR') +
+  mkMoBox('mo-pullback',  'Zone 6 Momentum Pullbacks',  '90 IR', '10 IR');
+
+/* ════════════════════════════════════════════
+   INITIALISE ALL DATA
+   ════════════════════════════════════════════ */
+const ALL_T1W_IDS = [
+  'z1-90','z1-10','z2-90','z2-10','z3-90','z3-10',
+  'z4-90','z4-10','z5-90','z5-10','z6-90','z6-10',
+  'spx-90','spx-10','mid-90','mid-10','sml-90','sml-10'
+];
+
+ALL_T1W_IDS.forEach(id => {
+  wsState[id]   = 'weakest';
+  sortState[id] = 1;
+  renderT1W(id);
+});
+
+renderMoBox('mo-breakout', MO.breakout);
+renderMoBox('mo-pullback',  MO.pullback);
+
+// Sample daily comments (pushed from database in production)
+const breakoutComment = document.getElementById('mo-breakout-comment');
+const pullbackComment  = document.getElementById('mo-pullback-comment');
+if (breakoutComment) breakoutComment.textContent =
+  'Intel (INTC) is now above the mean on a 10-day basis at \u221212 in Zone 4. ' +
+  'The strength has pulled the stock\u2019s 90-day reading up to the edge of Zone 1 at +68. ' +
+  'Watch for follow-through — sustained 10-day strength here may indicate early-stage mean reversion.';
+if (pullbackComment) pullbackComment.textContent =
+  'Disney (DIS) leads the list of Momentum Pullbacks today, with the issue\u2019s 10-day IR ' +
+  'slipping to +9 in Zone 3. The weakness has drawn DIS down to \u221274 in Zone 6 on a 90-day basis. ' +
+  'A confirmed sign flip on the 10-day opens the door for a reversion trade setup.';
+
+/* ════════════════════════════════════════════
+   SUBSCRIBER GATE
+   ════════════════════════════════════════════ */
+const SUBSCRIBER = 'stock'; // change to 'options' to unlock
+if (SUBSCRIBER !== 'options') {
+  ['m-opt-info','m-opt-page','m-osg'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('lock');
+  });
+}
+
+/* ════════════════════════════════════════════
+   NAVIGATION
+   ════════════════════════════════════════════ */
+function toggleMenu() {
+  document.getElementById('slideMenu').classList.toggle('open');
+  document.getElementById('menuOverlay').classList.toggle('open');
+}
+function closeMenu() {
+  document.getElementById('slideMenu').classList.remove('open');
+  document.getElementById('menuOverlay').classList.remove('open');
+}
+function doSearch() {
+  const q = document.getElementById('searchInput').value.trim().toUpperCase();
+  if (q) window.open(`issue.html?sym=${q}`, '_blank');
+}
+function goIssue(sym) {
+  window.open(`issue.html?sym=${sym}`, '_blank');
+}
+</script>
+</body>
+</html>
