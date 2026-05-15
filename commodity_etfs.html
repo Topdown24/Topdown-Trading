@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Top Down Trading — Commodity Sector ETFs (pg. 31)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════
+   DESIGN TOKENS
+══════════════════════════════════════════════════════ */
+:root {
+  --bg:         #08111e;
+  --panel:      #0d1829;
+  --panel-alt:  #0a1420;
+  --border:     #1a2d44;
+  --border-lit: #243c58;
+  --text:       #ddeeff;
+  --dim:        #5a7a9a;
+  --accent:     #3090d8;
+  --accent-mid: #2a7abf;
+  --z1: #00cc55;
+  --z2: #88cc44;
+  --z3: #7a9aaa;
+  --z4: #aa9a7a;
+  --z5: #ddcc00;
+  --z6: #e83535;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Rajdhani', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ══════════════════════════════════════════════════════
+   TOP BAR
+══════════════════════════════════════════════════════ */
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 14px;
+  background: var(--panel-alt);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  gap: 10px;
+}
+
+.back-btn {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dim);
+  background: var(--panel);
+  border: 1px solid var(--border-lit);
+  padding: 4px 10px;
+  cursor: pointer;
+  letter-spacing: .04em;
+  text-decoration: none;
+  transition: color .15s, border-color .15s;
+  white-space: nowrap;
+}
+.back-btn:hover { color: var(--text); border-color: var(--accent); }
+
+.page-info { flex: 1; text-align: center; }
+.page-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: .04em;
+  line-height: 1.2;
+}
+.page-sub {
+  font-size: 12px;
+  color: var(--dim);
+  font-style: italic;
+  margin-top: 1px;
+}
+
+.search-wrap { flex-shrink: 0; }
+.search-input {
+  background: var(--panel);
+  border: 1px solid var(--border-lit);
+  color: var(--text);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+  padding: 4px 10px;
+  width: 180px;
+  outline: none;
+  transition: border-color .15s;
+}
+.search-input::placeholder { color: var(--dim); }
+.search-input:focus { border-color: var(--accent); }
+
+/* ══════════════════════════════════════════════════════
+   MAIN BODY LAYOUT
+══════════════════════════════════════════════════════ */
+.main-body {
+  display: flex;
+  height: calc(100vh - 50px);
+  overflow: hidden;
+}
+
+/* ══════════════════════════════════════════════════════
+   LEFT SIDEBAR — COM.4
+══════════════════════════════════════════════════════ */
+.sidebar {
+  width: 285px;
+  min-width: 285px;
+  border-right: 2px solid var(--border-lit);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--panel-alt);
+  flex-shrink: 0;
+}
+
+.sidebar-header {
+  padding: 8px 10px 6px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.sb-title {
+  text-align: center;
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--text);
+  margin-bottom: 5px;
+}
+.sb-btns { display: flex; justify-content: center; gap: 0; }
+
+.sidebar-scroll { overflow-y: auto; flex: 1; }
+.sidebar-scroll::-webkit-scrollbar { width: 4px; }
+.sidebar-scroll::-webkit-scrollbar-track { background: var(--bg); }
+.sidebar-scroll::-webkit-scrollbar-thumb { background: var(--border-lit); border-radius: 2px; }
+
+/* ══════════════════════════════════════════════════════
+   RIGHT CONTENT
+══════════════════════════════════════════════════════ */
+.right-content { flex: 1; overflow-y: auto; padding: 10px 14px; }
+.right-content::-webkit-scrollbar { width: 4px; }
+.right-content::-webkit-scrollbar-track { background: var(--bg); }
+.right-content::-webkit-scrollbar-thumb { background: var(--border-lit); border-radius: 2px; }
+
+/* ══════════════════════════════════════════════════════
+   HISTOGRAM
+══════════════════════════════════════════════════════ */
+.histo-wrap { margin-bottom: 14px; }
+.section-title {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text);
+  text-align: center;
+  margin-bottom: 6px;
+  letter-spacing: .03em;
+}
+.histo-svg-box {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+#histo-tip {
+  position: fixed;
+  background: var(--panel);
+  border: 1px solid var(--accent);
+  color: var(--text);
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  padding: 5px 9px;
+  border-radius: 2px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.6);
+  white-space: nowrap;
+  z-index: 999;
+  pointer-events: none;
+  display: none;
+}
+
+/* ══════════════════════════════════════════════════════
+   TOGGLE — SHARED
+══════════════════════════════════════════════════════ */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.toggle-wrap { background: var(--panel); border: 1px solid var(--border); overflow: hidden; }
+
+.toggle-header {
+  background: var(--panel-alt);
+  border-bottom: 1px solid var(--border);
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.toggle-title { font-weight: 700; font-size: 12px; color: var(--text); }
+
+.toggle-btn {
+  background: var(--border);
+  border: 1px solid var(--border);
+  color: var(--dim);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.toggle-btn.active { background: var(--accent-mid); border-color: var(--accent); color: #fff; }
+.toggle-btn:hover:not(.active) { border-color: var(--accent); color: var(--text); }
+
+.scroll-table { max-height: 340px; overflow-y: auto; }
+.scroll-table::-webkit-scrollbar { width: 4px; }
+.scroll-table::-webkit-scrollbar-track { background: var(--bg); }
+.scroll-table::-webkit-scrollbar-thumb { background: var(--border-lit); border-radius: 2px; }
+
+/* ══════════════════════════════════════════════════════
+   IR TABLE — SHARED
+══════════════════════════════════════════════════════ */
+.ir-table { width: 100%; border-collapse: collapse; font-family: 'Courier New', monospace; font-size: 11px; }
+
+.ir-table th {
+  background: var(--panel);
+  color: var(--dim);
+  padding: 4px 6px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  font-size: 10px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.ir-table th.sortable { cursor: pointer; user-select: none; }
+.ir-table th.sortable:hover { color: var(--text); }
+.ir-table th.sort-active { color: var(--accent); }
+
+.sort-arrow { font-size: 10px; margin-left: 3px; opacity: .5; }
+.sort-arrow.active { opacity: 1; color: var(--accent); }
+
+.ir-table td { padding: 3px 6px; border-bottom: 1px solid #0e1a28; white-space: nowrap; }
+.ir-table tr:hover td { background: #111e30; }
+
+.col-symbol { color: var(--text); font-weight: bold; }
+.col-ir { text-align: center; }
+.col-zone { text-align: center; }
+.col-3mo { text-align: center; font-size: 10px; padding-left: 14px !important; }
+
+.zone-badge {
+  display: inline-block;
+  padding: 1px 5px;
+  font-size: 10px;
+  font-weight: bold;
+  border-radius: 2px;
+  color: #000;
+}
+
+.pos { color: #88cc44; }
+.neg { color: #e83535; }
+.zer { color: #b8cce0; }
+</style>
+</head>
+<body>
+
+<!-- Tooltip -->
+<div id="histo-tip"></div>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+  <a href="#" class="back-btn">← BACK</a>
+  <div class="page-info">
+    <div class="page-title">Commodity Sector ETFs</div>
+    <div class="page-sub"><em>Commodities ETFs that invest in the physical entity or derivatives, including futures</em></div>
+  </div>
+  <div class="search-wrap">
+    <input type="text" class="search-input" placeholder="🔍  Search...">
+  </div>
+</div>
+
+<!-- MAIN BODY -->
+<div class="main-body">
+
+  <!-- COM.4 LEFT SIDEBAR — Commodity ETFs LH Toggle -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <div class="sb-title">Commodity ETFs</div>
+      <div class="sb-btns">
+        <button class="toggle-btn active" onclick="handleLHPeriod(this,'90')">90 IR</button>
+        <button class="toggle-btn" onclick="handleLHPeriod(this,'10')">10 IR</button>
+      </div>
+    </div>
+    <div class="sidebar-scroll">
+      <table class="ir-table">
+        <thead>
+          <tr>
+            <th style="text-align:left">Tick</th>
+            <th style="text-align:left">Name</th>
+            <th class="sortable sort-active" id="lh-th-ir" onclick="handleLHSort()" style="text-align:center">IR <span class="sort-arrow active" id="lh-arr">↓</span></th>
+            <th style="text-align:center">Zn</th>
+          </tr>
+        </thead>
+        <tbody id="lh-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- RIGHT CONTENT -->
+  <div class="right-content">
+
+    <!-- COM.3 HISTOGRAM -->
+    <div class="histo-wrap">
+      <div class="section-title">Commodity ETFs — 90-day Implied Risk Histogram</div>
+      <div class="histo-svg-box">
+        <div id="histo-container"></div>
+      </div>
+    </div>
+
+    <!-- COM.5 Energy + COM.7 Ag side by side -->
+    <div class="two-col">
+
+      <!-- COM.5 Energy ETFs Toggle -->
+      <div class="toggle-wrap">
+        <div class="toggle-header">
+          <span class="toggle-title">Energy ETFs</span>
+          <div class="toggle-btns">
+            <button class="toggle-btn active" data-group="energy" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+            <button class="toggle-btn" data-group="energy" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+          </div>
+        </div>
+        <div class="scroll-table">
+          <table class="ir-table">
+            <thead><tr>
+              <th>Ticker</th>
+              <th>Name</th>
+              <th class="sortable sort-active" id="energy-th-ir" onclick="handleSortClick('energy','ir')" style="text-align:center">IR <span class="sort-arrow active" id="energy-arr-ir">↓</span></th>
+              <th style="text-align:center">Zn</th>
+              <th class="sortable" id="energy-th-3mo" onclick="handleSortClick('energy','3mo')" style="text-align:center;padding-left:14px">3Mo Ago <span class="sort-arrow" id="energy-arr-3mo">↕</span></th>
+            </tr></thead>
+            <tbody id="energy-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- COM.7 Ag ETFs Toggle -->
+      <div class="toggle-wrap">
+        <div class="toggle-header">
+          <span class="toggle-title">Ag ETFs</span>
+          <div class="toggle-btns">
+            <button class="toggle-btn active" data-group="ag" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+            <button class="toggle-btn" data-group="ag" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+          </div>
+        </div>
+        <div class="scroll-table">
+          <table class="ir-table">
+            <thead><tr>
+              <th>Ticker</th>
+              <th>Name</th>
+              <th class="sortable sort-active" id="ag-th-ir" onclick="handleSortClick('ag','ir')" style="text-align:center">IR <span class="sort-arrow active" id="ag-arr-ir">↓</span></th>
+              <th style="text-align:center">Zn</th>
+              <th class="sortable" id="ag-th-3mo" onclick="handleSortClick('ag','3mo')" style="text-align:center;padding-left:14px">3Mo Ago <span class="sort-arrow" id="ag-arr-3mo">↕</span></th>
+            </tr></thead>
+            <tbody id="ag-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /two-col COM.5+COM.7 -->
+
+    <!-- COM.6 Metals ETFs (half-page left) -->
+    <div class="two-col">
+      <div class="toggle-wrap">
+        <div class="toggle-header">
+          <span class="toggle-title">Metals ETFs</span>
+          <div class="toggle-btns">
+            <button class="toggle-btn active" data-group="metals" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+            <button class="toggle-btn" data-group="metals" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+          </div>
+        </div>
+        <div class="scroll-table">
+          <table class="ir-table">
+            <thead><tr>
+              <th>Ticker</th>
+              <th>Name</th>
+              <th class="sortable sort-active" id="metals-th-ir" onclick="handleSortClick('metals','ir')" style="text-align:center">IR <span class="sort-arrow active" id="metals-arr-ir">↓</span></th>
+              <th style="text-align:center">Zn</th>
+              <th class="sortable" id="metals-th-3mo" onclick="handleSortClick('metals','3mo')" style="text-align:center;padding-left:14px">3Mo Ago <span class="sort-arrow" id="metals-arr-3mo">↕</span></th>
+            </tr></thead>
+            <tbody id="metals-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div></div><!-- empty right half -->
+    </div><!-- /two-col COM.6 -->
+
+  </div><!-- /right-content -->
+</div><!-- /main-body -->
+
+<script>
+/* ════════════════════════════════════════════════════════
+   DATA — ALL 36 COMMODITY ETFs (MASTER LIST)
+   ir_90 / ir_10 = current period readings
+   ir_90_3mo / ir_10_3mo = 3-month ago readings
+   Names: official name minus sponsor prefix
+════════════════════════════════════════════════════════ */
+const ALL_DATA = {
+  // ZONE 1 (+67 to +99) — strong oversold / BUY signal
+  OVX:  {sym:'OVX',  name:'Crude Oil Volatility Index',          ir_90: 93, ir_10: 88, ir_90_3mo:-41, ir_10_3mo:-38},
+  BNO:  {sym:'BNO',  name:'Brent Oil Fund',                      ir_90: 87, ir_10: 79, ir_90_3mo:-52, ir_10_3mo:-44},
+  USO:  {sym:'USO',  name:'Oil Fund',                            ir_90: 79, ir_10: 84, ir_90_3mo:-38, ir_10_3mo:-61},
+  UNG:  {sym:'UNG',  name:'Natural Gas Fund',                    ir_90: 72, ir_10: 68, ir_90_3mo:-28, ir_10_3mo:-32},
+  // ZONE 2 (+34 to +66) — oversold / BUY
+  CORN: {sym:'CORN', name:'Corn Fund',                           ir_90: 64, ir_10: 58, ir_90_3mo:-29, ir_10_3mo:-22},
+  NIKL: {sym:'NIKL', name:'Nickel ETF',                          ir_90: 57, ir_10: 61, ir_90_3mo:-18, ir_10_3mo:-31},
+  PALL: {sym:'PALL', name:'Physical Palladium Shares',           ir_90: 48, ir_10: 42, ir_90_3mo:-11, ir_10_3mo:  8},
+  CANE: {sym:'CANE', name:'Sugar Cane Fund',                     ir_90: 44, ir_10: 39, ir_90_3mo:-24, ir_10_3mo:-19},
+  SLV:  {sym:'SLV',  name:'Silver Trust',                        ir_90: 38, ir_10: 44, ir_90_3mo: 12, ir_10_3mo: 21},
+  WEAT: {sym:'WEAT', name:'Wheat Fund',                          ir_90: 36, ir_10: 28, ir_90_3mo:-62, ir_10_3mo:-48},
+  // ZONE 3 (+1 to +33) — slightly oversold
+  PPLT: {sym:'PPLT', name:'Physical Platinum Shares',            ir_90: 31, ir_10: 24, ir_90_3mo: 48, ir_10_3mo: 36},
+  IAU:  {sym:'IAU',  name:'Gold Trust',                          ir_90: 29, ir_10: 33, ir_90_3mo: 14, ir_10_3mo: 22},
+  PHYS: {sym:'PHYS', name:'Physical Gold Trust',                 ir_90: 24, ir_10: 19, ir_90_3mo: 11, ir_10_3mo: 18},
+  COPX: {sym:'COPX', name:'Copper Miners ETF',                   ir_90: 21, ir_10: 17, ir_90_3mo:-33, ir_10_3mo:-28},
+  PSLV: {sym:'PSLV', name:'Physical Silver Trust',               ir_90: 18, ir_10: 22, ir_90_3mo:  6, ir_10_3mo: 13},
+  DBB:  {sym:'DBB',  name:'Base Metals Fund',                    ir_90: 14, ir_10:  9, ir_90_3mo:-47, ir_10_3mo:-38},
+  SPPP: {sym:'SPPP', name:'Physical Platinum & Palladium Trust', ir_90: 11, ir_10:  7, ir_90_3mo: 34, ir_10_3mo: 29},
+  SPUT: {sym:'SPUT', name:'Physical Uranium Trust',              ir_90:  8, ir_10: 14, ir_90_3mo:-56, ir_10_3mo:-44},
+  USCI: {sym:'USCI', name:'Commodity Index Fund',                ir_90:  6, ir_10:  4, ir_90_3mo:-21, ir_10_3mo:-16},
+  DBA:  {sym:'DBA',  name:'Agriculture Fund',                    ir_90:  4, ir_10:  8, ir_90_3mo:-14, ir_10_3mo: -9},
+  UGA:  {sym:'UGA',  name:'Gasoline Fund',                       ir_90:  3, ir_10: -6, ir_90_3mo:-38, ir_10_3mo:-44},
+  // ZONE 4 (-1 to -33) — slightly overbought
+  CEF:  {sym:'CEF',  name:'Physical Gold & Silver Trust',        ir_90: -8, ir_10: -4, ir_90_3mo: 22, ir_10_3mo: 17},
+  COMD: {sym:'COMD', name:'Commodity Strategy ETF',              ir_90:-12, ir_10:-18, ir_90_3mo:  8, ir_10_3mo: 14},
+  OILK: {sym:'OILK', name:'Oil & Gas Operating Companies ETF',  ir_90:-17, ir_10:-22, ir_90_3mo: 38, ir_10_3mo: 31},
+  CPER: {sym:'CPER', name:'Copper Index ETF',                    ir_90:-23, ir_10:-19, ir_90_3mo: 52, ir_10_3mo: 44},
+  DBE:  {sym:'DBE',  name:'Energy Fund',                         ir_90:-26, ir_10:-31, ir_90_3mo: 18, ir_10_3mo: 24},
+  DBO:  {sym:'DBO',  name:'Oil Fund',                            ir_90:-31, ir_10:-24, ir_90_3mo: 42, ir_10_3mo: 36},
+  // ZONE 5 (-34 to -66) — overbought / SELL
+  VXNG: {sym:'VXNG', name:'Natural Gas Volatility Index',        ir_90:-36, ir_10:-29, ir_90_3mo: 67, ir_10_3mo: 58},
+  GVZ:  {sym:'GVZ',  name:'Gold Volatility Index',               ir_90:-41, ir_10:-48, ir_90_3mo: 28, ir_10_3mo: 34},
+  SOYB: {sym:'SOYB', name:'Soybean Fund',                        ir_90:-48, ir_10:-52, ir_90_3mo: 31, ir_10_3mo: 27},
+  TAGS: {sym:'TAGS', name:'Agricultural Strategy Fund',          ir_90:-54, ir_10:-46, ir_90_3mo: 19, ir_10_3mo: 22},
+  DBC:  {sym:'DBC',  name:'Commodity Index Tracking Fund',       ir_90:-59, ir_10:-64, ir_90_3mo: 44, ir_10_3mo: 39},
+  VXSL: {sym:'VXSL', name:'Silver Volatility Index',             ir_90:-63, ir_10:-57, ir_90_3mo: 81, ir_10_3mo: 72},
+  ZSP:  {sym:'ZSP',  name:'Precious Metals ETF',                 ir_90:-65, ir_10:-71, ir_90_3mo: 37, ir_10_3mo: 42},
+  // ZONE 6 (-67 to -99) — extreme overbought / strong SELL
+  DBP:  {sym:'DBP',  name:'Precious Metals Fund',                ir_90:-71, ir_10:-68, ir_90_3mo: 54, ir_10_3mo: 48},
+  COP:  {sym:'COP',  name:'ConocoPhillips',                      ir_90:-82, ir_10:-76, ir_90_3mo: 63, ir_10_3mo: 57},
+};
+
+/* ════════════════════════════════════════════════════════
+   GROUP MEMBERSHIP
+════════════════════════════════════════════════════════ */
+const GROUPS = {
+  energy: ['USO','UNG','BNO','UGA','OVX','VXNG','OILK','DBE','DBO','DBP'],
+  metals: ['SLV','IAU','PALL','PPLT','CPER','COPX','DBB','NIKL','PHYS','PSLV','CEF','SPPP','SPUT','COP','ZSP','GVZ','VXSL','DBP'],
+  ag:     ['CORN','CANE','WEAT','SOYB','TAGS','DBC','DBA','USCI','COMD'],
+};
+
+const MASTER = Object.keys(ALL_DATA);
+
+/* ════════════════════════════════════════════════════════
+   UTILITY FUNCTIONS
+════════════════════════════════════════════════════════ */
+const ZONE_COLORS = {1:'#00cc55',2:'#88cc44',3:'#7a9aaa',4:'#aa9a7a',5:'#ddcc00',6:'#e83535'};
+
+function irToZone(ir) {
+  if (ir >= 67) return 1;
+  if (ir >= 34) return 2;
+  if (ir >= 1)  return 3;
+  if (ir >= -33) return 4;
+  if (ir >= -66) return 5;
+  return 6;
+}
+function zoneBadge(z) {
+  return `<span class="zone-badge" style="background:${ZONE_COLORS[z]}">${z}</span>`;
+}
+function irFmt(v)  { return (v > 0 ? '+' : '') + v; }
+function irCls(v)  { return v > 0 ? 'pos' : v < 0 ? 'neg' : 'zer'; }
+function truncName(name, n) {
+  return name.length > n ? name.slice(0, n) + '…' : name;
+}
+function hexToRgb(hex) {
+  return [parseInt(hex.slice(1,3),16), parseInt(hex.slice(3,5),16), parseInt(hex.slice(5,7),16)];
+}
+
+/* ════════════════════════════════════════════════════════
+   HISTOGRAM BUILDER — COM.3
+   Spec: Histogram_Spec_Final_v2.md
+════════════════════════════════════════════════════════ */
+
+// Pre-computed slot assignments (alphabetical within slot)
+// Zone index 0 = Zone 1 (+99 to +67) — leftmost/oversold
+const HISTO_ZONES = [
+  { color:'#00cc55', slots:[['OVX'],['BNO'],['USO'],['UNG']] },
+  { color:'#88cc44', slots:[['CORN'],['NIKL'],['CANE','PALL'],['SLV','WEAT']] },
+  { color:'#7a9aaa', slots:[['IAU','PPLT'],['COPX','PHYS','PSLV'],['DBB','SPPP','SPUT'],['DBA','UGA','USCI']] },
+  { color:'#aa9a7a', slots:[['CEF'],['COMD','OILK'],['CPER'],['DBE','DBO']] },
+  { color:'#ddcc00', slots:[['GVZ','VXNG'],['SOYB'],['TAGS'],['DBC','VXSL','ZSP']] },
+  { color:'#e83535', slots:[['DBP'],['COP'],[],[]] },
+];
+
+function buildHistogram() {
+  const W = 920, OW = 28, BX = OW, BW = W - 2*OW;
+  const ZW = BW / 6, SLOT_PITCH = BW / 24;
+  const BELL_A = 168, BELL_FLOOR = 16, BELL_SIG = ZW, BCX = BX + BW / 2;
+  const SH = 13, SFS = 9;
+  const ZCL = ['#00cc55','#88cc44','#7a9aaa','#aa9a7a','#ddcc00','#e83535'];
+
+  // Dynamic height
+  let BY = 205;
+  const maxStk = Math.max(1, ...HISTO_ZONES.flatMap(z => z.slots.map(s => s.length)));
+  if (maxStk * SH + 20 > BY) BY = maxStk * SH + 20;
+  const H = BY + 63;
+  const LY_RANGE = BY + 18;
+  const LY_ZONE  = BY + 31;
+
+  const ZLB = [
+    {range:'+99 to +67', label:'Zone 1'},
+    {range:'+66 to +34', label:'Zone 2'},
+    {range:'+33 to +1',  label:'Zone 3'},
+    {range:'-1 to -33',  label:'Zone 4'},
+    {range:'-34 to -66', label:'Zone 5'},
+    {range:'-67 to -99', label:'Zone 6'},
+  ];
+
+  let s = `<svg width="100%" preserveAspectRatio="xMidYMid meet" style="display:block" viewBox="0 0 ${W} ${H}">`;
+
+  // Defs
+  s += `<defs>
+    <filter id="glow"><feGaussianBlur stdDeviation="2.8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="softglow"><feGaussianBlur stdDeviation="1.5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>`;
+
+  // OOB panel backgrounds
+  s += `<rect x="0" y="0" width="${OW}" height="${BY}" fill="rgba(0,204,85,0.06)"/>`;
+  s += `<rect x="${W-OW}" y="0" width="${OW}" height="${BY}" fill="rgba(232,53,53,0.06)"/>`;
+
+  // Zone background fills
+  for (let z = 0; z < 6; z++) {
+    const zx = BX + z * ZW;
+    const [r,g,b] = hexToRgb(ZCL[z]);
+    s += `<rect x="${zx}" y="0" width="${ZW}" height="${BY}" fill="rgba(${r},${g},${b},0.07)"/>`;
+  }
+
+  // Zone dividers (solid vertical lines at zone boundaries)
+  for (let z = 1; z < 6; z++) {
+    const dx = BX + z * ZW;
+    s += `<line x1="${dx}" y1="0" x2="${dx}" y2="${BY}" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>`;
+  }
+  // OOB boundary lines
+  s += `<line x1="${BX}" y1="0" x2="${BX}" y2="${BY}" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>`;
+  s += `<line x1="${W-OW}" y1="0" x2="${W-OW}" y2="${BY}" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>`;
+
+  // Slot dividers (23 dashed lines)
+  for (let i = 1; i < 24; i++) {
+    const dx = BX + i * SLOT_PITCH;
+    s += `<line x1="${dx}" y1="8" x2="${dx}" y2="${BY}" stroke="rgba(255,255,255,0.055)" stroke-width="0.5" stroke-dasharray="3,6"/>`;
+  }
+
+  // Baseline
+  s += `<line x1="0" y1="${BY}" x2="${W}" y2="${BY}" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>`;
+
+  // Bell curve (3 passes)
+  let bp = '';
+  for (let px = BX; px <= BX + BW; px += 2) {
+    const dx = px - BCX;
+    const yVal = BY - (BELL_A * Math.exp(-dx*dx / (2*BELL_SIG*BELL_SIG)) + BELL_FLOOR);
+    bp += (px === BX ? `M${px.toFixed(1)},${yVal.toFixed(1)}` : ` L${px.toFixed(1)},${yVal.toFixed(1)}`);
+  }
+  s += `<path d="${bp}" stroke="rgba(120,185,255,0.14)" stroke-width="8" fill="none"/>`;
+  s += `<path d="${bp}" stroke="rgba(155,210,255,0.72)" stroke-width="1.6" fill="none" stroke-dasharray="8,4" filter="url(#glow)"/>`;
+  s += `<path d="${bp}" stroke="rgba(205,235,255,0.38)" stroke-width="0.8" fill="none" stroke-dasharray="8,4"/>`;
+
+  // Symbols
+  HISTO_ZONES.forEach((zone, zi) => {
+    const cl = ZCL[zi];
+    zone.slots.forEach((slot, si) => {
+      if (!slot.length) return;
+      const gi  = zi * 4 + si;
+      const scx = BX + (gi + 0.5) * SLOT_PITCH;
+      slot.forEach((sym, ri) => {
+        const d = ALL_DATA[sym];
+        if (!d) return;
+        const iry = d.ir_90 >= 0 ? `+${d.ir_90}` : `${d.ir_90}`;
+        const tipStr = `${sym} — ${d.name} | 90-IR: ${iry} | Zone ${zi+1}`;
+        const sy  = BY - (ri + 1) * SH + SFS;
+        const trunc = sym.slice(0, 3);
+        s += `<text x="${scx.toFixed(1)}" y="${sy.toFixed(1)}" text-anchor="middle" ` +
+             `font-family="'Courier New',monospace" font-size="${SFS}" font-weight="bold" ` +
+             `fill="${cl}" filter="url(#softglow)" cursor="pointer" ` +
+             `data-tip="${tipStr}">${trunc}</text>`;
+      });
+    });
+  });
+
+  // Zone range and bold labels
+  for (let z = 0; z < 6; z++) {
+    const zx = BX + z * ZW + ZW / 2;
+    s += `<text x="${zx.toFixed(1)}" y="${LY_RANGE}" text-anchor="middle" ` +
+         `font-family="'Courier New',monospace" font-size="8.5" fill="rgba(255,255,255,0.48)">${ZLB[z].range}</text>`;
+    s += `<text x="${zx.toFixed(1)}" y="${LY_ZONE}" text-anchor="middle" ` +
+         `font-family="'Trebuchet MS',sans-serif" font-size="10.5" font-weight="bold" ` +
+         `fill="${ZCL[z]}">${ZLB[z].label}</text>`;
+  }
+
+  // OOB panel labels
+  s += `<text x="${OW/2}" y="18" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="#00cc55">OOB</text>`;
+  s += `<text x="${OW/2}" y="29" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="#00cc55">Weak</text>`;
+  s += `<text x="${OW/2}" y="40" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="#00cc55">[0]</text>`;
+  s += `<text x="${OW/2}" y="51" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="#00cc55">≥+99</text>`;
+  s += `<text x="${(W-OW/2).toFixed(1)}" y="18" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="#e83535">OOB</text>`;
+  s += `<text x="${(W-OW/2).toFixed(1)}" y="29" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="#e83535">Str</text>`;
+  s += `<text x="${(W-OW/2).toFixed(1)}" y="40" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="#e83535">[0]</text>`;
+  s += `<text x="${(W-OW/2).toFixed(1)}" y="51" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="#e83535">≤-99</text>`;
+
+  // Direction legend
+  s += `<text x="${BX+6}" y="${H-5}" font-family="'Trebuchet MS',sans-serif" font-size="7.5" fill="rgba(0,212,160,0.40)">← Weak / Oversold</text>`;
+  s += `<text x="${W-OW-6}" y="${H-5}" text-anchor="end" font-family="'Trebuchet MS',sans-serif" font-size="7.5" fill="rgba(232,53,53,0.40)">Overbought / Strong →</text>`;
+
+  s += `</svg>`;
+
+  document.getElementById('histo-container').innerHTML = s;
+
+  // Tooltip binding
+  const tip = document.getElementById('histo-tip');
+  const ctr = document.getElementById('histo-container');
+  ctr.addEventListener('mousemove', e => {
+    const el = e.target;
+    if (el.dataset && el.dataset.tip) {
+      tip.textContent = el.dataset.tip;
+      tip.style.display = 'block';
+      tip.style.left = (e.clientX + 14) + 'px';
+      tip.style.top  = (e.clientY - 32) + 'px';
+    } else {
+      tip.style.display = 'none';
+    }
+  });
+  ctr.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+}
+
+/* ════════════════════════════════════════════════════════
+   LEFT HAND TOGGLE — COM.4
+   LH Toggle: Tick | Name | IR | Zn  (no 3Mo Ago)
+   Based on Toggle_LH_Spec_Final (1).md
+════════════════════════════════════════════════════════ */
+let lhPeriod = '90';
+let lhDir    = 1;  // 1 = descending (weakest/most oversold first)
+
+function handleLHPeriod(btn, period) {
+  lhPeriod = period;
+  btn.closest('.sb-btns').querySelectorAll('.toggle-btn')
+     .forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderLH();
+}
+
+function handleLHSort() {
+  lhDir *= -1;
+  renderLH();
+}
+
+function renderLH() {
+  const irField = lhPeriod === '90' ? 'ir_90' : 'ir_10';
+  const rows = MASTER
+    .map(sym => ALL_DATA[sym])
+    .sort((a, b) => (b[irField] - a[irField]) * lhDir);
+
+  const arr = document.getElementById('lh-arr');
+  arr.textContent = lhDir === 1 ? '↓' : '↑';
+  arr.classList.add('active');
+
+  document.getElementById('lh-tbody').innerHTML = rows.map(r => {
+    const ir = r[irField];
+    const z  = irToZone(ir);
+    const nm = truncName(r.name, 18);
+    return `<tr>
+      <td class="col-symbol" style="font-size:11px">${r.sym}</td>
+      <td style="color:#5a7a9a;font-size:10px">${nm}</td>
+      <td class="col-ir"><span class="${irCls(ir)}">${irFmt(ir)}</span></td>
+      <td class="col-zone">${zoneBadge(z)}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ════════════════════════════════════════════════════════
+   REGULAR TOGGLES — COM.5 / COM.6 / COM.7
+   Based on Toggle_Regular_Spec_v2 (1).md
+════════════════════════════════════════════════════════ */
+const sortState   = {};
+const periodState = {};
+
+function handleSortClick(groupId, field) {
+  if (!sortState[groupId]) sortState[groupId] = { field: 'ir', dir: 1 };
+  const s = sortState[groupId];
+  sortState[groupId] = (s.field === field)
+    ? { field, dir: s.dir * -1 }
+    : { field, dir: 1 };
+  renderToggleTable(groupId);
+}
+
+function updateSortArrows(groupId) {
+  const { field, dir } = sortState[groupId];
+  ['ir', '3mo'].forEach(f => {
+    const th  = document.getElementById(`${groupId}-th-${f}`);
+    const arr = document.getElementById(`${groupId}-arr-${f}`);
+    if (!th || !arr) return;
+    const on = f === field;
+    if (on) {
+      th.classList.add('sort-active');
+      arr.classList.add('active');
+      arr.textContent = dir === 1 ? '↓' : '↑';
+    } else {
+      th.classList.remove('sort-active');
+      arr.classList.remove('active');
+      arr.textContent = '↕';
+    }
+  });
+}
+
+function handlePeriodToggle(btn) {
+  btn.closest('.toggle-btns').querySelectorAll('.toggle-btn')
+     .forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  periodState[btn.dataset.group] = btn.dataset.period;
+  renderToggleTable(btn.dataset.group);
+}
+
+function renderToggleTable(groupId) {
+  if (!sortState[groupId])  sortState[groupId]  = { field: 'ir', dir: 1 };
+  if (!periodState[groupId]) periodState[groupId] = '90';
+
+  const p  = periodState[groupId];
+  const iF = p === '90' ? 'ir_90'     : 'ir_10';
+  const mF = p === '90' ? 'ir_90_3mo' : 'ir_10_3mo';
+  const { field, dir } = sortState[groupId];
+  const sF = field === 'ir' ? iF : mF;
+
+  const members = GROUPS[groupId].map(sym => ALL_DATA[sym]).filter(Boolean);
+  const rows    = [...members].sort((a, b) => (b[sF] - a[sF]) * dir);
+
+  document.getElementById(groupId + '-tbody').innerHTML = rows.map(r => {
+    const ir = r[iF], mo = r[mF];
+    const z  = irToZone(ir);
+    const nm = truncName(r.name, 22);
+    return `<tr>
+      <td class="col-symbol">${r.sym}</td>
+      <td style="color:#5a7a9a;font-size:10px">${nm}</td>
+      <td class="col-ir"><span class="${irCls(ir)}">${irFmt(ir)}</span></td>
+      <td class="col-zone">${zoneBadge(z)}</td>
+      <td class="col-3mo" style="padding-left:14px"><span class="${irCls(mo)}">${irFmt(mo)}</span></td>
+    </tr>`;
+  }).join('');
+
+  updateSortArrows(groupId);
+}
+
+/* ════════════════════════════════════════════════════════
+   SEARCH — simple ticker/name filter on LH sidebar
+════════════════════════════════════════════════════════ */
+document.querySelector('.search-input').addEventListener('input', function() {
+  const q = this.value.trim().toLowerCase();
+  if (!q) { renderLH(); return; }
+  const irField = lhPeriod === '90' ? 'ir_90' : 'ir_10';
+  const filtered = MASTER
+    .map(sym => ALL_DATA[sym])
+    .filter(r => r.sym.toLowerCase().includes(q) || r.name.toLowerCase().includes(q))
+    .sort((a, b) => (b[irField] - a[irField]) * lhDir);
+  document.getElementById('lh-tbody').innerHTML = filtered.map(r => {
+    const ir = r[irField];
+    const z  = irToZone(ir);
+    const nm = truncName(r.name, 18);
+    return `<tr>
+      <td class="col-symbol" style="font-size:11px">${r.sym}</td>
+      <td style="color:#5a7a9a;font-size:10px">${nm}</td>
+      <td class="col-ir"><span class="${irCls(ir)}">${irFmt(ir)}</span></td>
+      <td class="col-zone">${zoneBadge(z)}</td>
+    </tr>`;
+  }).join('');
+});
+
+/* ════════════════════════════════════════════════════════
+   INITIALISE
+════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  buildHistogram();
+  renderLH();
+  ['energy','metals','ag'].forEach(gid => {
+    sortState[gid]   = { field: 'ir', dir: 1 };
+    periodState[gid] = '90';
+    renderToggleTable(gid);
+  });
+});
+</script>
+</body>
+</html>
