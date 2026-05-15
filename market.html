@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Market | Top Down Trading</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:      #08111e;
+  --panel:   #0d1829;
+  --palt:    #0a1420;
+  --border:  #1a2d44;
+  --blit:    #243c58;
+  --text:    #ddeeff;
+  --tdim:    #5a7a9a;
+  --tmid:    #b8cce0;
+  --acc:     #2a7abf;
+  --achi:    #3090d8;
+  --pos:     #22d860;
+  --neg:     #e83535;
+  --z1:#00d4a0; --z2:#22d860; --z3:#c8a800;
+  --z4:#7acc00; --z5:#e06020; --z6:#e83535;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;overflow-x:hidden;}
+
+/* ── OVERLAY ── */
+#overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;backdrop-filter:blur(2px);}
+#overlay.open{display:block;}
+
+/* ── SLIDE-OUT MENU ── */
+#smenu{
+  position:fixed;top:0;left:-270px;width:248px;height:100vh;
+  background:var(--palt);border-right:2px solid var(--blit);
+  z-index:300;transition:left .22s ease;display:flex;flex-direction:column;
+}
+#smenu.open{left:0;}
+.sm-top{
+  display:flex;align-items:center;padding:11px 14px 10px;
+  border-bottom:1px solid var(--border);gap:8px;
+}
+.sm-brand{
+  flex:1;font-size:11px;font-weight:bold;letter-spacing:.1em;
+  color:var(--achi);font-family:'Trebuchet MS',sans-serif;
+}
+.sm-x{cursor:pointer;color:var(--tdim);font-size:16px;padding:2px 6px;line-height:1;}
+.sm-x:hover{color:var(--text);}
+.sm-items{list-style:none;flex:1;padding:6px 0;overflow-y:auto;}
+.sm-item{
+  padding:10px 18px;font-size:11px;letter-spacing:.04em;
+  cursor:pointer;color:var(--text);border-left:3px solid transparent;
+  transition:background .14s,color .14s;
+}
+.sm-item:hover{background:#111e30;border-left-color:var(--achi);}
+.sm-item.cur{
+  background:var(--bg);color:var(--tdim);border-left-color:var(--blit);
+  cursor:default;pointer-events:none;font-style:italic;
+}
+.sm-item.lock{color:#263850;cursor:not-allowed;pointer-events:none;}
+.sm-item.lock::after{content:' ⬡';font-size:8px;opacity:.5;}
+.sm-div{height:1px;background:var(--border);margin:5px 14px;}
+.sm-sub{font-size:8.5px;color:var(--tdim);padding:5px 18px 1px;letter-spacing:.09em;text-transform:uppercase;}
+
+/* ── TOP NAV ── */
+#tnav{
+  position:sticky;top:0;z-index:100;
+  background:var(--palt);border-bottom:1px solid var(--border);
+  display:flex;align-items:stretch;height:40px;
+}
+.t-ham{
+  width:38px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--tdim);font-size:17px;
+  border-right:1px solid var(--border);flex-shrink:0;
+}
+.t-ham:hover{color:var(--text);background:var(--panel);}
+.t-boxes{display:flex;flex:1;align-items:stretch;}
+.t-search{
+  flex:1.3;display:flex;align-items:center;
+  padding:0 11px;border-right:1px solid var(--border);
+}
+.t-search input{
+  width:100%;background:transparent;border:none;outline:none;
+  color:var(--text);font-family:'Courier New',monospace;
+  font-size:11px;letter-spacing:.03em;
+}
+::placeholder{color:var(--tdim);}
+.t-btn{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;background:transparent;border:none;
+  border-right:1px solid var(--border);cursor:pointer;
+  color:var(--tmid);font-family:'Courier New',monospace;
+  font-size:10px;letter-spacing:.02em;padding:0 5px;text-align:center;
+  line-height:1.25;transition:background .14s,color .14s;
+}
+.t-btn:last-child{border-right:none;}
+.t-btn:hover{background:var(--panel);color:var(--text);}
+.t-btn .t2{font-size:8.5px;color:var(--tdim);}
+
+/* ── CONTENT ── */
+#pg{padding:12px 16px 24px;max-width:1420px;margin:0 auto;}
+
+/* ── 3.6 MSS BAR ── */
+.mss{
+  text-align:center;margin:8px 0 15px;
+  font-family:'Trebuchet MS',sans-serif;
+}
+.mss span{font-size:22px;letter-spacing:.05em;color:var(--text);}
+.mss .bld{font-weight:700;}
+.mss .arr{color:var(--tdim);margin:0 7px;font-size:20px;}
+.mss a{color:var(--achi);text-decoration:none;font-weight:400;}
+.mss a:hover{color:var(--z2);text-decoration:underline;}
+
+/* ── HISTOGRAM SECTION ── */
+.histo-sec{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:4px;margin-bottom:8px;padding:10px 8px 8px;
+}
+.histo-ttl{
+  text-align:center;font-family:'Trebuchet MS',sans-serif;
+  font-size:13px;font-weight:bold;letter-spacing:.06em;
+  color:var(--text);margin-bottom:7px;
+}
+.histo-wrap{overflow-x:auto;text-align:center;}
+.dc{
+  margin-top:8px;padding:7px 12px;background:var(--palt);
+  border:1px solid var(--border);border-radius:3px;
+  font-size:10.5px;color:var(--tmid);line-height:1.55;
+}
+.dc .dcl{font-weight:bold;color:var(--achi);margin-right:5px;}
+
+/* ── TWO COLUMN ── */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.pbox{background:var(--panel);border:1px solid var(--border);border-radius:4px;overflow:hidden;}
+.phdr{
+  background:var(--palt);border-bottom:1px solid var(--border);
+  padding:6px 10px;text-align:center;
+}
+.pt1{font-size:11px;font-weight:bold;color:var(--text);font-family:'Trebuchet MS',sans-serif;letter-spacing:.04em;}
+.pt2{font-size:9px;color:var(--achi);font-family:'Trebuchet MS',sans-serif;margin-top:2px;letter-spacing:.04em;}
+.pbdy{padding:8px;}
+.cwrap{position:relative;height:196px;}
+.ckey{
+  display:flex;gap:14px;justify-content:center;flex-wrap:wrap;
+  padding:4px 6px 2px;border-top:1px solid var(--border);
+  font-size:9px;color:var(--tdim);
+}
+.ki{display:flex;align-items:center;gap:5px;}
+.kb{display:inline-block;width:16px;height:9px;border-radius:1px;}
+.kl{display:inline-block;width:22px;height:0;border-top:2px solid;}
+
+/* ── TOGGLES ── */
+.tog-hdr{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:5px 9px;background:var(--palt);border-bottom:1px solid var(--border);
+}
+.tog-lbl{font-size:10.5px;font-weight:bold;color:var(--text);}
+.pbtns{display:flex;gap:4px;}
+.pbtn{
+  padding:2px 8px;font-size:9px;font-family:'Courier New',monospace;
+  border:1px solid var(--border);border-radius:2px;
+  cursor:pointer;color:var(--tdim);background:var(--bg);transition:all .14s;
+}
+.pbtn.on{background:var(--acc);color:#fff;border-color:var(--achi);}
+.tog-tbl{max-height:320px;overflow-y:auto;}
+.tog-tbl::-webkit-scrollbar{width:4px;}
+.tog-tbl::-webkit-scrollbar-track{background:var(--palt);}
+.tog-tbl::-webkit-scrollbar-thumb{background:var(--blit);border-radius:2px;}
+table.tg{width:100%;border-collapse:collapse;font-size:11px;}
+table.tg th{
+  padding:3px 5px;font-size:9px;font-weight:normal;
+  color:var(--tdim);border-bottom:1px solid var(--border);
+  background:var(--palt);white-space:nowrap;cursor:pointer;
+  user-select:none;
+}
+table.tg th:hover{color:var(--text);}
+table.tg th.as{color:var(--achi);}
+table.tg td{padding:3px 5px;border-bottom:1px solid #0c1825;white-space:nowrap;}
+table.tg tr:hover td{background:#111e30;}
+.tk{font-weight:bold;font-size:11px;}
+.nm{font-size:10px;color:var(--tdim);max-width:136px;overflow:hidden;text-overflow:ellipsis;}
+.ir{text-align:center;}
+.zn{text-align:center;}
+.mo{text-align:center;font-size:10px;}
+.zb{display:inline-block;padding:1px 5px;border-radius:2px;font-size:9px;font-weight:bold;color:#000;}
+.pg{color:var(--pos);} .ng{color:var(--neg);} .nu{color:var(--tmid);}
+</style>
+</head>
+<body>
+
+<!-- OVERLAY -->
+<div id="overlay" onclick="closeMenu()"></div>
+
+<!-- SLIDE-OUT MENU -->
+<nav id="smenu">
+  <div class="sm-top">
+    <span class="sm-brand">TOP DOWN TRADING</span>
+    <span class="sm-x" onclick="closeMenu()">✕</span>
+  </div>
+  <ul class="sm-items">
+    <li class="sm-item" onclick="goTo('portfolio.html')">My Portfolio</li>
+    <li class="sm-item" onclick="goTo('front.html')">Front</li>
+    <li class="sm-item cur">Market</li>
+    <li class="sm-item" onclick="goTo('sector.html')">Sector</li>
+    <li class="sm-item" onclick="goTo('stock.html')">Stock</li>
+    <div class="sm-div"></div>
+    <li id="opt-btn"  class="sm-item lock">Options</li>
+    <li id="osg-btn"  class="sm-item lock">Options Strategy Game</li>
+  </ul>
+</nav>
+
+<!-- TOP NAV — 6 boxes including Search -->
+<header id="tnav">
+  <div class="t-ham" onclick="openMenu()">☰</div>
+  <div class="t-boxes">
+    <div class="t-search">
+      <input type="text" placeholder="🔍  SEARCH">
+    </div>
+    <button class="t-btn" onclick="goTo('zones.html')">
+      <span>Six Zone</span>
+      <span class="t2">Analysis</span>
+    </button>
+    <button class="t-btn" onclick="goTo('spx.html')">S&amp;P 500<br><span class="t2">(SPX)</span></button>
+    <button class="t-btn" onclick="goTo('mid.html')">S&amp;P Mid Cap 400<br><span class="t2">(MID)</span></button>
+    <button class="t-btn" onclick="goTo('sml.html')">S&amp;P Smallcap 600<br><span class="t2">(SML)</span></button>
+    <button class="t-btn" onclick="goTo('world.html')">
+      <span>World</span>
+      <span class="t2">ETFs &amp; Indexes</span>
+    </button>
+  </div>
+</header>
+
+<!-- PAGE CONTENT -->
+<div id="pg">
+
+  <!-- 3.6  MARKET → SECTOR → STOCK -->
+  <div class="mss">
+    <span>
+      <span class="bld">Market</span>
+      <span class="arr">→</span>
+      <a href="sector.html">Sector</a>
+      <span class="arr">→</span>
+      <a href="stock.html">Stock</a>
+    </span>
+  </div>
+
+  <!-- 3.7  OEX HISTOGRAM -->
+  <div class="histo-sec">
+    <div class="histo-ttl">S&amp;P 100 (OEX)</div>
+    <div class="histo-wrap" id="histoWrap"></div>
+    <div class="dc">
+      <span class="dcl">Daily Comment —</span>
+      The S&amp;P 100 (OEX) sits at <strong>−18</strong> in <strong>Zone 4</strong> on a 90-day basis, and at <strong>+22</strong> in
+      <strong>Zone 3</strong> over 10 days. Energy leads all sectors with XLE at <strong>−44 (Zone 5)</strong>,
+      while Utilities brings up the rear: UTU at <strong>+14 (Zone 3)</strong>.
+    </div>
+  </div>
+
+  <!-- 3.8 & 3.9  WORLD ETFs + BROAD INDEXES TOGGLES -->
+  <div class="two">
+    <!-- 3.8 World ETFs -->
+    <div class="pbox">
+      <div class="phdr">
+        <div class="pt1">Broadbased World ETFs and Indexes</div>
+        <div class="pt2">MSCI / FTSE</div>
+      </div>
+      <div class="tog-hdr">
+        <span class="tog-lbl">World Markets</span>
+        <div class="pbtns">
+          <button class="pbtn on" onclick="setPer('wld',90,this)">90 IR</button>
+          <button class="pbtn"    onclick="setPer('wld',10,this)">10 IR</button>
+        </div>
+      </div>
+      <div class="tog-tbl">
+        <table class="tg"><thead><tr>
+          <th class="tk" onclick="srt('wld','sym')">Ticker ↕</th>
+          <th class="nm" style="text-align:left">Name</th>
+          <th class="ir as" onclick="srt('wld','ir')">IR ↓</th>
+          <th class="zn">Zn</th>
+          <th class="mo" onclick="srt('wld','mo')">3Mo Ago ↕</th>
+        </tr></thead>
+        <tbody id="bwld"></tbody></table>
+      </div>
+    </div>
+
+    <!-- 3.9 Broad Indexes -->
+    <div class="pbox">
+      <div class="phdr">
+        <div class="pt1">Broadbased Indexes and ETFs</div>
+        <div class="pt2">US Broad Market</div>
+      </div>
+      <div class="tog-hdr">
+        <span class="tog-lbl">US Indexes</span>
+        <div class="pbtns">
+          <button class="pbtn on" onclick="setPer('brd',90,this)">90 IR</button>
+          <button class="pbtn"    onclick="setPer('brd',10,this)">10 IR</button>
+        </div>
+      </div>
+      <div class="tog-tbl">
+        <table class="tg"><thead><tr>
+          <th class="tk" onclick="srt('brd','sym')">Ticker ↕</th>
+          <th class="nm" style="text-align:left">Name</th>
+          <th class="ir as" onclick="srt('brd','ir')">IR ↓</th>
+          <th class="zn">Zn</th>
+          <th class="mo" onclick="srt('brd','mo')">3Mo Ago ↕</th>
+        </tr></thead>
+        <tbody id="bbrd"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3.10 & 3.11  PHASE CHART + MARKET GRAPH -->
+  <div class="two">
+    <div class="pbox">
+      <div class="phdr">
+        <div class="pt1">Market Barometer / Phase Chart</div>
+        <div class="pt2">S&amp;P 500 — 90 Day</div>
+      </div>
+      <div class="pbdy">
+        <div class="cwrap"><canvas id="cPhase"></canvas></div>
+        <div class="ckey">
+          <span class="ki"><span class="kb" style="background:#2a7abf"></span> Phase Reading (zone-colored bars)</span>
+        </div>
+      </div>
+    </div>
+    <div class="pbox">
+      <div class="phdr">
+        <div class="pt1">The Market / S&amp;P 500 Index</div>
+        <div class="pt2">Closing Price vs 90-Day Mean — Zone Bands</div>
+      </div>
+      <div class="pbdy">
+        <div class="cwrap"><canvas id="cMkt"></canvas></div>
+        <div class="ckey">
+          <span class="ki"><span class="kl" style="border-color:var(--z2)"></span> Closing Price</span>
+          <span class="ki"><span class="kl" style="border-color:rgba(180,200,220,.55);border-top-style:dashed"></span> 90-Day Mean</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3.12 & 3.13  RATES + VIX -->
+  <div class="two">
+    <div class="pbox">
+      <div class="phdr">
+        <div class="pt1">The Cost of Money</div>
+        <div class="pt2">Short-term and Long-term Interest Rates</div>
+      </div>
+      <div class="pbdy">
+        <div class="cwrap"><canvas id="cRates"></canvas></div>
+        <div class="ckey">
+          <span class="ki"><span class="kb" style="background:var(--z3)"></span> TNX 90 IR (Long-term)</span>
+          <span class="ki"><span class="kl" style="border-color:var(--z5)"></span> IRX 90 IR (Short-term)</span>
+        </div>
+      </div>
+    </div>
+    <div class="pbox">
+      <div class="phdr">
+        <div class="pt1">The Pulse of the Market</div>
+        <div class="pt2">Implied Volatility / VIX</div>
+      </div>
+      <div class="pbdy">
+        <div class="cwrap"><canvas id="cVIX"></canvas></div>
+        <div class="ckey">
+          <span class="ki"><span class="kl" style="border-color:#ff6b9d"></span> VIX 90 IR</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3.14 & 3.15  DJX + CBTX -->
+  <div class="two">
+    <div class="pbox">
+      <div class="phdr">
+        <div class="pt1">Dow Jones Industrial Average (DJX)</div>
+      </div>
+      <div class="pbdy">
+        <div class="cwrap"><canvas id="cDJX"></canvas></div>
+        <div class="ckey">
+          <span class="ki"><span class="kb" style="background:var(--achi)"></span> 90-Day IR</span>
+          <span class="ki"><span class="kl" style="border-color:var(--z2)"></span> 10-Day IR</span>
+        </div>
+      </div>
+    </div>
+    <div class="pbox">
+      <div class="phdr">
+        <div class="pt1">Bitcoin US (CBTX)</div>
+      </div>
+      <div class="pbdy">
+        <div class="cwrap"><canvas id="cCBTX"></canvas></div>
+        <div class="ckey">
+          <span class="ki"><span class="kb" style="background:var(--achi)"></span> 90-Day IR</span>
+          <span class="ki"><span class="kl" style="border-color:#f7931a"></span> 10-Day IR</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3.16 & 3.17  GLD vs SLV / GLD vs CBTX -->
+  <div class="two" style="margin-bottom:20px;">
+    <div class="pbox">
+      <div class="phdr">
+        <div class="pt1">Gold Price (GLD) vs Silver Price (SLV)</div>
+      </div>
+      <div class="pbdy">
+        <div class="cwrap"><canvas id="cGLDSLV"></canvas></div>
+        <div class="ckey">
+          <span class="ki"><span class="kb" style="background:#ffd700"></span> GLD 90 IR</span>
+          <span class="ki"><span class="kl" style="border-color:#c0c0c0"></span> SLV 90 IR</span>
+        </div>
+      </div>
+    </div>
+    <div class="pbox">
+      <div class="phdr">
+        <div class="pt1">Gold Price (GLD) vs Bitcoin (CBTX)</div>
+      </div>
+      <div class="pbdy">
+        <div class="cwrap"><canvas id="cGLDBTC"></canvas></div>
+        <div class="ckey">
+          <span class="ki"><span class="kb" style="background:#ffd700"></span> GLD 90 IR</span>
+          <span class="ki"><span class="kl" style="border-color:#f7931a"></span> CBTX 90 IR</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- #pg -->
+
+<!-- TOOLTIP for histogram -->
+<div id="htip" style="position:fixed;display:none;background:var(--panel);border:1px solid var(--achi);color:var(--text);font-family:'Courier New',monospace;font-size:11px;padding:5px 10px;border-radius:3px;box-shadow:0 3px 14px rgba(0,0,0,.65);white-space:nowrap;z-index:1000;pointer-events:none;"></div>
+
+<script>
+/* ═══════════════════════════════════════════
+   SUBSCRIBER  ('stock' | 'options')
+═══════════════════════════════════════════ */
+const SUBSCRIBER = 'stock';
+if (SUBSCRIBER === 'options') {
+  document.getElementById('opt-btn').classList.remove('lock');
+  document.getElementById('osg-btn').classList.remove('lock');
+}
+
+/* ═══════════════════════════════════════════
+   MENU / NAV
+═══════════════════════════════════════════ */
+function goTo(u){ window.location.href = u; }
+function openMenu(){
+  document.getElementById('smenu').classList.add('open');
+  document.getElementById('overlay').classList.add('open');
+}
+function closeMenu(){
+  document.getElementById('smenu').classList.remove('open');
+  document.getElementById('overlay').classList.remove('open');
+}
+
+/* ═══════════════════════════════════════════
+   ZONE UTILITIES
+═══════════════════════════════════════════ */
+const ZC = ['','#00d4a0','#22d860','#c8a800','#7acc00','#e06020','#e83535'];
+const ZN = ['','Zone 1','Zone 2','Zone 3','Zone 4','Zone 5','Zone 6'];
+const ZL = ['','Extreme Oversold','Oversold','Slightly Oversold','Slightly Overbought','Overbought','Extreme Overbought'];
+function irZone(ir){
+  if(ir >= 67) return 1;
+  if(ir >= 34) return 2;
+  if(ir >= 1)  return 3;
+  if(ir >= -33)return 4;
+  if(ir >= -66)return 5;
+  return 6;
+}
+function zc(z){ return ZC[z]||'#888'; }
+function irStr(v){ return v>0?'+'+v:String(v); }
+function irCls(v){ return v>0?'pg':v<0?'ng':'nu'; }
+
+/* ═══════════════════════════════════════════
+   DATE LABELS (last 90 trading-ish days)
+═══════════════════════════════════════════ */
+const DATES = (()=>{
+  const a=[];
+  for(let i=89;i>=0;i--){
+    const d=new Date(); d.setDate(d.getDate()-i);
+    a.push(d.toLocaleDateString('en-US',{month:'short',day:'numeric'}));
+  }
+  return a;
+})();
+
+/* ═══════════════════════════════════════════
+   SEEDED RANDOM + DATA GENERATORS
+═══════════════════════════════════════════ */
+function mkRng(seed){
+  let s=seed;
+  return ()=>{ s=(s*1664525+1013904223)&0xffffffff; return (s>>>0)/4294967295; };
+}
+// Generate 90 zone values (1–6) trending to endZone
+function genZone(endZone,seed,vol=0.45){
+  const r=mkRng(seed);
+  const startZone=Math.max(1,Math.min(6,endZone+(r()-.5)*2.4));
+  return Array.from({length:90},(_,i)=>{
+    const t=i/89;
+    const trend=startZone+(endZone-startZone)*t;
+    return Math.max(1,Math.min(6,trend+(r()-.5)*vol*2));
+  });
+}
+
+/* ═══════════════════════════════════════════
+   CHART.JS PLUGINS
+═══════════════════════════════════════════ */
+// Global zone-band background (for all zone-y-axis charts)
+const zoneBandPlugin = {
+  id:'zoneBand',
+  beforeDraw(chart){
+    if(chart.options.plugins?.zoneBand===false) return;
+    const {ctx,chartArea,scales} = chart;
+    if(!chartArea||!scales.y) return;
+    const {top,bottom,left,right} = chartArea;
+    const y = scales.y;
+    ctx.save();
+    // zone color bands
+    [[5.5,6.5,'#e8353514'],[4.5,5.5,'#e0602014'],[3.5,4.5,'#7acc0014'],
+     [2.5,3.5,'#c8a80014'],[1.5,2.5,'#22d86014'],[0.5,1.5,'#00d4a014']
+    ].forEach(([lo,hi,c])=>{
+      const yT=y.getPixelForValue(Math.min(hi,y.max));
+      const yB=y.getPixelForValue(Math.max(lo,y.min));
+      if(yT<yB){ ctx.fillStyle=c; ctx.fillRect(left,yT,right-left,yB-yT); }
+    });
+    // mean dashed line at 3.5
+    const my=y.getPixelForValue(3.5);
+    if(my>=top&&my<=bottom){
+      ctx.strokeStyle='rgba(255,255,255,.2)';
+      ctx.lineWidth=1; ctx.setLineDash([4,4]);
+      ctx.beginPath(); ctx.moveTo(left,my); ctx.lineTo(right,my); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    // "Zone" label between 4 and 5
+    const zy=y.getPixelForValue(4.5);
+    if(zy>=top&&zy<=bottom){
+      ctx.font='7.5px Trebuchet MS';
+      ctx.fillStyle='rgba(255,255,255,.28)';
+      ctx.textAlign='right';
+      ctx.fillText('Zone',left-3,zy+3);
+    }
+    ctx.restore();
+  }
+};
+Chart.register(zoneBandPlugin);
+
+const sharedY = {
+  min:0.5, max:6.5,
+  grid:{color:'rgba(255,255,255,.05)'},
+  ticks:{
+    stepSize:1,
+    color:'#5a7a9a',
+    font:{size:9,family:'Courier New'},
+    callback:v=>Number.isInteger(v)&&v>=1&&v<=6?v:'',
+    padding:4
+  },
+  border:{color:'#1a2d44'}
+};
+const sharedX = {
+  grid:{color:'rgba(255,255,255,.04)'},
+  ticks:{
+    color:'#5a7a9a',
+    font:{size:8,family:'Courier New'},
+    maxTicksLimit:9,maxRotation:0
+  },
+  border:{color:'#1a2d44'}
+};
+const noLeg = {display:false};
+const ttip = {
+  backgroundColor:'#0d1829',borderColor:'#3090d8',borderWidth:1,
+  titleColor:'#ddeeff',bodyColor:'#b8cce0',
+  titleFont:{family:'Courier New',size:10},
+  bodyFont:{family:'Courier New',size:10}
+};
+
+function barColsByZone(data){
+  return data.map(v=>zc(Math.round(Math.max(1,Math.min(6,v)))));
+}
+
+/* ═══════════════════════════════════════════
+   3.10  PHASE CHART  (zone-colored bars)
+═══════════════════════════════════════════ */
+(()=>{
+  const d = genZone(4,101,0.55);
+  new Chart(document.getElementById('cPhase'),{
+    type:'bar',
+    data:{labels:DATES,datasets:[{
+      data:d,
+      backgroundColor:barColsByZone(d),
+      borderWidth:0,borderRadius:1,
+    }]},
+    options:{
+      responsive:true,maintainAspectRatio:false,animation:false,
+      plugins:{legend:noLeg,tooltip:{...ttip,callbacks:{
+        label:c=>`Phase: Zone ${Math.round(c.raw)} — ${ZL[Math.round(c.raw)]||''}`
+      }}},
+      scales:{y:{...sharedY},x:sharedX}
+    }
+  });
+})();
+
+/* ═══════════════════════════════════════════
+   3.11  MARKET GRAPH  (SPX price vs mean)
+═══════════════════════════════════════════ */
+(()=>{
+  const MEAN=5650, SD=505;
+  const r=mkRng(202);
+  let px=5540;
+  const prices=[], means=[];
+  for(let i=0;i<90;i++){
+    const chg=(r()-.485)*85;
+    px=Math.max(4400,Math.min(6500,px+chg));
+    prices.push(Math.round(px));
+    means.push(MEAN);
+  }
+  prices[89]=5632; // match -18 Zone 4
+
+  // local plugin for price-zone bands
+  const priceBandPlugin={
+    id:'priceBand',
+    beforeDraw(chart){
+      const {ctx,chartArea,scales}=chart;
+      if(!chartArea||!scales.y) return;
+      const {top,bottom,left,right}=chartArea;
+      const y=scales.y;
+      ctx.save();
+      [
+        [MEAN+2*SD, MEAN+3*SD,'#e8353514'],
+        [MEAN+SD,   MEAN+2*SD,'#e0602014'],
+        [MEAN,      MEAN+SD,  '#7acc0014'],
+        [MEAN-SD,   MEAN,     '#c8a80014'],
+        [MEAN-2*SD, MEAN-SD,  '#22d86014'],
+        [MEAN-3*SD, MEAN-2*SD,'#00d4a014'],
+      ].forEach(([lo,hi,c])=>{
+        const yT=y.getPixelForValue(Math.min(hi,y.max));
+        const yB=y.getPixelForValue(Math.max(lo,y.min));
+        const rTop=Math.max(top,yT), rBot=Math.min(bottom,yB);
+        if(rBot>rTop){ctx.fillStyle=c;ctx.fillRect(left,rTop,right-left,rBot-rTop);}
+      });
+      // mean line
+      const my=y.getPixelForValue(MEAN);
+      if(my>=top&&my<=bottom){
+        ctx.strokeStyle='rgba(255,255,255,.28)';
+        ctx.lineWidth=1;ctx.setLineDash([5,4]);
+        ctx.beginPath();ctx.moveTo(left,my);ctx.lineTo(right,my);ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      ctx.restore();
+    }
+  };
+
+  new Chart(document.getElementById('cMkt'),{
+    type:'line',
+    data:{labels:DATES,datasets:[
+      {
+        label:'SPX Close',data:prices,
+        borderColor:'#22d860',borderWidth:1.5,
+        pointRadius:0,fill:false,tension:0.3,
+      },
+      {
+        label:'90-Day Mean',data:means,
+        borderColor:'rgba(180,200,220,.5)',borderWidth:1,
+        borderDash:[6,3],pointRadius:0,fill:false,
+      }
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,animation:false,
+      plugins:{
+        legend:noLeg,tooltip:ttip,
+        zoneBand:false  // disable global zone plugin; use priceBand instead
+      },
+      scales:{
+        y:{
+          min:MEAN-3*SD, max:MEAN+3*SD,
+          grid:{color:'rgba(255,255,255,.05)'},
+          ticks:{color:'#5a7a9a',font:{size:8,family:'Courier New'},
+                 callback:v=>'$'+(v/1000).toFixed(1)+'k'},
+          border:{color:'#1a2d44'}
+        },
+        x:sharedX
+      }
+    },
+    plugins:[priceBandPlugin]
+  });
+})();
+
+/* ═══════════════════════════════════════════
+   COMBO CHART BUILDER  (bar=90-day, line=10-day)
+═══════════════════════════════════════════ */
+function makeCombo(id,s90,s10,barClr,lineClr,ez90=4,ez10=3,v90=0.4,v10=0.75){
+  const d90=genZone(ez90,s90,v90);
+  const d10=genZone(ez10,s10,v10);
+  new Chart(document.getElementById(id),{
+    type:'bar',
+    data:{labels:DATES,datasets:[
+      {type:'bar', label:'90-Day IR', data:d90,
+       backgroundColor:barClr+'99',borderColor:barClr,borderWidth:0.4,borderRadius:1},
+      {type:'line',label:'10-Day IR', data:d10,
+       borderColor:lineClr,borderWidth:1.6,pointRadius:0,fill:false,tension:0.35}
+    ]},
+    options:{
+      responsive:true,maintainAspectRatio:false,animation:false,
+      plugins:{legend:noLeg,tooltip:ttip},
+      scales:{y:{...sharedY},x:sharedX}
+    }
+  });
+}
+
+/* ═══════════════════════════════════════════
+   3.12  COST OF MONEY  (TNX bar + IRX line)
+═══════════════════════════════════════════ */
+makeCombo('cRates',301,302,'#c8a800','#e06020',5,3,0.38,0.55);
+
+/* ═══════════════════════════════════════════
+   3.13  VIX  (line only)
+═══════════════════════════════════════════ */
+(()=>{
+  const d=genZone(3,401,0.5);
+  new Chart(document.getElementById('cVIX'),{
+    type:'line',
+    data:{labels:DATES,datasets:[{
+      label:'VIX',data:d,
+      borderColor:'#ff6b9d',backgroundColor:'rgba(255,107,157,.08)',
+      borderWidth:1.6,pointRadius:0,fill:true,tension:0.4
+    }]},
+    options:{
+      responsive:true,maintainAspectRatio:false,animation:false,
+      plugins:{legend:noLeg,tooltip:ttip},
+      scales:{y:{...sharedY},x:sharedX}
+    }
+  });
+})();
+
+/* ═══════════════════════════════════════════
+   3.14  DJX    3.15  CBTX
+   3.16  GLD/SLV  3.17  GLD/CBTX
+═══════════════════════════════════════════ */
+makeCombo('cDJX',   501,502,'#3090d8','#22d860',4,3,0.42,0.7);
+makeCombo('cCBTX',  601,602,'#3090d8','#f7931a',5,4,0.9,1.15);
+makeCombo('cGLDSLV',701,702,'#ffd700','#c0c0c0',2,2,0.4,0.5);
+makeCombo('cGLDBTC',801,802,'#ffd700','#f7931a',2,5,0.4,0.9);
+
+/* ═══════════════════════════════════════════
+   TOGGLE DATA  3.8 / 3.9
+═══════════════════════════════════════════ */
+const TDATA = {
+  wld:{
+    period:90,
+    sortF:'ir',sortD:1,   // dir: 1=weak-first (highest IR on top)
+    rows:[
+      {sym:'MXWLD',nm:'MSCI World Index',             i90:+15,i10:+8, m90:+22,m10:+12},
+      {sym:'MXEF', nm:'MSCI Emerging Markets Index',  i90:+31,i10:+45,m90:+18,m10:+28},
+      {sym:'MXEA', nm:'MSCI EAFE Index',              i90:+22,i10:+19,m90:+28,m10:+22},
+      {sym:'MXUSA',nm:'MXUSA Index',                  i90:-18,i10:-22,m90:-8, m10:-12},
+      {sym:'SPGM', nm:'MSCI Global Stock Market ETF', i90:-5, i10:+12,m90:+3, m10:+8 },
+      {sym:'MXACW',nm:'MSCI ACWI Index',              i90:+8, i10:+14,m90:+15,m10:+18},
+      {sym:'VEA',  nm:'FTSE Developed Markets ETF',   i90:+19,i10:+25,m90:+22,m10:+20},
+      {sym:'VWO',  nm:'FTSE Emerging Markets ETF',    i90:+28,i10:+38,m90:+12,m10:+22},
+      {sym:'VGK',  nm:'FTSE Europe ETF',              i90:+24,i10:+30,m90:+18,m10:+25},
+      {sym:'VPL',  nm:'FTSE Pacific ETF',             i90:+11,i10:+6, m90:+19,m10:+15},
+      {sym:'FLLA', nm:'FTSE Latin America ETF',       i90:+35,i10:+42,m90:+20,m10:+30},
+    ]
+  },
+  brd:{
+    period:90,
+    sortF:'ir',sortD:1,
+    rows:[
+      {sym:'SPX', nm:'S&P 500',                       i90:-18,i10:+22,m90:-5, m10:+10},
+      {sym:'MID', nm:'S&P Midcap 400',                i90:+12,i10:+28,m90:+8, m10:+18},
+      {sym:'SML', nm:'S&P Smallcap 600',              i90:+25,i10:+35,m90:+15,m10:+22},
+      {sym:'CBTX',nm:'CBOE Bitcoin ETF Index',        i90:-55,i10:-38,m90:-42,m10:-30},
+      {sym:'ZAX', nm:'ZAX Microcap Index',            i90:+18,i10:+22,m90:+10,m10:+15},
+      {sym:'CZA', nm:'ZAX Mid-Cap ETF',               i90:+8, i10:+15,m90:+5, m10:+10},
+      {sym:'IWC', nm:'Micro Cap ETF',                 i90:+22,i10:+30,m90:+16,m10:+24},
+      {sym:'MGC', nm:'Mega Cap ETF',                  i90:-12,i10:-5, m90:-8, m10:-3 },
+      {sym:'SPTM',nm:'S&P Composite ETF',             i90:-8, i10:+12,m90:-2, m10:+6 },
+      {sym:'XOEF',nm:"S&P 500 ex-S&P 100 ETF",       i90:+5, i10:+18,m90:+2, m10:+10},
+    ]
+  }
+};
+
+function renderTog(id){
+  const s=TDATA[id];
+  const irf = s.period===90?'i90':'i10';
+  const mof = s.period===90?'m90':'m10';
+  const sf = s.sortF==='ir'?irf:mof;
+  const sorted=[...s.rows].sort((a,b)=>(b[sf]-a[sf])*s.sortD);
+
+  const body=document.getElementById('b'+id);
+  body.innerHTML=sorted.map(r=>{
+    const ir=r[irf], mo=r[mof];
+    const z=irZone(ir);
+    return `<tr>
+      <td class="tk">${r.sym}</td>
+      <td class="nm" title="${r.nm}">${r.nm.length>22?r.nm.slice(0,22)+'…':r.nm}</td>
+      <td class="ir ${irCls(ir)}">${irStr(ir)}</td>
+      <td class="zn"><span class="zb" style="background:${zc(z)}">${z}</span></td>
+      <td class="mo ${irCls(mo)}">${irStr(mo)}</td>
+    </tr>`;
+  }).join('');
+
+  // update column headers
+  const tbl=document.querySelector(`#b${id}`).closest('table');
+  tbl.querySelectorAll('th').forEach(th=>{
+    const oc=th.getAttribute('onclick')||'';
+    const m=oc.match(/'(\w+)'\)$/);
+    if(!m) return;
+    const f=m[1];
+    const isIR= f==='ir', isMO= f==='mo';
+    const isActive=(isIR&&s.sortF==='ir')||(isMO&&s.sortF==='mo');
+    th.classList.toggle('as',isActive);
+    const base = isIR?'IR':isMO?'3Mo Ago':f==='sym'?'Ticker':'?';
+    th.textContent = base + (isActive?(s.sortD===1?' ↓':' ↑'):' ↕');
+  });
+}
+
+function setPer(id,p,btn){
+  TDATA[id].period=p;
+  btn.closest('.pbtns').querySelectorAll('.pbtn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderTog(id);
+}
+function srt(id,f){
+  const s=TDATA[id];
+  if(s.sortF===f) s.sortD*=-1;
+  else{s.sortF=f;s.sortD=1;}
+  renderTog(id);
+}
+
+renderTog('wld');
+renderTog('brd');
+
+/* ═══════════════════════════════════════════
+   3.7  OEX HISTOGRAM  (SVG)
+═══════════════════════════════════════════ */
+(()=>{
+  // 100 OEX member stocks + OEX index itself (isIdx:true)
+  // Sorted by IR descending (Zone 1 = leftmost, Zone 6 = rightmost)
+  const stocks = [
+    // ── Zone 1 ──────────────────────────
+    {s:'HAL',  ir: 88, z:1, sl:2},
+    {s:'COP',  ir: 75, z:1, sl:3},
+    {s:'XOM',  ir: 70, z:1, sl:4},
+    {s:'CVX',  ir: 68, z:1, sl:4},
+    // ── Zone 2 ──────────────────────────
+    {s:'CHTR', ir: 65, z:2, sl:1},
+    {s:'NFLX', ir: 60, z:2, sl:1},
+    {s:'AAPL', ir: 56, z:2, sl:2},
+    {s:'MSFT', ir: 52, z:2, sl:2},
+    {s:'INTC', ir: 48, z:2, sl:3},
+    {s:'DIS',  ir: 44, z:2, sl:3},
+    {s:'AMZN', ir: 43, z:2, sl:3},
+    {s:'PYPL', ir: 40, z:2, sl:4},
+    {s:'GOOG', ir: 38, z:2, sl:4},
+    {s:'F',    ir: 35, z:2, sl:4},
+    {s:'GM',   ir: 34, z:2, sl:4},
+    // ── Zone 3 ──────────────────────────
+    {s:'GOOGL',ir: 32, z:3, sl:1},
+    {s:'AMD',  ir: 30, z:3, sl:1},
+    {s:'TSLA', ir: 28, z:3, sl:1},
+    {s:'ACN',  ir: 26, z:3, sl:1},
+    {s:'META', ir: 25, z:3, sl:2},
+    {s:'NVDA', ir: 23, z:3, sl:2},
+    {s:'CMCSA',ir: 21, z:3, sl:2},
+    {s:'T',    ir: 19, z:3, sl:2},
+    {s:'VZ',   ir: 18, z:3, sl:2},
+    {s:'TMUS', ir: 16, z:3, sl:3},
+    {s:'MO',   ir: 15, z:3, sl:3},
+    {s:'PM',   ir: 14, z:3, sl:3},
+    {s:'PFE',  ir: 13, z:3, sl:3},
+    {s:'CSCO', ir: 11, z:3, sl:3},
+    {s:'MMM',  ir: 10, z:3, sl:3},
+    {s:'MRK',  ir:  9, z:3, sl:3},
+    {s:'DOW',  ir:  8, z:3, sl:4},
+    {s:'KHC',  ir:  6, z:3, sl:4},
+    {s:'USB',  ir:  4, z:3, sl:4},
+    {s:'EMR',  ir:  3, z:3, sl:4},
+    {s:'WFC',  ir:  2, z:3, sl:4},
+    {s:'AMT',  ir:  1, z:3, sl:4},
+    // ── Zone 4  (OEX index = isIdx) ─────
+    {s:'BAC',  ir: -2, z:4, sl:1},
+    {s:'GE',   ir: -3, z:4, sl:1},
+    {s:'LIN',  ir: -5, z:4, sl:1},
+    {s:'C',    ir: -6, z:4, sl:1},
+    {s:'IBM',  ir: -8, z:4, sl:1},
+    {s:'BK',   ir: -9, z:4, sl:2},
+    {s:'AIG',  ir:-11, z:4, sl:2},
+    {s:'MET',  ir:-13, z:4, sl:2},
+    {s:'DUK',  ir:-15, z:4, sl:2},
+    {s:'EXC',  ir:-17, z:4, sl:2},
+    {s:'OEX',  ir:-18, z:4, sl:3, isIdx:true},  // ← THE INDEX
+    {s:'SO',   ir:-19, z:4, sl:3},
+    {s:'CL',   ir:-20, z:4, sl:3},
+    {s:'NEE',  ir:-22, z:4, sl:3},
+    {s:'KO',   ir:-23, z:4, sl:3},
+    {s:'PG',   ir:-25, z:4, sl:3},
+    {s:'MDLZ', ir:-27, z:4, sl:4},
+    {s:'ABT',  ir:-28, z:4, sl:4},
+    {s:'JNJ',  ir:-30, z:4, sl:4},
+    {s:'MDT',  ir:-32, z:4, sl:4},
+    {s:'PEP',  ir:-33, z:4, sl:4},
+    // ── Zone 5 ──────────────────────────
+    {s:'MCD',  ir:-34, z:5, sl:1},
+    {s:'TXN',  ir:-36, z:5, sl:1},
+    {s:'SBUX', ir:-38, z:5, sl:1},
+    {s:'CVS',  ir:-39, z:5, sl:1},
+    {s:'BMY',  ir:-40, z:5, sl:1},
+    {s:'UNH',  ir:-42, z:5, sl:1},
+    {s:'DHR',  ir:-44, z:5, sl:2},
+    {s:'BA',   ir:-46, z:5, sl:2},
+    {s:'TMO',  ir:-47, z:5, sl:2},
+    {s:'ABBV', ir:-49, z:5, sl:2},
+    {s:'LLY',  ir:-50, z:5, sl:2},
+    {s:'GILD', ir:-51, z:5, sl:2},
+    {s:'AMGN', ir:-54, z:5, sl:3},
+    {s:'SCHW', ir:-56, z:5, sl:3},
+    {s:'BLK',  ir:-58, z:5, sl:3},
+    {s:'GS',   ir:-60, z:5, sl:4},
+    {s:'MS',   ir:-62, z:5, sl:4},
+    {s:'JPM',  ir:-64, z:5, sl:4},
+    {s:'MA',   ir:-66, z:5, sl:4},
+    // ── Zone 6 ──────────────────────────
+    {s:'V',    ir:-67, z:6, sl:1},
+    {s:'AXP',  ir:-70, z:6, sl:1},
+    {s:'CAT',  ir:-72, z:6, sl:1},
+    {s:'COF',  ir:-73, z:6, sl:1},
+    {s:'BRK.B',ir:-74, z:6, sl:1},
+    {s:'WMT',  ir:-76, z:6, sl:2},
+    {s:'LMT',  ir:-77, z:6, sl:2},
+    {s:'LOW',  ir:-78, z:6, sl:2},
+    {s:'TGT',  ir:-79, z:6, sl:2},
+    {s:'DE',   ir:-81, z:6, sl:2},
+    {s:'HD',   ir:-82, z:6, sl:2},
+    {s:'COST', ir:-84, z:6, sl:3},
+    {s:'GD',   ir:-85, z:6, sl:3},
+    {s:'NKE',  ir:-86, z:6, sl:3},
+    {s:'HON',  ir:-87, z:6, sl:3},
+    {s:'QCOM', ir:-88, z:6, sl:3},
+    {s:'AVGO', ir:-90, z:6, sl:3},
+    {s:'RTX',  ir:-91, z:6, sl:4},
+    {s:'INTU', ir:-93, z:6, sl:4},
+    {s:'UNP',  ir:-95, z:6, sl:4},
+    {s:'ADBE', ir:-96, z:6, sl:4},
+    {s:'UPS',  ir:-97, z:6, sl:4},
+    {s:'CRM',  ir:-98, z:6, sl:4},
+    {s:'NOW',  ir:-99, z:6, sl:4},
+  ];
+
+  /* SVG constants */
+  const W=940, H=272, OW=28, BX=28, BW=884, BY=207, SH=13, FS=9;
+  const ZW=BW/6, SLOT_PITCH=BW/24;  // 36.83px
+  const BCX=BX+BW/2, BELL_A=170, BELL_SIG=ZW, BELL_FL=15;
+
+  /* Group by zone/slot */
+  const slotMap={};
+  stocks.forEach(st=>{
+    const k=`${st.z}-${st.sl}`;
+    (slotMap[k]=slotMap[k]||[]).push(st);
+  });
+  // alpha sort within each slot
+  Object.values(slotMap).forEach(a=>a.sort((x,y)=>x.s.localeCompare(y.s)));
+
+  /* Bell curve Y at pixel x */
+  function bellY(px){
+    const dx=px-BCX;
+    return BY-(BELL_A*Math.exp(-dx*dx/(2*BELL_SIG*BELL_SIG))+BELL_FL);
+  }
+  function bellPath(){
+    let d='';
+    for(let x=BX;x<=BX+BW;x+=2){
+      d+=(x===BX?'M':'L')+` ${x.toFixed(1)},${bellY(x).toFixed(1)}`;
+    }
+    return d;
+  }
+  const bp=bellPath();
+
+  let svg=`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <filter id="glow"><feGaussianBlur stdDeviation="3" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <filter id="sg"><feGaussianBlur stdDeviation="1.2" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>`;
+
+  /* OOB panels */
+  svg+=`<rect x="0" y="0" width="${OW}" height="${BY}" fill="${ZC[1]}" opacity=".10"/>`;
+  svg+=`<rect x="${W-OW}" y="0" width="${OW}" height="${BY}" fill="${ZC[6]}" opacity=".10"/>`;
+
+  /* Zone backgrounds */
+  for(let z=1;z<=6;z++){
+    const zx=BX+(z-1)*ZW;
+    svg+=`<rect x="${zx.toFixed(1)}" y="0" width="${ZW.toFixed(1)}" height="${BY}" fill="${ZC[z]}" opacity=".07"/>`;
+  }
+
+  /* Slot dividers (minor dashes) */
+  for(let i=1;i<24;i++){
+    if(i%4===0) continue; // zone boundaries drawn separately
+    const x=(BX+i*SLOT_PITCH).toFixed(1);
+    svg+=`<line x1="${x}" y1="12" x2="${x}" y2="${BY}" stroke="rgba(255,255,255,.05)" stroke-width=".5" stroke-dasharray="3,7"/>`;
+  }
+
+  /* Zone boundaries */
+  for(let z=1;z<6;z++){
+    const x=(BX+z*ZW).toFixed(1);
+    svg+=`<line x1="${x}" y1="0" x2="${x}" y2="${BY}" stroke="rgba(255,255,255,.22)" stroke-width="1"/>`;
+  }
+  /* OOB boundary lines */
+  svg+=`<line x1="${BX}" y1="0" x2="${BX}" y2="${BY}" stroke="rgba(255,255,255,.4)" stroke-width="1.5"/>`;
+  svg+=`<line x1="${W-OW}" y1="0" x2="${W-OW}" y2="${BY}" stroke="rgba(255,255,255,.4)" stroke-width="1.5"/>`;
+  /* Baseline */
+  svg+=`<line x1="0" y1="${BY}" x2="${W}" y2="${BY}" stroke="rgba(255,255,255,.32)" stroke-width="1"/>`;
+
+  /* Bell curve — three passes */
+  svg+=`<path d="${bp}" fill="none" stroke="rgba(100,175,255,.12)" stroke-width="9" filter="url(#glow)"/>`;
+  svg+=`<path d="${bp}" fill="none" stroke="rgba(150,210,255,.65)" stroke-width="1.5" stroke-dasharray="8,5" filter="url(#glow)"/>`;
+  svg+=`<path d="${bp}" fill="none" stroke="rgba(200,235,255,.35)" stroke-width=".8" stroke-dasharray="8,5"/>`;
+
+  /* Symbols */
+  for(let z=1;z<=6;z++){
+    for(let sl=1;sl<=4;sl++){
+      const arr=slotMap[`${z}-${sl}`]||[];
+      if(!arr.length) continue;
+      const gi=(z-1)*4+(sl-1);          // global slot index 0–23
+      const scx=BX+(gi+0.5)*SLOT_PITCH; // center x
+      arr.forEach((st,idx)=>{
+        const sy=BY-(idx+1)*SH+SH*0.75;
+        const lbl=st.s.slice(0,4);       // up to 4 chars
+        const clr=ZC[z];
+        const isIdx=st.isIdx||false;
+        const fsize=isIdx?11:FS;
+        const fw=isIdx?'bold':'normal';
+        const tip=`${st.s}  |  IR: ${st.ir>0?'+':''}${st.ir}  |  ${ZN[z]}${isIdx?' (INDEX)':''}`;
+        svg+=`<text x="${scx.toFixed(1)}" y="${sy.toFixed(1)}" text-anchor="middle" `+
+          `font-family="'Courier New',monospace" font-size="${fsize}" font-weight="${fw}" `+
+          `fill="${clr}" filter="url(#sg)" cursor="pointer" data-tip="${tip}">${lbl}</text>`;
+      });
+    }
+  }
+
+  /* OOB labels */
+  svg+=`<text x="${OW/2}" y="15" text-anchor="middle" font-family="Trebuchet MS" font-size="7" fill="${ZC[1]}" opacity=".8">OOB</text>`;
+  svg+=`<text x="${OW/2}" y="24" text-anchor="middle" font-family="Trebuchet MS" font-size="6.5" fill="${ZC[1]}" opacity=".7">Weak</text>`;
+  svg+=`<text x="${OW/2}" y="33" text-anchor="middle" font-family="Trebuchet MS" font-size="7" fill="${ZC[1]}">[0]</text>`;
+  svg+=`<text x="${W-OW/2}" y="15" text-anchor="middle" font-family="Trebuchet MS" font-size="7" fill="${ZC[6]}" opacity=".8">OOB</text>`;
+  svg+=`<text x="${W-OW/2}" y="24" text-anchor="middle" font-family="Trebuchet MS" font-size="6.5" fill="${ZC[6]}" opacity=".7">Strong</text>`;
+  svg+=`<text x="${W-OW/2}" y="33" text-anchor="middle" font-family="Trebuchet MS" font-size="7" fill="${ZC[6]}">[0]</text>`;
+
+  /* Below-baseline: IR range + Zone label */
+  const IR_RANGES=['+99 to +67','+66 to +34','+33 to +1','−1 to −33','−34 to −66','−67 to −99'];
+  for(let z=1;z<=6;z++){
+    const cx=(BX+(z-1)*ZW+ZW/2).toFixed(1);
+    svg+=`<text x="${cx}" y="${BY+17}" text-anchor="middle" font-family="'Courier New',monospace" font-size="8" fill="rgba(255,255,255,.4)">${IR_RANGES[z-1]}</text>`;
+    svg+=`<text x="${cx}" y="${BY+32}" text-anchor="middle" font-family="Trebuchet MS" font-size="11" font-weight="bold" fill="${ZC[z]}">${ZN[z]}</text>`;
+  }
+  /* Footer legend */
+  svg+=`<text x="${BX+4}" y="${H-3}" font-family="Trebuchet MS" font-size="7.5" fill="rgba(0,212,160,.35)">← Weak / Oversold</text>`;
+  svg+=`<text x="${W-OW-4}" y="${H-3}" text-anchor="end" font-family="Trebuchet MS" font-size="7.5" fill="rgba(232,53,53,.35)">Overbought / Strong →</text>`;
+
+  svg+='</svg>';
+  document.getElementById('histoWrap').innerHTML=svg;
+
+  /* Tooltip */
+  const tip=document.getElementById('htip');
+  const svgEl=document.querySelector('#histoWrap svg');
+  svgEl.addEventListener('mousemove',e=>{
+    const el=e.target;
+    if(el.dataset.tip){
+      tip.textContent=el.dataset.tip;
+      tip.style.display='block';
+      tip.style.left=(e.clientX+14)+'px';
+      tip.style.top=(e.clientY-12)+'px';
+    } else {
+      tip.style.display='none';
+    }
+  });
+  svgEl.addEventListener('mouseleave',()=>tip.style.display='none');
+})();
+</script>
+</body>
+</html>
