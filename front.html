@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top Down Trading | Dashboard</title>
+    <!--
+      TOP DOWN TRADING — FRONT PAGE (pg. 2)
+      18 Elements | Post-Login Dashboard
+      Embedded CSS + JS | Ready to open in browser
+      ─────────────────────────────────────────────
+      IR = Implied Risk, scale ±99
+      Zones 1–6 (Zone 1=extreme overbought, Zone 6=extreme oversold)
+      Phase Chart = SPX on 0–120 scale (separate from Zone system)
+      Toggle 2-Way = sort/display toggle between 90-day and 10-day IR
+    -->
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+
+    /* ═══════════════════════════════════════════
+       CSS CUSTOM PROPERTIES
+       ═══════════════════════════════════════════ */
+    :root {
+        /* Backgrounds */
+        --bg-base:    #06080f;
+        --bg-surface: #0b0f1e;
+        --bg-card:    #0f1526;
+        --bg-card2:   #111a30;
+
+        /* Borders */
+        --border-dim:    #1c2a45;
+        --border-mid:    #243550;
+
+        /* Text */
+        --text-primary:   #c8d8f0;
+        --text-secondary: #6b85ab;
+        --text-muted:     #364d6b;
+
+        /* Accents */
+        --gold:      #f0a823;
+        --gold-text: #ffc85a;
+        --cyan:      #00c8e0;
+
+        /* Zone colors (Z1=most overbought→red, Z6=most oversold→green) */
+        --z1: #ef4444;
+        --z2: #f97316;
+        --z3: #eab308;
+        --z4: #84cc16;
+        --z5: #22c55e;
+        --z6: #4ade80;
+
+        /* IR value colors */
+        --positive: #22c55e;
+        --negative: #ef4444;
+        --neutral:  #94a3b8;
+    }
+
+    /* ═══════════════════════════════════════════
+       RESET & BASE
+       ═══════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+        font-family: 'Rajdhani', sans-serif;
+        background: var(--bg-base);
+        color: var(--text-primary);
+        min-height: 100vh;
+        font-size: 14px;
+    }
+
+    /* ═══════════════════════════════════════════
+       SEARCH BAR (above top nav)
+       ═══════════════════════════════════════════ */
+    .search-bar {
+        background: var(--bg-surface);
+        border-bottom: 1px solid var(--border-dim);
+        padding: 5px 16px;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 8px;
+    }
+    .search-label {
+        font-size: 0.62rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+    }
+    .search-bar input {
+        background: var(--bg-card);
+        border: 1px solid var(--border-mid);
+        color: var(--text-primary);
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 0.72rem;
+        padding: 4px 10px;
+        border-radius: 3px;
+        width: 200px;
+        outline: none;
+        transition: border-color 0.15s;
+    }
+    .search-bar input::placeholder { color: var(--text-muted); }
+    .search-bar input:focus { border-color: var(--gold); }
+
+    /* ═══════════════════════════════════════════
+       TOP NAVIGATION — 6 buttons across
+       Bright = registered client access
+       Dim   = requires upgrade
+       ═══════════════════════════════════════════ */
+    .top-nav {
+        background: var(--bg-surface);
+        border-bottom: 1px solid var(--border-mid);
+        padding: 0 12px;
+        display: flex;
+        align-items: center;
+        height: 44px;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+    }
+    .top-nav-links {
+        display: flex;
+        gap: 4px;
+        width: 100%;
+        justify-content: center;
+    }
+    .nav-btn {
+        padding: 5px 14px;
+        font-family: 'Rajdhani', sans-serif;
+        font-weight: 600;
+        font-size: 0.78rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        text-decoration: none;
+        border-radius: 3px;
+        transition: all 0.15s;
+        border: 1px solid transparent;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+    /* BRIGHT: accessible to registered users */
+    .nav-btn.bright {
+        background: #12203a;
+        border-color: var(--gold);
+        color: var(--gold-text);
+    }
+    .nav-btn.bright:hover {
+        background: var(--gold);
+        color: #000;
+        box-shadow: 0 0 12px rgba(240,168,35,0.35);
+    }
+    /* DIM: locked/upgrade required */
+    .nav-btn.dim {
+        background: #080d18;
+        border-color: #192433;
+        color: #2a3d55;
+        cursor: default;
+    }
+
+    /* ═══════════════════════════════════════════
+       PAGE WRAPPER
+       ═══════════════════════════════════════════ */
+    .page-wrapper {
+        display: flex;
+        min-height: calc(100vh - 76px); /* 44px nav + 32px search */
+    }
+
+    /* ═══════════════════════════════════════════
+       LEFT SIDEBAR — 6 buttons down
+       ═══════════════════════════════════════════ */
+    .sidebar {
+        width: 148px;
+        flex-shrink: 0;
+        background: var(--bg-surface);
+        border-right: 1px solid var(--border-mid);
+        padding: 14px 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        position: sticky;
+        top: 76px;
+        height: calc(100vh - 76px);
+        overflow-y: auto;
+    }
+    .side-btn {
+        padding: 9px 8px;
+        font-family: 'Rajdhani', sans-serif;
+        font-weight: 600;
+        font-size: 0.72rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        text-decoration: none;
+        border-radius: 3px;
+        transition: all 0.15s;
+        display: block;
+        text-align: center;
+        border: 1px solid transparent;
+        cursor: pointer;
+        line-height: 1.3;
+    }
+    .side-btn.bright {
+        background: #12203a;
+        border-color: var(--gold);
+        color: var(--gold-text);
+    }
+    .side-btn.bright:hover {
+        background: var(--gold);
+        color: #000;
+    }
+    .side-btn.dim {
+        background: #080d18;
+        border-color: #192433;
+        color: #2a3d55;
+        cursor: default;
+    }
+
+    /* ═══════════════════════════════════════════
+       MAIN CONTENT AREA
+       ═══════════════════════════════════════════ */
+    .main-content {
+        flex: 1;
+        padding: 18px 20px;
+        overflow-y: auto;
+        min-width: 0;
+    }
+
+    /* ═══════════════════════════════════════════
+       ELEMENT 2.1 — TITLE / LOGO
+       ═══════════════════════════════════════════ */
+    .page-title {
+        text-align: center;
+        margin-bottom: 18px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid var(--border-dim);
+    }
+    .page-title h1 {
+        font-size: 2.1rem;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--gold-text);
+        text-shadow: 0 0 40px rgba(240,168,35,0.28);
+    }
+    .page-title .subtitle {
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 0.65rem;
+        letter-spacing: 0.2em;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        margin-top: 5px;
+    }
+
+    /* ═══════════════════════════════════════════
+       PAGE NAV BUTTONS (Market / Sector / Stock)
+       Elements 2.2, 2.10, 2.13
+       ═══════════════════════════════════════════ */
+    .nav-page-btn {
+        display: block;
+        width: 190px;
+        margin: 0 auto 16px;
+        padding: 10px 20px;
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 1.05rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        text-align: center;
+        text-decoration: none;
+        color: var(--gold-text);
+        background: #12203a;
+        border: 2px solid var(--gold);
+        border-radius: 4px;
+        transition: all 0.15s;
+        cursor: pointer;
+    }
+    .nav-page-btn:hover {
+        background: var(--gold);
+        color: #000;
+        box-shadow: 0 0 20px rgba(240,168,35,0.35);
+    }
+
+    /* ═══════════════════════════════════════════
+       CARD COMPONENT
+       ═══════════════════════════════════════════ */
+    .card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-dim);
+        border-radius: 4px;
+        padding: 12px;
+        margin-bottom: 14px;
+    }
+    .card-title {
+        font-size: 0.68rem;
+        font-weight: 600;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        text-align: center;
+        margin-bottom: 10px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid var(--border-dim);
+    }
+
+    /* ═══════════════════════════════════════════
+       TWO-COLUMN LAYOUT (half page each)
+       ═══════════════════════════════════════════ */
+    .two-col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin-bottom: 14px;
+    }
+
+    /* ═══════════════════════════════════════════
+       TOGGLE 2-WAY COMPONENT
+       Switches between 90-day and 10-day IR display
+       Sort column is bolded; both columns always visible
+       ═══════════════════════════════════════════ */
+    .toggle-wrap {
+        background: var(--bg-card);
+        border: 1px solid var(--border-dim);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    .toggle-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+        border-bottom: 1px solid var(--border-dim);
+        background: var(--bg-card2);
+    }
+    .toggle-title {
+        font-size: 0.68rem;
+        font-weight: 600;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+    }
+    .toggle-btns {
+        display: flex;
+        border: 1px solid var(--border-mid);
+        border-radius: 3px;
+        overflow: hidden;
+    }
+    .toggle-btn {
+        padding: 3px 10px;
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 0.62rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        background: transparent;
+        border: none;
+        border-right: 1px solid var(--border-mid);
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: all 0.12s;
+    }
+    .toggle-btn:last-child { border-right: none; }
+    .toggle-btn.active { background: var(--gold); color: #000; }
+    .toggle-btn:not(.active):hover {
+        background: var(--bg-card2);
+        color: var(--text-primary);
+    }
+
+    /* ═══════════════════════════════════════════
+       IR TABLE (used inside toggles)
+       ═══════════════════════════════════════════ */
+    .ir-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: 'Share Tech Mono', monospace;
+        font-size: 0.68rem;
+    }
+    .ir-table th {
+        padding: 4px 6px;
+        text-align: right;
+        color: var(--text-muted);
+        font-size: 0.58rem;
+        letter-spacing: 0.1em;
+        border-bottom: 1px solid var(--border-dim);
+        white-space: nowrap;
+        font-family: 'Rajdhani', sans-serif;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    .ir-table th:first-child { text-align: left; }
+    .ir-table td {
+        padding: 4px 6px;
+        border-bottom: 1px solid rgba(28,42,69,0.35);
+        text-align: right;
+    }
+    .ir-table td:first-child {
+        text-align: left;
+        color: var(--text-primary);
+        font-weight: bold;
+    }
+    .ir-table tr:last-child td { border-bottom: none; }
+    .ir-table tr:hover td { background: rgba(30,45,74,0.35); }
+
+    /* Value color coding */
+    .val-pos { color: var(--positive); }
+    .val-neg { color: var(--negative); }
+    .val-neu { color: var(--neutral); }
+
+    /* ═══════════════════════════════════════════
+       ZONE BADGE
+       ═══════════════════════════════════════════ */
+    .zbadge {
+        display: inline-block;
+        padding: 1px 4px;
+        border-radius: 2px;
+        font-size: 0.56rem;
+        font-weight: bold;
+        font-family: 'Rajdhani', sans-serif;
+    }
+    .z1b { background: rgba(239,68,68,0.15);  color: var(--z1); border: 1px solid var(--z1); }
+    .z2b { background: rgba(249,115,22,0.15); color: var(--z2); border: 1px solid var(--z2); }
+    .z3b { background: rgba(234,179,8,0.15);  color: var(--z3); border: 1px solid var(--z3); }
+    .z4b { background: rgba(132,204,22,0.15); color: var(--z4); border: 1px solid var(--z4); }
+    .z5b { background: rgba(34,197,94,0.15);  color: var(--z5); border: 1px solid var(--z5); }
+    .z6b { background: rgba(74,222,128,0.15); color: var(--z6); border: 1px solid var(--z6); }
+
+    /* ═══════════════════════════════════════════
+       SCROLLABLE TABLE CONTAINERS
+       ═══════════════════════════════════════════ */
+    .scroll-lg { max-height: 320px; overflow-y: auto; padding: 8px; }
+    .scroll-md { max-height: 240px; overflow-y: auto; padding: 8px; }
+    .scroll-sm { max-height: 160px; overflow-y: auto; padding: 8px; }
+
+    /* ═══════════════════════════════════════════
+       PORTFOLIO HISTOGRAM SECTION (Element 2.3)
+       ═══════════════════════════════════════════ */
+    .portfolio-section { margin-bottom: 14px; }
+    .portfolio-title {
+        font-size: 0.72rem;
+        font-weight: 600;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+        text-align: center;
+        margin-bottom: 6px;
+    }
+    .portfolio-comment {
+        margin-top: 6px;
+        font-size: 0.76rem;
+        color: var(--cyan);
+        letter-spacing: 0.04em;
+        text-align: center;
+        font-family: 'Share Tech Mono', monospace;
+    }
+
+    /* ═══════════════════════════════════════════
+       COMBO CHART KEY
+       ═══════════════════════════════════════════ */
+    .chart-key {
+        display: flex;
+        gap: 14px;
+        justify-content: center;
+        margin-top: 3px;
+        font-size: 0.58rem;
+        font-family: 'Share Tech Mono', monospace;
+    }
+    .key-bar  { color: var(--positive); }
+    .key-line { color: var(--cyan); }
+
+    /* ═══════════════════════════════════════════
+       STRONGEST / WEAKEST STOCK LISTS
+       Elements 2.15–2.18
+       ═══════════════════════════════════════════ */
+    .stock-list {
+        background: var(--bg-card);
+        border: 2px solid var(--border-mid);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    .stock-list-title {
+        padding: 9px 12px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        text-align: center;
+        color: var(--gold-text);
+        background: var(--bg-card2);
+        border-bottom: 1px solid var(--border-mid);
+    }
+    .rank-pad { padding: 6px; }
+
+    /* ═══════════════════════════════════════════
+       NAME CELL (sector/ETF description in table)
+       ═══════════════════════════════════════════ */
+    .name-cell {
+        color: var(--text-secondary) !important;
+        font-size: 0.6rem;
+        text-align: left !important;
+        max-width: 130px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: var(--bg-base); }
+    ::-webkit-scrollbar-thumb { background: var(--border-mid); border-radius: 2px; }
+
+    </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════
+     SEARCH BOX (above navigation — static page top)
+     ══════════════════════════════════════════════════ -->
+<div class="search-bar">
+    <span class="search-label">Search</span>
+    <input type="text" id="searchInput" placeholder="Ticker or company name…" onkeyup="handleSearch(this.value)">
+</div>
+
+<!-- ══════════════════════════════════════════════════
+     TOP NAVIGATION — 6 buttons across
+     Bright = About Us, Zone System, Stock Analysis, Resources, Contact
+     Dim    = Options Strategies (requires paid Options subscription)
+     ══════════════════════════════════════════════════ -->
+<nav class="top-nav">
+    <div class="top-nav-links">
+        <a href="about.html"    class="nav-btn bright">About Us</a>
+        <a href="zones.html"    class="nav-btn bright">The Zone System</a>
+        <a href="analysis.html" class="nav-btn bright">Stock Analysis</a>
+        <a href="options.html"  class="nav-btn dim"   title="Options subscription required">Options Strategies</a>
+        <a href="resources.html" class="nav-btn bright">Resources</a>
+        <a href="contact.html"  class="nav-btn bright">Contact</a>
+    </div>
+</nav>
+
+<!-- ══════════════════════════════════════════════════
+     PAGE WRAPPER: Sidebar + Main Content
+     ══════════════════════════════════════════════════ -->
+<div class="page-wrapper">
+
+    <!-- ══════════════════════════════════════════
+         LEFT SIDEBAR — 6 buttons down
+         Bright = registered stock client or free trial
+         Dim    = Options (requires Options subscription)
+         ══════════════════════════════════════════ -->
+    <aside class="sidebar">
+        <a href="portfolio.html" class="side-btn bright">My Portfolio</a>
+        <a href="market.html"    class="side-btn bright">Market</a>
+        <a href="sector.html"    class="side-btn bright">Sector</a>
+        <a href="stock.html"     class="side-btn bright">Stock</a>
+        <a href="options.html"   class="side-btn dim"  title="Options subscription required">Options</a>
+        <a href="game.html"      class="side-btn bright">Option Strategy Game</a>
+    </aside>
+
+    <!-- ══════════════════════════════════════════
+         MAIN CONTENT AREA — 18 Elements
+         ══════════════════════════════════════════ -->
+    <main class="main-content">
+
+        <!-- ─────────────────────────────────────
+             ELEMENT 2.1 — TOP DOWN TRADING TITLE
+             Logo, centered, large, bold
+             ───────────────────────────────────── -->
+        <div class="page-title">
+            <h1>↓ Top Down Trading</h1>
+            <div class="subtitle" id="dashDate">Implied Risk Analytics Platform &nbsp;·&nbsp; Loading date…</div>
+        </div>
+
+        <!-- ─────────────────────────────────────
+             ELEMENT 2.2 — MARKET BUTTON
+             Centered hyperlink to Market (pg. 3)
+             ───────────────────────────────────── -->
+        <a href="market.html" class="nav-page-btn">Market</a>
+
+        <!-- ─────────────────────────────────────
+             ELEMENT 2.3 — [PORTFOLIO MONIKER] HISTOGRAM
+             Defaults to OEX histogram until client activates a Portfolio.
+             Pulls from Personal Portfolio page (ElementPP6.6) in production.
+             Comment line below baseline: "[Moniker] is in Zone X with a reading of ±YY"
+             ───────────────────────────────────── -->
+        <div class="card portfolio-section">
+            <div class="portfolio-title" id="portfolioTitle">OEX Portfolio · Histogram</div>
+            <svg id="portfolioHistogram" viewBox="0 0 680 155" width="100%" height="155" style="display:block;"></svg>
+            <div class="portfolio-comment" id="portfolioComment">OEX is in Zone 4 with a reading of +18</div>
+        </div>
+
+        <!-- ─────────────────────────────────────
+             ELEMENTS 2.4 & 2.5 — OEX + NDX TOGGLE 2-WAY
+             Two across, half page each.
+             Toggle sorts table by selected IR period.
+             Both 90 IR and 10 IR columns always visible.
+             Active sort column is bold.
+             ───────────────────────────────────── -->
+        <div class="two-col">
+
+            <!-- 2.4: S&P 100 (OEX) -->
+            <div class="toggle-wrap">
+                <div class="toggle-header">
+                    <span class="toggle-title">S&amp;P 100 (OEX)</span>
+                    <div class="toggle-btns">
+                        <button class="toggle-btn active" data-group="oex" data-period="90" onclick="handleToggle(this)">90 IR</button>
+                        <button class="toggle-btn"        data-group="oex" data-period="10" onclick="handleToggle(this)">10 IR</button>
+                    </div>
+                </div>
+                <div class="scroll-lg">
+                    <table class="ir-table">
+                        <thead><tr><th>Ticker</th><th>90 IR</th><th>10 IR</th><th>Zone</th></tr></thead>
+                        <tbody id="oex-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 2.5: Nasdaq 100 (NDX) -->
+            <div class="toggle-wrap">
+                <div class="toggle-header">
+                    <span class="toggle-title">Nasdaq 100 (NDX)</span>
+                    <div class="toggle-btns">
+                        <button class="toggle-btn active" data-group="ndx" data-period="90" onclick="handleToggle(this)">90 IR</button>
+                        <button class="toggle-btn"        data-group="ndx" data-period="10" onclick="handleToggle(this)">10 IR</button>
+                    </div>
+                </div>
+                <div class="scroll-lg">
+                    <table class="ir-table">
+                        <thead><tr><th>Ticker</th><th>90 IR</th><th>10 IR</th><th>Zone</th></tr></thead>
+                        <tbody id="ndx-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div><!-- /two-col 2.4–2.5 -->
+
+        <!-- ─────────────────────────────────────
+             ELEMENTS 2.6 & 2.7 — OEX + NDX 90/10 GRAPH
+             Two across, half page each.
+             90-day combination bar+line chart.
+             Vertical axis: Zones (IR value ±99)
+             Horizontal axis: Days (1–90)
+             Bar = 90-day IR (zone-colored)
+             Line = 10-day IR (cyan)
+             ───────────────────────────────────── -->
+        <div class="two-col">
+
+            <!-- 2.6: OEX Chart -->
+            <div class="card">
+                <div class="card-title">S&amp;P 100 (OEX) — 90-Day IR History</div>
+                <svg id="oexChart" viewBox="0 0 330 175" width="100%" height="175" style="display:block;"></svg>
+                <div class="chart-key">
+                    <span class="key-bar">▬ Bar = 90-day IR</span>
+                    <span class="key-line">― Line = 10-day IR</span>
+                </div>
+            </div>
+
+            <!-- 2.7: NDX Chart -->
+            <div class="card">
+                <div class="card-title">Nasdaq 100 (NDX) — 90-Day IR History</div>
+                <svg id="ndxChart" viewBox="0 0 330 175" width="100%" height="175" style="display:block;"></svg>
+                <div class="chart-key">
+                    <span class="key-bar">▬ Bar = 90-day IR</span>
+                    <span class="key-line">― Line = 10-day IR</span>
+                </div>
+            </div>
+
+        </div><!-- /two-col 2.6–2.7 -->
+
+        <!-- ─────────────────────────────────────
+             ELEMENTS 2.8 & 2.9 — RUSSELL ETFs + MAJOR INDEXES TOGGLE
+             Two across, half page each.
+             ───────────────────────────────────── -->
+        <div class="two-col">
+
+            <!-- 2.8: Broadbased Russell ETFs — small set, no scroll needed -->
+            <div class="toggle-wrap">
+                <div class="toggle-header">
+                    <span class="toggle-title">Broadbased Russell ETFs</span>
+                    <div class="toggle-btns">
+                        <button class="toggle-btn active" data-group="russell" data-period="90" onclick="handleToggle(this)">90 IR</button>
+                        <button class="toggle-btn"        data-group="russell" data-period="10" onclick="handleToggle(this)">10 IR</button>
+                    </div>
+                </div>
+                <!-- No scroll — only 5 members, window fits naturally -->
+                <div style="padding:8px;">
+                    <table class="ir-table">
+                        <thead><tr><th>Ticker</th><th>Name</th><th>90 IR</th><th>10 IR</th><th>Zone</th></tr></thead>
+                        <tbody id="russell-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 2.9: Major ETFs and Indexes (17 members) -->
+            <div class="toggle-wrap">
+                <div class="toggle-header">
+                    <span class="toggle-title">Major ETFs &amp; Indexes</span>
+                    <div class="toggle-btns">
+                        <button class="toggle-btn active" data-group="major" data-period="90" onclick="handleToggle(this)">90 IR</button>
+                        <button class="toggle-btn"        data-group="major" data-period="10" onclick="handleToggle(this)">10 IR</button>
+                    </div>
+                </div>
+                <div class="scroll-md">
+                    <table class="ir-table">
+                        <thead><tr><th>Ticker</th><th>90 IR</th><th>10 IR</th><th>Zone</th></tr></thead>
+                        <tbody id="major-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div><!-- /two-col 2.8–2.9 -->
+
+        <!-- ─────────────────────────────────────
+             ELEMENT 2.10 — SECTOR BUTTON
+             Centered hyperlink to Sector (pg. 4)
+             ───────────────────────────────────── -->
+        <a href="sector.html" class="nav-page-btn">Sector</a>
+
+        <!-- ─────────────────────────────────────
+             ELEMENTS 2.11 & 2.12 — SECTOR ETF TOGGLES
+             Two across, half page each.
+             ───────────────────────────────────── -->
+        <div class="two-col">
+
+            <!-- 2.11: S&P Select Sector ETFs (13 members incl. GLD & SLV) -->
+            <div class="toggle-wrap">
+                <div class="toggle-header">
+                    <span class="toggle-title">S&amp;P Select Sector ETFs</span>
+                    <div class="toggle-btns">
+                        <button class="toggle-btn active" data-group="select" data-period="90" onclick="handleToggle(this)">90 IR</button>
+                        <button class="toggle-btn"        data-group="select" data-period="10" onclick="handleToggle(this)">10 IR</button>
+                    </div>
+                </div>
+                <div class="scroll-md">
+                    <table class="ir-table">
+                        <thead><tr><th>Ticker</th><th>Sector</th><th>90 IR</th><th>10 IR</th><th>Zone</th></tr></thead>
+                        <tbody id="select-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 2.12: S&P SPDR Sector ETFs (18 members) -->
+            <div class="toggle-wrap">
+                <div class="toggle-header">
+                    <span class="toggle-title">S&amp;P SPDR Sector ETFs</span>
+                    <div class="toggle-btns">
+                        <button class="toggle-btn active" data-group="spdr" data-period="90" onclick="handleToggle(this)">90 IR</button>
+                        <button class="toggle-btn"        data-group="spdr" data-period="10" onclick="handleToggle(this)">10 IR</button>
+                    </div>
+                </div>
+                <div class="scroll-md">
+                    <table class="ir-table">
+                        <thead><tr><th>Ticker</th><th>90 IR</th><th>10 IR</th><th>Zone</th></tr></thead>
+                        <tbody id="spdr-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div><!-- /two-col 2.11–2.12 -->
+
+        <!-- ─────────────────────────────────────
+             ELEMENT 2.13 — STOCK BUTTON
+             Centered hyperlink to Stock (pg. 5)
+             ───────────────────────────────────── -->
+        <a href="stock.html" class="nav-page-btn">Stock</a>
+
+        <!-- ─────────────────────────────────────
+             ELEMENT 2.14 — STOCK ZONE PERCENTAGE HISTOGRAM
+             Baseline: Phase Chart scale (0–120)
+             Mean line at 60 (center)
+             Zone boundary lines at 20, 40, 60, 80, 100
+             % of database stocks in each zone (90-day basis)
+             Cyan marker: current Phase Chart (SPX) reading
+             ───────────────────────────────────── -->
+        <div class="card">
+            <div class="card-title">Stock Zone Percentage — 90-Day Basis &nbsp;|&nbsp; Phase Chart Scale (0–120)</div>
+            <svg id="zoneHistogram" viewBox="0 0 680 185" width="100%" height="185" style="display:block;"></svg>
+        </div>
+
+        <!-- ─────────────────────────────────────
+             ELEMENTS 2.15 & 2.16 — WEAKEST STOCKS
+             Two across, half page each.
+             Both 90 IR and 10 IR shown; sorted by title metric.
+             15 stocks per list.
+             ───────────────────────────────────── -->
+        <div class="two-col">
+
+            <!-- 2.15: Weakest by 90-day IR (lowest values = Zone 1, most overbought) -->
+            <div class="stock-list">
+                <div class="stock-list-title">Weakest 90-day IR</div>
+                <div class="rank-pad">
+                    <table class="ir-table">
+                        <thead><tr><th>#</th><th>Ticker</th><th>90 IR</th><th>10 IR</th><th>Zone</th></tr></thead>
+                        <tbody id="weak90-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 2.16: Weakest by 10-day IR -->
+            <div class="stock-list">
+                <div class="stock-list-title">Weakest 10-day IR</div>
+                <div class="rank-pad">
+                    <table class="ir-table">
+                        <thead><tr><th>#</th><th>Ticker</th><th>90 IR</th><th>10 IR</th><th>Zone</th></tr></thead>
+                        <tbody id="weak10-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div><!-- /two-col 2.15–2.16 -->
+
+        <!-- ─────────────────────────────────────
+             ELEMENTS 2.17 & 2.18 — STRONGEST STOCKS
+             Two across, half page each.
+             Highest IR values = Zone 6, most oversold (most implied retracement upside)
+             ───────────────────────────────────── -->
+        <div class="two-col">
+
+            <!-- 2.17: Strongest by 90-day IR -->
+            <div class="stock-list">
+                <div class="stock-list-title">Strongest 90-day IR</div>
+                <div class="rank-pad">
+                    <table class="ir-table">
+                        <thead><tr><th>#</th><th>Ticker</th><th>90 IR</th><th>10 IR</th><th>Zone</th></tr></thead>
+                        <tbody id="strong90-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 2.18: Strongest by 10-day IR -->
+            <div class="stock-list">
+                <div class="stock-list-title">Strongest 10-day IR</div>
+                <div class="rank-pad">
+                    <table class="ir-table">
+                        <thead><tr><th>#</th><th>Ticker</th><th>90 IR</th><th>10 IR</th><th>Zone</th></tr></thead>
+                        <tbody id="strong10-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div><!-- /two-col 2.17–2.18 -->
+
+    </main><!-- /main-content -->
+</div><!-- /page-wrapper -->
+
+
+<!-- ══════════════════════════════════════════════════════════════
+     JAVASCRIPT
+     ══════════════════════════════════════════════════════════════
+
+     Sections:
+     1. Utility helpers (zone, formatting)
+     2. Placeholder data (replace with live DB feed in production)
+     3. Toggle 2-Way system
+     4. Ranked list renderer (Weakest / Strongest)
+     5. SVG Chart: Portfolio Histogram (Element 2.3)
+     6. SVG Chart: Combo Bar+Line Chart (Elements 2.6, 2.7)
+     7. SVG Chart: Zone Percentage Histogram (Element 2.14)
+     8. Search handler
+     9. Initialization
+
+     ══════════════════════════════════════════════════════════════ -->
+<script>
+
+// ──────────────────────────────────────────────
+// 1. UTILITY HELPERS
+// ──────────────────────────────────────────────
+
+/**
+ * Returns zone number 1–6 from an IR value.
+ * Zone 6 = extreme oversold (+66 to +99)
+ * Zone 1 = extreme overbought (-66 to -99)
+ */
+function getZone(ir) {
+    if (ir >= 66)  return 6;
+    if (ir >= 33)  return 5;
+    if (ir >= 0)   return 4;
+    if (ir >= -33) return 3;
+    if (ir >= -66) return 2;
+    return 1;
+}
+
+// Zone display colors (borders, lines, badges)
+const ZC = {
+    1: '#ef4444', 2: '#f97316', 3: '#eab308',
+    4: '#84cc16', 5: '#22c55e', 6: '#4ade80'
+};
+// Zone translucent fill colors (chart bands, badge backgrounds)
+const ZBG = {
+    1: 'rgba(239,68,68,0.11)',  2: 'rgba(249,115,22,0.11)',
+    3: 'rgba(234,179,8,0.11)',  4: 'rgba(132,204,22,0.11)',
+    5: 'rgba(34,197,94,0.11)', 6: 'rgba(74,222,128,0.11)'
+};
+
+/** Format IR with sign: +18, -44, 0 */
+function fmtIR(v) { return (v > 0 ? '+' : '') + v; }
+
+/** CSS class for IR value color */
+function irCls(v) { return v > 0 ? 'val-pos' : (v < 0 ? 'val-neg' : 'val-neu'); }
+
+/** Render a zone badge for a given IR value */
+function zoneBadge(ir) {
+    const z = getZone(ir);
+    return `<span class="zbadge z${z}b">Z${z}</span>`;
+}
+
+
+// ──────────────────────────────────────────────
+// 2. PLACEHOLDER DATA
+// Replace with live database feed in production.
+// Structure: { t: ticker, ir90: number, ir10: number, name?: string }
+// ──────────────────────────────────────────────
+
+// S&P 100 (OEX) — 25 representative stocks
+const OEX_DATA = [
+    {t:'AAPL',  ir90:-24, ir10:-18}, {t:'MSFT',  ir90:-31, ir10:-45},
+    {t:'AMZN',  ir90: 12, ir10: 28}, {t:'NVDA',  ir90:-67, ir10:-82},
+    {t:'GOOGL', ir90:  8, ir10: 15}, {t:'META',  ir90:-44, ir10:-38},
+    {t:'TSLA',  ir90: 55, ir10: 71}, {t:'BRK.B', ir90: 22, ir10: 18},
+    {t:'JPM',   ir90:-15, ir10: -8}, {t:'UNH',   ir90: 78, ir10: 65},
+    {t:'XOM',   ir90: 44, ir10: 38}, {t:'JNJ',   ir90: 18, ir10: 22},
+    {t:'V',     ir90:-28, ir10:-35}, {t:'PG',    ir90: 35, ir10: 28},
+    {t:'MA',    ir90:-19, ir10:-25}, {t:'HD',    ir90: 62, ir10: 55},
+    {t:'CVX',   ir90: 52, ir10: 48}, {t:'ABBV',  ir90:-55, ir10:-61},
+    {t:'MRK',   ir90: 88, ir10: 72}, {t:'LLY',   ir90: 71, ir10: 58},
+    {t:'COST',  ir90: -8, ir10: 12}, {t:'BAC',   ir90:-32, ir10:-18},
+    {t:'WMT',   ir90: 28, ir10: 42}, {t:'CRM',   ir90:-48, ir10:-55},
+    {t:'ADBE',  ir90:-72, ir10:-68}
+];
+
+// Nasdaq 100 (NDX) — 25 representative stocks
+const NDX_DATA = [
+    {t:'AAPL',  ir90:-24, ir10:-18}, {t:'MSFT',  ir90:-31, ir10:-45},
+    {t:'AMZN',  ir90: 12, ir10: 28}, {t:'NVDA',  ir90:-67, ir10:-82},
+    {t:'GOOGL', ir90:  8, ir10: 15}, {t:'META',  ir90:-44, ir10:-38},
+    {t:'TSLA',  ir90: 55, ir10: 71}, {t:'AVGO',  ir90:-38, ir10:-44},
+    {t:'ADBE',  ir90:-72, ir10:-68}, {t:'CSCO',  ir90: 14, ir10:  8},
+    {t:'INTC',  ir90: 82, ir10: 76}, {t:'AMD',   ir90:-58, ir10:-71},
+    {t:'QCOM',  ir90: 38, ir10: 44}, {t:'TXN',   ir90: 25, ir10: 18},
+    {t:'NFLX',  ir90:-18, ir10:-28}, {t:'PYPL',  ir90: 68, ir10: 72},
+    {t:'AMGN',  ir90: 42, ir10: 35}, {t:'GILD',  ir90: 31, ir10: 45},
+    {t:'SBUX',  ir90: 75, ir10: 62}, {t:'MDLZ',  ir90: 18, ir10: 28},
+    {t:'MRNA',  ir90: 88, ir10: 81}, {t:'REGN',  ir90:-12, ir10: -5},
+    {t:'BIIB',  ir90: 55, ir10: 62}, {t:'MELI',  ir90:-22, ir10:-35},
+    {t:'LULU',  ir90: 72, ir10: 65}
+];
+
+// Broadbased Russell ETFs (5 members)
+const RUSSELL_DATA = [
+    {t:'IWV',  name:'Russell 3000 ETF',    ir90: 14, ir10: 22},
+    {t:'SMMD', name:'Russell 2500 ETF',    ir90: 28, ir10: 38},
+    {t:'IWM',  name:'Russell 2000 ETF',    ir90: 42, ir10: 48},
+    {t:'IWB',  name:'Russell 1000 ETF',    ir90:  8, ir10: 15},
+    {t:'IWL',  name:'Russell Top 200 ETF', ir90:-12, ir10: -8}
+];
+
+// Major ETFs and Indexes (17 members)
+const MAJOR_DATA = [
+    {t:'OEX',  ir90: 18, ir10: 12}, {t:'DJX',  ir90: -8, ir10:-15},
+    {t:'NDX',  ir90:-22, ir10:-35}, {t:'CBTX', ir90:-55, ir10:-72},
+    {t:'VIX',  ir90: 45, ir10: 68}, {t:'IRX',  ir90: 12, ir10:  8},
+    {t:'LTX',  ir90: 38, ir10: 44}, {t:'MGTN', ir90:-18, ir10:-28},
+    {t:'XII',  ir90:  5, ir10: 18}, {t:'IVV',  ir90: 15, ir10: 22},
+    {t:'TOPT', ir90:-12, ir10: -5}, {t:'QTOP', ir90:-28, ir10:-42},
+    {t:'QNXT', ir90:  8, ir10: 15}, {t:'FVL',  ir90: 32, ir10: 38},
+    {t:'XLG',  ir90: -5, ir10:  8}, {t:'QQEW', ir90: 22, ir10: 35},
+    {t:'QQXT', ir90: 42, ir10: 28}
+];
+
+// S&P Select Sector ETFs + GLD + SLV (13 members)
+const SELECT_DATA = [
+    {t:'XLC',  name:'Communication Svcs',  ir90:-18, ir10:-28},
+    {t:'XLY',  name:'Consumer Discret.',   ir90: 12, ir10: 22},
+    {t:'XLP',  name:'Consumer Staples',    ir90: 38, ir10: 32},
+    {t:'XLE',  name:'Energy',              ir90: 55, ir10: 62},
+    {t:'XLF',  name:'Financial',           ir90: -8, ir10:-15},
+    {t:'XLV',  name:'Healthcare',          ir90: 72, ir10: 65},
+    {t:'XLI',  name:'Industrials',         ir90: 28, ir10: 35},
+    {t:'XLK',  name:'Info Technology',     ir90:-35, ir10:-48},
+    {t:'XLB',  name:'Materials',           ir90: 42, ir10: 38},
+    {t:'XLRE', name:'Real Estate',         ir90: 65, ir10: 58},
+    {t:'XLU',  name:'Utilities',           ir90: 48, ir10: 42},
+    {t:'GLD',  name:'Gold ETF',            ir90:-72, ir10:-85},
+    {t:'SLV',  name:'Silver ETF',          ir90:-45, ir10:-58}
+];
+
+// S&P SPDR Sector ETFs (18 members)
+const SPDR_DATA = [
+    {t:'XTN', ir90: 22, ir10: 35}, {t:'XTL', ir90:-12, ir10:-22},
+    {t:'XSW', ir90:-28, ir10:-38}, {t:'XSD', ir90:-55, ir10:-68},
+    {t:'XRT', ir90: 35, ir10: 28}, {t:'KRE', ir90:-18, ir10: -8},
+    {t:'XPH', ir90: 48, ir10: 55}, {t:'XOP', ir90: 62, ir10: 55},
+    {t:'XES', ir90: 72, ir10: 65}, {t:'XME', ir90: 45, ir10: 52},
+    {t:'KIE', ir90: -5, ir10: 12}, {t:'XHB', ir90: 38, ir10: 28},
+    {t:'XHS', ir90: 58, ir10: 65}, {t:'XHE', ir90: 42, ir10: 35},
+    {t:'KCE', ir90:-22, ir10:-15}, {t:'XBI', ir90: 78, ir10: 72},
+    {t:'KBE', ir90:-15, ir10: -8}, {t:'XAR', ir90: 28, ir10: 42}
+];
+
+
+// ──────────────────────────────────────────────
+// 3. TOGGLE 2-WAY SYSTEM
+// ──────────────────────────────────────────────
+
+/**
+ * Called by each toggle button's onclick.
+ * Updates active state and re-renders the table sorted
+ * by the selected IR period.
+ */
+function handleToggle(btn) {
+    const group  = btn.dataset.group;
+    const period = btn.dataset.period;
+
+    // Update visual active state within this toggle's button group
+    btn.closest('.toggle-btns')
+       .querySelectorAll('.toggle-btn')
+       .forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    // Re-render the associated table
+    renderToggleTable(group, period);
+}
+
+/**
+ * Renders (or re-renders) a toggle table sorted by the given period.
+ * Sort is descending (highest IR first = most oversold at top).
+ */
+function renderToggleTable(group, period) {
+    const sortKey = period === '90' ? 'ir90' : 'ir10';
+
+    const configs = {
+        oex:     { data: OEX_DATA,     tbodyId: 'oex-tbody',     hasName: false },
+        ndx:     { data: NDX_DATA,     tbodyId: 'ndx-tbody',     hasName: false },
+        russell: { data: RUSSELL_DATA, tbodyId: 'russell-tbody', hasName: true  },
+        major:   { data: MAJOR_DATA,   tbodyId: 'major-tbody',   hasName: false },
+        select:  { data: SELECT_DATA,  tbodyId: 'select-tbody',  hasName: true  },
+        spdr:    { data: SPDR_DATA,    tbodyId: 'spdr-tbody',    hasName: false }
+    };
+
+    const cfg = configs[group];
+    if (!cfg) return;
+
+    const sorted = [...cfg.data].sort((a, b) => b[sortKey] - a[sortKey]);
+    const tbody = document.getElementById(cfg.tbodyId);
+    if (!tbody) return;
+
+    tbody.innerHTML = sorted.map(row => {
+        const nameTd = cfg.hasName
+            ? `<td class="name-cell">${row.name}</td>`
+            : '';
+        // Bold the active sort column
+        const s90 = sortKey === 'ir90' ? ' style="font-weight:bold;"' : '';
+        const s10 = sortKey === 'ir10' ? ' style="font-weight:bold;"' : '';
+        return `<tr>
+            <td>${row.t}</td>
+            ${nameTd}
+            <td class="${irCls(row.ir90)}"${s90}>${fmtIR(row.ir90)}</td>
+            <td class="${irCls(row.ir10)}"${s10}>${fmtIR(row.ir10)}</td>
+            <td>${zoneBadge(row.ir90)}</td>
+        </tr>`;
+    }).join('');
+}
+
+
+// ──────────────────────────────────────────────
+// 4. RANKED LISTS — Weakest & Strongest
+// ──────────────────────────────────────────────
+
+// Build a combined, de-duplicated stock universe from OEX + NDX
+const ALL_STOCKS = [...OEX_DATA];
+NDX_DATA.forEach(s => {
+    if (!ALL_STOCKS.find(a => a.t === s.t)) ALL_STOCKS.push(s);
+});
+// Extra stocks to ensure full range of zones in top/bottom lists
+[
+    {t:'SHOP', ir90: 91, ir10: 85}, {t:'SMCI', ir90: 94, ir10: 89},
+    {t:'ARM',  ir90:-89, ir10:-93}, {t:'PLTR', ir90:-79, ir10:-86},
+    {t:'COIN', ir90:-66, ir10:-79}, {t:'ROKU', ir90: 83, ir10: 76},
+    {t:'SNAP', ir90: 79, ir10: 84}, {t:'LYFT', ir90:-84, ir10:-73},
+    {t:'UBER', ir90:-38, ir10:-46}, {t:'SPOT', ir90:-49, ir10:-59}
+].forEach(s => {
+    if (!ALL_STOCKS.find(a => a.t === s.t)) ALL_STOCKS.push(s);
+});
+
+/**
+ * Renders a ranked stock list (Weakest or Strongest).
+ * @param {string}  tbodyId  - target <tbody> id
+ * @param {string}  sortKey  - 'ir90' or 'ir10'
+ * @param {boolean} asc      - true = ascending (weakest first), false = descending (strongest first)
+ * @param {number}  limit    - number of rows to show (15)
+ */
+function renderRankedList(tbodyId, sortKey, asc, limit) {
+    const sorted = [...ALL_STOCKS]
+        .sort((a, b) => asc ? a[sortKey] - b[sortKey] : b[sortKey] - a[sortKey])
+        .slice(0, limit);
+
+    const tbody = document.getElementById(tbodyId);
+    if (!tbody) return;
+
+    tbody.innerHTML = sorted.map((row, i) => `<tr>
+        <td style="color:var(--text-muted)">${i + 1}</td>
+        <td>${row.t}</td>
+        <td class="${irCls(row.ir90)}">${fmtIR(row.ir90)}</td>
+        <td class="${irCls(row.ir10)}">${fmtIR(row.ir10)}</td>
+        <td>${zoneBadge(row.ir90)}</td>
+    </tr>`).join('');
+}
+
+
+// ──────────────────────────────────────────────
+// 5. SVG: PORTFOLIO HISTOGRAM (Element 2.3)
+// ──────────────────────────────────────────────
+// X-axis: IR scale −99 to +99 (6 zone bands)
+// Bars: distribution of stocks/portfolio across IR values
+// Zone bands color-coded in background
+// Mean line at IR = 0; zone boundary dashed lines
+// ──────────────────────────────────────────────
+
+function drawPortfolioHistogram() {
+    const svg = document.getElementById('portfolioHistogram');
+    if (!svg) return;
+    const W=680, H=155, pL=42, pR=18, pT=16, pB=34;
+    const cW = W-pL-pR, cH = H-pT-pB;
+
+    // IR → x pixel
+    const irX = ir => pL + ((ir + 99) / 198) * cW;
+
+    // Zone definitions on IR scale
+    const ZONES = [
+        {from:-99,to:-66,z:1},{from:-66,to:-33,z:2},{from:-33,to:0,z:3},
+        {from:0,to:33,z:4},{from:33,to:66,z:5},{from:66,to:99,z:6}
+    ];
+
+    // Placeholder distribution bars (count of stocks near each IR value)
+    // Normal-ish distribution slightly skewed toward positive (more oversold stocks)
+    const BARS = [
+        {ir:-90,n:2},{ir:-75,n:4},{ir:-60,n:5},{ir:-45,n:7},{ir:-30,n:10},
+        {ir:-15,n:12},{ir:0,n:15},{ir:15,n:14},{ir:30,n:11},
+        {ir:45,n:7},{ir:60,n:5},{ir:75,n:3},{ir:90,n:1}
+    ];
+    const maxN = Math.max(...BARS.map(b => b.n));
+    const bW = cW / 14.5;
+
+    let h = '';
+
+    // Zone background bands
+    ZONES.forEach(z => {
+        const x1 = irX(z.from), x2 = irX(z.to);
+        h += `<rect x="${x1}" y="${pT}" width="${x2-x1}" height="${cH}" fill="${ZBG[z.z]}"/>`;
+    });
+
+    // Zone boundary dashed lines
+    [-66,-33,0,33,66].forEach(v => {
+        const x = irX(v);
+        h += `<line x1="${x}" y1="${pT}" x2="${x}" y2="${pT+cH}" stroke="#243550" stroke-width="1" stroke-dasharray="3,3"/>`;
+    });
+
+    // Mean line at IR = 0 (golden dashed)
+    const mx = irX(0);
+    h += `<line x1="${mx}" y1="${pT}" x2="${mx}" y2="${pT+cH}" stroke="#f0a823" stroke-width="1.5" stroke-dasharray="5,3"/>`;
+    h += `<text x="${mx}" y="${pT-3}" text-anchor="middle" font-size="8" fill="#f0a823" font-family="Share Tech Mono,monospace">MEAN</text>`;
+
+    // Distribution bars
+    BARS.forEach(b => {
+        const x = irX(b.ir) - bW/2;
+        const bH = (b.n / maxN) * (cH - 4);
+        const y = pT + cH - bH;
+        h += `<rect x="${x}" y="${y}" width="${bW-1}" height="${bH}" fill="${ZC[getZone(b.ir)]}" opacity="0.72" rx="1"/>`;
+    });
+
+    // Baseline
+    h += `<line x1="${pL}" y1="${pT+cH}" x2="${W-pR}" y2="${pT+cH}" stroke="#243550" stroke-width="1"/>`;
+    // Y-axis
+    h += `<line x1="${pL}" y1="${pT}" x2="${pL}" y2="${pT+cH}" stroke="#243550" stroke-width="1"/>`;
+
+    // X-axis IR value labels
+    [-99,-66,-33,0,33,66,99].forEach(v => {
+        h += `<text x="${irX(v)}" y="${pT+cH+12}" text-anchor="middle" font-size="8" fill="#4a6a8a" font-family="Share Tech Mono,monospace">${v}</text>`;
+    });
+
+    // Zone labels on baseline
+    ZONES.forEach(z => {
+        const x = irX((z.from + z.to) / 2);
+        h += `<text x="${x}" y="${pT+cH+24}" text-anchor="middle" font-size="8" fill="${ZC[z.z]}" font-family="Share Tech Mono,monospace">Z${z.z}</text>`;
+    });
+
+    svg.innerHTML = h;
+}
+
+
+// ──────────────────────────────────────────────
+// 6. SVG: 90/10 COMBO CHART (Elements 2.6 & 2.7)
+// ──────────────────────────────────────────────
+// Vertical axis:   Zones / IR value (−99 to +99)
+// Horizontal axis: Days (1–90)
+// Bars:  90-day IR per day, zone-colored
+// Line:  10-day IR overlay in cyan
+// ──────────────────────────────────────────────
+
+function drawComboChart(svgId, variant) {
+    const svg = document.getElementById(svgId);
+    if (!svg) return;
+    const W=330, H=175, pL=26, pR=22, pT=12, pB=28;
+    const cW = W-pL-pR, cH = H-pT-pB;
+    const days = 90;
+
+    // Generate 90 days of placeholder IR data
+    // 90-day IR: slow oscillation; 10-day: more volatile overlay
+    const off = variant === 'ndx' ? 1.5 : 0;
+    const ir90 = [], ir10 = [];
+    for (let i = 0; i < days; i++) {
+        const t = i / days;
+        const v90 = Math.round(28 * Math.sin(t * Math.PI * 2.2 + off) + 8 * Math.cos(t * Math.PI * 5) + 6);
+        const v10 = Math.round(v90 + 18 * Math.sin(t * Math.PI * 9 + off + 1.2));
+        ir90.push(Math.max(-99, Math.min(99, v90)));
+        ir10.push(Math.max(-99, Math.min(99, v10)));
+    }
+
+    const irY  = v => pT + ((99 - v) / 198) * cH;
+    const dayX = i => pL + (i / (days - 1)) * cW;
+    const bW   = cW / days;
+
+    let h = '';
+
+    // Zone background bands
+    [{from:66,to:99,z:6},{from:33,to:66,z:5},{from:0,to:33,z:4},
+     {from:-33,to:0,z:3},{from:-66,to:-33,z:2},{from:-99,to:-66,z:1}].forEach(z => {
+        const y1 = irY(z.to), y2 = irY(z.from);
+        h += `<rect x="${pL}" y="${y1}" width="${cW}" height="${y2-y1}" fill="${ZBG[z.z]}"/>`;
+    });
+
+    // Zone boundary horizontal lines
+    [66,33,0,-33,-66].forEach(v => {
+        const y = irY(v);
+        h += `<line x1="${pL}" y1="${y}" x2="${pL+cW}" y2="${y}" stroke="#1c2a45" stroke-width="0.5"/>`;
+    });
+
+    // Mean line
+    h += `<line x1="${pL}" y1="${irY(0)}" x2="${pL+cW}" y2="${irY(0)}" stroke="#f0a823" stroke-width="0.8" stroke-dasharray="3,2" opacity="0.5"/>`;
+
+    // Bars: 90-day IR (zone-colored)
+    ir90.forEach((v, i) => {
+        const x = dayX(i);
+        const y0 = irY(0);
+        const bH = Math.abs(irY(v) - y0);
+        const y  = v >= 0 ? irY(v) : y0;
+        h += `<rect x="${x-bW/2}" y="${y}" width="${bW-0.3}" height="${bH}" fill="${ZC[getZone(v)]}" opacity="0.65"/>`;
+    });
+
+    // Line: 10-day IR (cyan)
+    const pts = ir10.map((v, i) => `${dayX(i)},${irY(v)}`).join(' ');
+    h += `<polyline points="${pts}" fill="none" stroke="#00c8e0" stroke-width="1.2" stroke-linejoin="round" opacity="0.9"/>`;
+
+    // Axes
+    h += `<line x1="${pL}" y1="${pT}" x2="${pL}" y2="${pT+cH}" stroke="#243550" stroke-width="1"/>`;
+    h += `<line x1="${pL}" y1="${pT+cH}" x2="${pL+cW}" y2="${pT+cH}" stroke="#243550" stroke-width="1"/>`;
+
+    // Y-axis labels (IR values)
+    [99,66,33,0,-33,-66,-99].forEach(v => {
+        h += `<text x="${pL-3}" y="${irY(v)+3}" text-anchor="end" font-size="6" fill="#364d6b" font-family="Share Tech Mono,monospace">${v}</text>`;
+    });
+
+    // X-axis day labels
+    [1,30,60,90].forEach(d => {
+        h += `<text x="${dayX(d-1)}" y="${pT+cH+11}" text-anchor="middle" font-size="6" fill="#364d6b" font-family="Share Tech Mono,monospace">${d}</text>`;
+    });
+
+    // Zone labels on right side
+    [{z:6,v:82},{z:5,v:50},{z:4,v:16},{z:3,v:-16},{z:2,v:-50},{z:1,v:-82}].forEach(({z,v}) => {
+        h += `<text x="${pL+cW+3}" y="${irY(v)+3}" font-size="6" fill="${ZC[z]}" font-family="Share Tech Mono,monospace">Z${z}</text>`;
+    });
+
+    svg.innerHTML = h;
+}
+
+
+// ──────────────────────────────────────────────
+// 7. SVG: ZONE PERCENTAGE HISTOGRAM (Element 2.14)
+// ──────────────────────────────────────────────
+// Baseline: Phase Chart scale 0–120 (6 zones × 20 pts)
+// Mean at 60 (center of scale)
+// Zone boundary lines at 20, 40, 60, 80, 100
+// Bars: % of database stocks in each zone (90-day)
+// Cyan marker: current Phase Chart (SPX) reading
+// ──────────────────────────────────────────────
+
+function drawZoneHistogram() {
+    const svg = document.getElementById('zoneHistogram');
+    if (!svg) return;
+    const W=680, H=185, pL=48, pR=18, pT=18, pB=48;
+    const cW = W-pL-pR, cH = H-pT-pB;
+
+    // Placeholder: % of stocks in each zone on 90-day basis (sums to 100)
+    const ZONES_PCT = [
+        {z:1, from:0,  to:20,  pct: 8},   // extreme overbought
+        {z:2, from:20, to:40,  pct:14},   // overbought
+        {z:3, from:40, to:60,  pct:22},   // slightly overbought
+        {z:4, from:60, to:80,  pct:30},   // slightly oversold
+        {z:5, from:80, to:100, pct:18},   // oversold
+        {z:6, from:100,to:120, pct: 8}    // extreme oversold
+    ];
+    const maxPct = 35;
+    const zW = cW / 6;
+
+    // Phase Chart scale value → x pixel
+    const pcX = v => pL + (v / 120) * cW;
+
+    let h = '';
+
+    // Zone background bands
+    ZONES_PCT.forEach((z, i) => {
+        const x = pL + i * zW;
+        h += `<rect x="${x}" y="${pT}" width="${zW}" height="${cH}" fill="${ZBG[z.z]}"/>`;
+        if (i > 0) h += `<line x1="${x}" y1="${pT}" x2="${x}" y2="${pT+cH}" stroke="#243550" stroke-width="1" stroke-dasharray="3,3"/>`;
+    });
+
+    // Horizontal reference lines at 10%, 20%, 30%
+    [10, 20, 30].forEach(pct => {
+        const y = pT + cH - (pct / maxPct) * cH;
+        h += `<line x1="${pL}" y1="${y}" x2="${pL+cW}" y2="${y}" stroke="#1c2a45" stroke-width="0.5"/>`;
+        h += `<text x="${pL-4}" y="${y+3}" text-anchor="end" font-size="7" fill="#364d6b" font-family="Share Tech Mono,monospace">${pct}%</text>`;
+    });
+
+    // Mean line at Phase Chart 60
+    const meanX = pcX(60);
+    h += `<line x1="${meanX}" y1="${pT}" x2="${meanX}" y2="${pT+cH}" stroke="#f0a823" stroke-width="1.5" stroke-dasharray="4,2"/>`;
+    h += `<text x="${meanX}" y="${pT-4}" text-anchor="middle" font-size="8" fill="#f0a823" font-family="Share Tech Mono,monospace">MEAN (60)</text>`;
+
+    // Zone bars
+    ZONES_PCT.forEach((z, i) => {
+        const x  = pL + i * zW + 3;
+        const bH = (z.pct / maxPct) * cH;
+        const y  = pT + cH - bH;
+        h += `<rect x="${x}" y="${y}" width="${zW-6}" height="${bH}" fill="${ZC[z.z]}" opacity="0.78" rx="1"/>`;
+        // Percentage label: inside bar if tall enough, above if not
+        const labelY    = bH > 18 ? y + 14 : y - 4;
+        const labelFill = bH > 18 ? '#000' : ZC[z.z];
+        h += `<text x="${x+(zW-6)/2}" y="${labelY}" text-anchor="middle" font-size="10" font-weight="bold" fill="${labelFill}" font-family="Rajdhani,sans-serif">${z.pct}%</text>`;
+    });
+
+    // Current Phase Chart reading marker (placeholder: 72)
+    // In production: pull SPX 90-day Phase Chart reading from DB
+    const PC_TODAY = 72;
+    const pcMx = pcX(PC_TODAY);
+    h += `<line x1="${pcMx}" y1="${pT}" x2="${pcMx}" y2="${pT+cH}" stroke="#00c8e0" stroke-width="1.5"/>`;
+    h += `<polygon points="${pcMx-4},${pT+cH} ${pcMx+4},${pT+cH} ${pcMx},${pT+cH-7}" fill="#00c8e0"/>`;
+
+    // Baseline
+    h += `<line x1="${pL}" y1="${pT+cH}" x2="${W-pR}" y2="${pT+cH}" stroke="#243550" stroke-width="1"/>`;
+    // Y-axis
+    h += `<line x1="${pL}" y1="${pT}" x2="${pL}" y2="${pT+cH}" stroke="#243550" stroke-width="1"/>`;
+
+    // X-axis Phase Chart scale labels
+    [0,20,40,60,80,100,120].forEach(v => {
+        h += `<text x="${pcX(v)}" y="${pT+cH+12}" text-anchor="middle" font-size="8" fill="#4a6a8a" font-family="Share Tech Mono,monospace">${v}</text>`;
+    });
+
+    // Phase Chart scale label + current reading callout
+    h += `<text x="${pL+cW/2}" y="${pT+cH+25}" text-anchor="middle" font-size="7" fill="#364d6b" font-family="Share Tech Mono,monospace">PHASE CHART SCALE (0–120) &nbsp;&nbsp; ▲ Phase Chart: ${PC_TODAY}</text>`;
+
+    // Zone labels bottom row
+    ZONES_PCT.forEach((z, i) => {
+        const x = pL + i * zW + zW/2;
+        h += `<text x="${x}" y="${pT+cH+38}" text-anchor="middle" font-size="8" fill="${ZC[z.z]}" font-family="Share Tech Mono,monospace">Z${z.z}</text>`;
+    });
+
+    svg.innerHTML = h;
+}
+
+
+// ──────────────────────────────────────────────
+// 8. SEARCH HANDLER
+// ──────────────────────────────────────────────
+// In production: redirect to stock detail page or filter results.
+// For this prototype: logs query and shows a simple alert.
+
+function handleSearch(val) {
+    if (val.trim().length >= 2) {
+        // Production: navigate to search results page
+        // window.location.href = `/search?q=${encodeURIComponent(val)}`;
+        console.log('Search query:', val.trim().toUpperCase());
+    }
+}
+
+document.getElementById('searchInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+        const q = e.target.value.trim().toUpperCase();
+        if (q) alert(`Search: "${q}" — connect to live data feed to navigate to stock detail.`);
+    }
+});
+
+
+// ──────────────────────────────────────────────
+// 9. INITIALIZATION
+// ──────────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', () => {
+
+    // Set date in subtitle
+    const now = new Date();
+    const ds  = now.toLocaleDateString('en-US', {weekday:'short', year:'numeric', month:'short', day:'numeric'});
+    const el  = document.getElementById('dashDate');
+    if (el) el.textContent = `Implied Risk Analytics Platform  ·  ${ds}`;
+
+    // Render all toggle tables (default: sorted by 90-day IR)
+    ['oex','ndx','russell','major','select','spdr'].forEach(g => renderToggleTable(g, '90'));
+
+    // Render ranked stock lists
+    renderRankedList('weak90-tbody',   'ir90', true,  15);  // Weakest by 90-day
+    renderRankedList('weak10-tbody',   'ir10', true,  15);  // Weakest by 10-day
+    renderRankedList('strong90-tbody', 'ir90', false, 15);  // Strongest by 90-day
+    renderRankedList('strong10-tbody', 'ir10', false, 15);  // Strongest by 10-day
+
+    // Draw SVG charts
+    drawPortfolioHistogram();
+    drawComboChart('oexChart', 'oex');
+    drawComboChart('ndxChart', 'ndx');
+    drawZoneHistogram();
+
+});
+</script>
+</body>
+</html>
