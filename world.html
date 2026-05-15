@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Top Down Trading | World ETFs & Indexes (pg. 33)</title>
+<!--
+════════════════════════════════════════════════════════════════
+WORLD ETFs & INDEXES — pg. 33  |  Static Page: World
+Rebuilt to Histogram_Spec_Final_v2 + Toggle_Regular_Spec_v2
+            + Toggle_LH_Spec_Final
+
+ZONE / SIGN CONVENTION:
+  Zone 1 (+67 to +99) = extreme oversold  = GREEN  (price below mean, needs to rise)
+  Zone 2 (+34 to +66) = oversold          = sage green
+  Zone 3 (+1  to +33) = slightly oversold = cool steel
+  Zone 4 (-1  to -33) = slightly overbought = warm steel
+  Zone 5 (-34 to -66) = overbought        = amber yellow
+  Zone 6 (-67 to -99) = extreme overbought = RED (price above mean, needs to fall)
+
+POSITIVE IR = price is BELOW mean = needs to RISE
+NEGATIVE IR = price is ABOVE mean = needs to DECLINE
+════════════════════════════════════════════════════════════════
+-->
+<style>
+/* ── RESET ──────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+
+/* ── SPEC COLOR TOKENS ──────────────────────────────────── */
+:root {
+    --bg:        #08111e;
+    --panel:     #0d1829;
+    --panel-alt: #0a1420;
+    --border:    #1a2d44;
+    --border-lt: #243c58;
+    --text:      #ddeeff;
+    --muted:     #5a7a9a;
+    --accent:    #3090d8;
+    --accent-bg: #2a7abf;
+    --z1: #00cc55; --z2: #88cc44; --z3: #7a9aaa;
+    --z4: #aa9a7a; --z5: #ddcc00; --z6: #e83535;
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ── PAGE HEADER ─────────────────────────────────────────── */
+.pg-header {
+    flex-shrink: 0;
+    background: var(--panel-alt);
+    border-bottom: 1px solid var(--border-lt);
+    padding: 8px 14px 7px;
+}
+.top-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 7px; }
+
+.btn-back {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: var(--panel); border: 1px solid var(--border-lt);
+    color: var(--accent); font-family: 'Courier New', monospace;
+    font-size: 12px; font-weight: bold; padding: 5px 14px;
+    cursor: pointer; text-decoration: none; white-space: nowrap;
+    transition: border-color .15s;
+}
+.btn-back:hover { border-color: var(--accent); color: var(--text); }
+
+.search-wrap { flex: 1; display: flex; gap: 6px; }
+.search-input {
+    flex: 1; background: var(--panel); border: 1px solid var(--border-lt);
+    color: var(--text); font-family: 'Courier New', monospace;
+    font-size: 12px; padding: 5px 10px; outline: none;
+}
+.search-input:focus { border-color: var(--accent); }
+.btn-search {
+    background: var(--accent-bg); border: 1px solid var(--accent);
+    color: #fff; font-family: 'Courier New', monospace;
+    font-size: 12px; font-weight: bold; padding: 5px 16px;
+    cursor: pointer; transition: opacity .15s;
+}
+.btn-search:hover { opacity: .85; }
+
+.page-title { text-align: center; }
+.page-title h1 { font-size: 20px; font-weight: bold; letter-spacing: .5px; color: var(--text); }
+.page-title p  { font-style: italic; color: var(--muted); font-size: 11px; margin-top: 2px; }
+
+/* ── MAIN BODY ───────────────────────────────────────────── */
+/* CRITICAL: height not min-height; overflow hidden */
+.main-body { flex: 1; display: flex; overflow: hidden; }
+
+/* ── LEFT SIDEBAR — LH TOGGLE ────────────────────────────── */
+.sidebar {
+    width: 285px; min-width: 285px;
+    border-right: 2px solid var(--border-lt);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+    background: var(--panel-alt);
+    flex-shrink: 0;
+}
+.sb-header {
+    padding: 8px 10px 6px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+.sb-title { text-align: center; font-weight: bold; font-size: 12px; color: var(--text); margin-bottom: 5px; }
+.sb-period-btns { display: flex; justify-content: center; gap: 4px; }
+
+.toggle-btn {
+    background: var(--border); border: 1px solid var(--border);
+    color: var(--muted); font-size: 11px; padding: 3px 10px;
+    cursor: pointer; transition: all .15s; font-family: 'Courier New', monospace;
+}
+.toggle-btn.active { background: var(--accent-bg); border-color: var(--accent); color: #fff; }
+.toggle-btn:hover:not(.active) { border-color: var(--accent); color: var(--text); }
+
+.sidebar-scroll {
+    overflow-y: auto; flex: 1;
+    scrollbar-width: thin; scrollbar-color: var(--border-lt) transparent;
+}
+.sidebar-scroll::-webkit-scrollbar { width: 4px; }
+.sidebar-scroll::-webkit-scrollbar-thumb { background: var(--border-lt); border-radius: 2px; }
+
+/* LH table */
+.lh-table { width: 100%; border-collapse: collapse; font-family: 'Courier New', monospace; font-size: 11px; }
+.lh-table th {
+    background: var(--panel-alt); color: var(--muted); padding: 4px 6px;
+    text-align: left; border-bottom: 1px solid var(--border);
+    font-size: 10px; letter-spacing: .04em; text-transform: uppercase;
+    white-space: nowrap; position: sticky; top: 0; z-index: 2;
+}
+.lh-table th.sortable { cursor: pointer; user-select: none; }
+.lh-table th.sortable:hover { color: var(--text); }
+.lh-table th.sort-active { color: var(--accent); }
+.lh-table td { padding: 4px 6px; border-bottom: 1px solid #0e1a28; white-space: nowrap; }
+.lh-table tr:hover td { background: #111e30; }
+
+/* ── RIGHT CONTENT ───────────────────────────────────────── */
+.right-content {
+    flex: 1; overflow-y: auto; padding: 10px 14px;
+    scrollbar-width: thin; scrollbar-color: var(--border-lt) transparent;
+}
+.right-content::-webkit-scrollbar { width: 6px; }
+.right-content::-webkit-scrollbar-thumb { background: var(--border-lt); border-radius: 3px; }
+
+/* ── HISTOGRAM CONTAINER ─────────────────────────────────── */
+.histo-wrap { margin-bottom: 14px; }
+.section-title {
+    font-weight: bold; font-size: 13px; color: var(--text);
+    text-align: center; margin-bottom: 6px; letter-spacing: .03em;
+}
+.histo-svg-box { background: var(--panel); border: 1px solid var(--border); overflow: hidden; }
+
+/* Histogram tooltip */
+#histo-tip {
+    position: fixed; background: var(--panel); border: 1px solid var(--accent);
+    color: var(--text); font-family: 'Courier New', monospace; font-size: 11px;
+    padding: 5px 9px; border-radius: 2px; box-shadow: 0 2px 12px rgba(0,0,0,0.6);
+    white-space: nowrap; z-index: 999; pointer-events: none; display: none;
+}
+
+/* ── REGULAR TOGGLES ─────────────────────────────────────── */
+.two-col  { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.half-left { max-width: 50%; margin-bottom: 12px; }
+
+.toggle-wrap { background: var(--panel); border: 1px solid var(--border); overflow: hidden; }
+.toggle-header {
+    background: var(--panel-alt); border-bottom: 1px solid var(--border);
+    padding: 6px 10px; display: flex; align-items: center; justify-content: space-between;
+}
+.toggle-title { font-weight: bold; font-size: 12px; color: var(--text); }
+.toggle-btns  { display: flex; gap: 4px; }
+
+.scroll-table {
+    max-height: 340px; overflow-y: auto;
+    scrollbar-width: thin; scrollbar-color: var(--border-lt) transparent;
+}
+.scroll-table::-webkit-scrollbar { width: 4px; }
+.scroll-table::-webkit-scrollbar-track { background: #08111e; }
+.scroll-table::-webkit-scrollbar-thumb { background: var(--border-lt); border-radius: 2px; }
+
+.ir-table { width: 100%; border-collapse: collapse; font-family: 'Courier New', monospace; font-size: 11px; }
+.ir-table th {
+    background: var(--panel); color: var(--muted); padding: 4px 6px; text-align: left;
+    border-bottom: 1px solid var(--border); position: sticky; top: 0;
+    font-size: 10px; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap;
+}
+.ir-table th.sortable { cursor: pointer; user-select: none; }
+.ir-table th.sortable:hover { color: var(--text); }
+.ir-table th.sort-active { color: var(--accent); }
+.sort-arrow { font-size: 10px; margin-left: 3px; opacity: 0.5; }
+.sort-arrow.active { opacity: 1; color: var(--accent); }
+.ir-table td { padding: 3px 6px; border-bottom: 1px solid #0e1a28; white-space: nowrap; }
+.ir-table tr:hover td { background: #111e30; }
+.col-symbol { color: var(--text); font-weight: bold; }
+.col-ir     { text-align: center; }
+.col-zone   { text-align: center; }
+.col-3mo    { text-align: center; font-size: 10px; }
+
+.zone-badge { display: inline-block; padding: 1px 5px; font-size: 10px; font-weight: bold; border-radius: 2px; color: #000; }
+.pos { color: #88cc44; }
+.neg { color: #e83535; }
+.zer { color: #b8cce0; }
+
+/* Symbol links */
+.sym-link { color: var(--text); text-decoration: none; font-weight: bold; }
+.sym-link:hover { color: var(--accent); text-decoration: underline; }
+
+/* Flags — flagcdn.com PNG images, always render cross-platform */
+.flag-img { vertical-align: middle; margin-left: 4px; display: inline-block; }
+
+/* General rollover tooltip */
+#tip {
+    display: none; position: fixed;
+    background: var(--panel); border: 1px solid var(--accent);
+    color: var(--text); font-family: 'Courier New', monospace; font-size: 11px;
+    padding: 4px 10px; border-radius: 2px; pointer-events: none;
+    z-index: 9998; white-space: nowrap; box-shadow: 0 2px 12px rgba(0,0,0,0.55);
+}
+</style>
+</head>
+<body>
+
+<div id="histo-tip"></div>
+<div id="tip"></div>
+
+<!-- ═══════════════════════════════════════════════════════
+     PAGE HEADER
+     ═══════════════════════════════════════════════════════ -->
+<div class="pg-header">
+    <div class="top-bar">
+        <a href="market.html" class="btn-back">&#8592; BACK</a>
+        <div class="search-wrap">
+            <input class="search-input" id="searchInput" type="text" placeholder="Search symbol…">
+            <button class="btn-search" onclick="handleSearch()">SEARCH</button>
+        </div>
+    </div>
+    <div class="page-title">
+        <h1>World ETFs and Indexes</h1>
+        <p>World ETFs that invest in companies headquartered in countries other than the U.S.</p>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     MAIN BODY
+     ═══════════════════════════════════════════════════════ -->
+<div class="main-body">
+
+    <!-- ────────────────────────────────────────────────────
+         WLD.3: LEFT HAND TOGGLE — Full World ETF list
+         Spec: Toggle_LH_Spec_Final
+         Columns: Tick | IR ↕ | Zn  (no Name col, no 3Mo Ago)
+         Sort: IR only; click header to flip direction.
+         Default: weakest first (highest +IR at top).
+         ──────────────────────────────────────────────────── -->
+    <div class="sidebar">
+        <div class="sb-header">
+            <div class="sb-title">World ETFs &amp; Indexes</div>
+            <div class="sb-period-btns">
+                <button class="toggle-btn active" data-period="90" onclick="handleLHPeriod(this)">90 IR</button>
+                <button class="toggle-btn"        data-period="10" onclick="handleLHPeriod(this)">10 IR</button>
+            </div>
+        </div>
+        <div class="sidebar-scroll">
+            <table class="lh-table">
+                <thead><tr>
+                    <th style="text-align:left">Tick</th>
+                    <th class="sortable sort-active" id="lh-th-ir" onclick="handleLHSort()" style="text-align:center">IR <span class="sort-arrow active" id="lh-arr">↓</span></th>
+                    <th style="text-align:center">Zn</th>
+                </tr></thead>
+                <tbody id="lh-tbody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ────────────────────────────────────────────────────
+         RIGHT CONTENT PANEL
+         ──────────────────────────────────────────────────── -->
+    <div class="right-content">
+
+        <!-- WLD.4: HISTOGRAM -->
+        <div class="histo-wrap">
+            <div class="section-title">World ETFs and Indexes — 90-day Implied Risk Histogram</div>
+            <div class="histo-svg-box">
+                <!-- NEVER set height attr — viewBox + width=100% only -->
+                <svg id="mainHisto" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block"></svg>
+            </div>
+            <div style="margin-top:8px;padding:8px 12px;background:var(--panel);border:1px solid var(--border);border-left:3px solid var(--accent);font-style:italic;font-size:11px;color:var(--muted);line-height:1.6;">
+                World ETFs Daily Comment: Asian and emerging-market ETFs are broadly clustered
+                in Zones 2–3, reflecting recent price weakness relative to 90-day trend lines.
+                European ETFs show wider dispersion, with select country ETFs extending into
+                Zone 1 oversold territory. Latin American names lead in positive IR readings,
+                suggesting the deepest mean-reversion potential among world equity categories.
+            </div>
+        </div>
+
+        <!-- WLD.5 + WLD.6 -->
+        <div class="two-col">
+            <div class="toggle-wrap">
+                <div class="toggle-header">
+                    <span class="toggle-title">China / India</span>
+                    <div class="toggle-btns">
+                        <button class="toggle-btn active" data-group="chinaindia" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+                        <button class="toggle-btn"        data-group="chinaindia" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+                    </div>
+                </div>
+                <div class="scroll-table"><table class="ir-table">
+                    <thead><tr>
+                        <th style="text-align:left">Ticker</th>
+                        <th class="sortable sort-active" id="chinaindia-th-ir"  onclick="handleSortClick('chinaindia','ir')"  style="text-align:center">IR <span class="sort-arrow active" id="chinaindia-arr-ir">↓</span></th>
+                        <th style="text-align:center">Zn</th>
+                        <th class="sortable" id="chinaindia-th-3mo" onclick="handleSortClick('chinaindia','3mo')" style="text-align:center;padding-left:14px">3Mo Ago <span class="sort-arrow" id="chinaindia-arr-3mo">↕</span></th>
+                    </tr></thead>
+                    <tbody id="chinaindia-tbody"></tbody>
+                </table></div>
+            </div>
+            <div class="toggle-wrap">
+                <div class="toggle-header">
+                    <span class="toggle-title">Asia</span>
+                    <div class="toggle-btns">
+                        <button class="toggle-btn active" data-group="asia" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+                        <button class="toggle-btn"        data-group="asia" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+                    </div>
+                </div>
+                <div class="scroll-table"><table class="ir-table">
+                    <thead><tr>
+                        <th style="text-align:left">Ticker</th>
+                        <th class="sortable sort-active" id="asia-th-ir"  onclick="handleSortClick('asia','ir')"  style="text-align:center">IR <span class="sort-arrow active" id="asia-arr-ir">↓</span></th>
+                        <th style="text-align:center">Zn</th>
+                        <th class="sortable" id="asia-th-3mo" onclick="handleSortClick('asia','3mo')" style="text-align:center;padding-left:14px">3Mo Ago <span class="sort-arrow" id="asia-arr-3mo">↕</span></th>
+                    </tr></thead>
+                    <tbody id="asia-tbody"></tbody>
+                </table></div>
+            </div>
+        </div>
+
+        <!-- WLD.7 + WLD.8 -->
+        <div class="two-col">
+            <div class="toggle-wrap">
+                <div class="toggle-header">
+                    <span class="toggle-title">US Allies</span>
+                    <div class="toggle-btns">
+                        <button class="toggle-btn active" data-group="usallies" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+                        <button class="toggle-btn"        data-group="usallies" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+                    </div>
+                </div>
+                <div class="scroll-table"><table class="ir-table">
+                    <thead><tr>
+                        <th style="text-align:left">Ticker</th>
+                        <th class="sortable sort-active" id="usallies-th-ir"  onclick="handleSortClick('usallies','ir')"  style="text-align:center">IR <span class="sort-arrow active" id="usallies-arr-ir">↓</span></th>
+                        <th style="text-align:center">Zn</th>
+                        <th class="sortable" id="usallies-th-3mo" onclick="handleSortClick('usallies','3mo')" style="text-align:center;padding-left:14px">3Mo Ago <span class="sort-arrow" id="usallies-arr-3mo">↕</span></th>
+                    </tr></thead>
+                    <tbody id="usallies-tbody"></tbody>
+                </table></div>
+            </div>
+            <div class="toggle-wrap">
+                <div class="toggle-header">
+                    <span class="toggle-title">Europe</span>
+                    <div class="toggle-btns">
+                        <button class="toggle-btn active" data-group="europe" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+                        <button class="toggle-btn"        data-group="europe" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+                    </div>
+                </div>
+                <div class="scroll-table"><table class="ir-table">
+                    <thead><tr>
+                        <th style="text-align:left">Ticker</th>
+                        <th class="sortable sort-active" id="europe-th-ir"  onclick="handleSortClick('europe','ir')"  style="text-align:center">IR <span class="sort-arrow active" id="europe-arr-ir">↓</span></th>
+                        <th style="text-align:center">Zn</th>
+                        <th class="sortable" id="europe-th-3mo" onclick="handleSortClick('europe','3mo')" style="text-align:center;padding-left:14px">3Mo Ago <span class="sort-arrow" id="europe-arr-3mo">↕</span></th>
+                    </tr></thead>
+                    <tbody id="europe-tbody"></tbody>
+                </table></div>
+            </div>
+        </div>
+
+        <!-- WLD.9: Latin America — half page left -->
+        <div class="half-left">
+            <div class="toggle-wrap">
+                <div class="toggle-header">
+                    <span class="toggle-title">Latin America</span>
+                    <div class="toggle-btns">
+                        <button class="toggle-btn active" data-group="latam" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+                        <button class="toggle-btn"        data-group="latam" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+                    </div>
+                </div>
+                <div class="scroll-table"><table class="ir-table">
+                    <thead><tr>
+                        <th style="text-align:left">Ticker</th>
+                        <th class="sortable sort-active" id="latam-th-ir"  onclick="handleSortClick('latam','ir')"  style="text-align:center">IR <span class="sort-arrow active" id="latam-arr-ir">↓</span></th>
+                        <th style="text-align:center">Zn</th>
+                        <th class="sortable" id="latam-th-3mo" onclick="handleSortClick('latam','3mo')" style="text-align:center;padding-left:14px">3Mo Ago <span class="sort-arrow" id="latam-arr-3mo">↕</span></th>
+                    </tr></thead>
+                    <tbody id="latam-tbody"></tbody>
+                </table></div>
+            </div>
+        </div>
+
+    </div><!-- /right-content -->
+</div><!-- /main-body -->
+
+<script>
+'use strict';
+
+/* ── ZONE / IR UTILITIES (spec palette) ─────────────────── */
+const ZONE_COLORS = {
+    1:'#00cc55', 2:'#88cc44', 3:'#7a9aaa',
+    4:'#aa9a7a', 5:'#ddcc00', 6:'#e83535'
+};
+
+function irToZone(ir) {
+    if (ir >= 67) return 1; if (ir >= 34) return 2; if (ir >= 1)  return 3;
+    if (ir >= -33) return 4; if (ir >= -66) return 5; return 6;
+}
+
+/* Returns global slot index 0–23, or 'L'/'R' for OOB */
+function irToSlot(ir) {
+    if (ir >= 99) return 'L'; if (ir <= -99) return 'R';
+    if (ir >= 91) return 0;  if (ir >= 83) return 1;  if (ir >= 75) return 2;  if (ir >= 67) return 3;
+    if (ir >= 59) return 4;  if (ir >= 52) return 5;  if (ir >= 43) return 6;  if (ir >= 34) return 7;
+    if (ir >= 26) return 8;  if (ir >= 18) return 9;  if (ir >= 9)  return 10; if (ir >= 1)  return 11;
+    if (ir >= -8) return 12; if (ir >= -17) return 13; if (ir >= -25) return 14; if (ir >= -33) return 15;
+    if (ir >= -42) return 16; if (ir >= -51) return 17; if (ir >= -58) return 18; if (ir >= -66) return 19;
+    if (ir >= -74) return 20; if (ir >= -82) return 21; if (ir >= -90) return 22; return 23;
+}
+
+function irFmt(v)   { return (v > 0 ? '+' : '') + v; }
+function irCls(v)   { return v > 0 ? 'pos' : v < 0 ? 'neg' : 'zer'; }
+function zoneBadge(z) {
+    return `<span class="zone-badge" style="background:${ZONE_COLORS[z]}">${z}</span>`;
+}
+
+/* ── FLAGS — flagcdn.com PNG (renders on all platforms) ──── */
+const ISO = {
+    EWY:'kr', EWJ:'jp', INDA:'in', EWZ:'br', EWT:'tw', MCHI:'cn', FXI:'cn',
+    ECNS:'cn', EWC:'ca', EWU:'gb', EWW:'mx', EWA:'au', EWP:'es', EWG:'de',
+    EWH:'hk', EIS:'il', EZA:'za', ECH:'cl', EWS:'sg', KSA:'sa', EPOL:'pl',
+    EWI:'it', THD:'th', EIDO:'id', EWN:'nl', EWD:'se', TUR:'tr', EWM:'my',
+    EWQ:'fr', EPHE:'ph', EDEN:'dk', EWO:'at', EIRL:'ie', KWT:'kw', QAT:'qa',
+    ENZL:'nz', EFNL:'fi', ENOR:'no', EWK:'be', UAE:'ae', INDY:'in',
+    ARGT:'ar', GREK:'gr', COLO:'co', NORW:'no', PGJ:'cn', PIN:'in',
+    GLIN:'in', DGIN:'in', VNM:'vn', ISRA:'il', IDX:'id', BRF:'br',
+    MXUSA:'us', HCX:'cn', CZH:'cn', MXY:'mx',
+    FLAU:'au', FLCA:'ca', FLSA:'sa', FLGB:'gb', FLKR:'kr', FLTW:'tw',
+    FLEE:'eu', FLEU:'eu', FLGR:'de', FLSW:'ch', FLCH:'cn', FLIN:'in',
+    FLJP:'jp', FLJH:'jp', FLMX:'mx', FLBR:'br',
+    CHH:'cn', GXC:'cn', VGK:'eu', SPEU:'eu', MML:'mx',
+    IEUR:'eu', IEUS:'eu', IEVR:'eu', IEVS:'eu', EWF:'za', ARFT:'ar',
+};
+function flagImg(sym) {
+    const iso = ISO[sym];
+    if (!iso) return '';
+    return `<img src="https://flagcdn.com/16x12/${iso}.png" width="16" height="12" `
+         + `alt="${iso.toUpperCase()}" class="flag-img" onerror="this.style.display='none'">`;
+}
+
+function homeURL(sym) { return `/static/pages/${sym}.html`; }
+
+/* ── ETF NAMES ───────────────────────────────────────────── */
+const NAMES = {
+    URTH:'iShares MSCI World ETF', IEUR:'iShares Core MSCI Europe ETF',
+    IEUS:'iShares MSCI Europe Small-Cap ETF', EWY:'iShares MSCI South Korea ETF',
+    EWJ:'iShares MSCI Japan ETF', INDA:'iShares MSCI India ETF',
+    EWZ:'iShares MSCI Brazil ETF', EWT:'iShares MSCI Taiwan ETF',
+    MCHI:'iShares MSCI China ETF', FXI:'iShares China Large-Cap ETF',
+    ECNS:'iShares MSCI China Small-Cap ETF', EWC:'iShares MSCI Canada ETF',
+    EWU:'iShares MSCI United Kingdom ETF', EWW:'iShares MSCI Mexico ETF',
+    EWA:'iShares MSCI Australia ETF', EWP:'iShares MSCI Spain ETF',
+    EWG:'iShares MSCI Germany ETF', EWH:'iShares MSCI Hong Kong ETF',
+    EIS:'iShares MSCI Israel ETF', EZA:'iShares MSCI South Africa ETF',
+    ECH:'iShares MSCI Chile ETF', EWS:'iShares MSCI Singapore ETF',
+    KSA:'iShares MSCI Saudi Arabia ETF', EPOL:'iShares MSCI Poland ETF',
+    EWI:'iShares MSCI Italy ETF', THD:'iShares MSCI Thailand ETF',
+    EIDO:'iShares MSCI Indonesia ETF', EWN:'iShares MSCI Netherlands ETF',
+    EWD:'iShares MSCI Sweden ETF', TUR:'iShares MSCI Turkey ETF',
+    EWM:'iShares MSCI Malaysia ETF', EWQ:'iShares MSCI France ETF',
+    EPHE:'iShares MSCI Philippines ETF', EDEN:'iShares MSCI Denmark ETF',
+    EWO:'iShares MSCI Austria ETF', EIRL:'iShares MSCI Ireland ETF',
+    KWT:'iShares MSCI Kuwait ETF', QAT:'iShares MSCI Qatar ETF',
+    ENZL:'iShares MSCI New Zealand ETF', EFNL:'iShares MSCI Finland ETF',
+    ENOR:'iShares MSCI Norway ETF', EWK:'iShares MSCI Belgium ETF',
+    UAE:'iShares MSCI UAE ETF', INDY:'iShares India 50 ETF',
+    AIA:'iShares Asia 50 ETF', ARGT:'Global X MSCI Argentina ETF',
+    GREK:'Global X MSCI Greece ETF', COLO:'Global X MSCI Colombia ETF',
+    NORW:'Global X MSCI Norway ETF', CQQQ:'Invesco China Technology ETF',
+    PQJ:'Invesco FTSE RAFI Dev Mkts ex-US ETF', PGJ:'Invesco Golden Dragon China ETF',
+    PIN:'Invesco India ETF', GLIN:'Goldman Sachs India Equity ETF',
+    DGIN:'WisdomTree Digital India Fund', AFK:'VanEck Africa Index ETF',
+    VNM:'VanEck Vietnam ETF', ISRA:'VanEck Israel ETF',
+    IDX:'VanEck Indonesia Index ETF', BRF:'VanEck Brazil Small-Cap ETF',
+    MXWLD:'MSCI World Index', MXEF:'MSCI Emerging Markets Index',
+    MXEA:'MSCI EAFE Index', MXUSA:'MSCI USA Index',
+    MXACW:'MSCI All Country World Index', OOI:'S&P Global 100 Index',
+    DJAT:'Dow Jones Asia-Pacific Total Mkt Index',
+    HCX:'MSCI Hong Kong + China Index', CZH:'Invesco Great Wall China A-Shares ETF',
+    MXY:'MSCI Mexico Index', FLAU:'Franklin FTSE Australia ETF',
+    FLCA:'Franklin FTSE Canada ETF', FLSA:'Franklin FTSE Saudi Arabia ETF',
+    FLGB:'Franklin FTSE United Kingdom ETF', FLKR:'Franklin FTSE South Korea ETF',
+    FLTW:'Franklin FTSE Taiwan ETF', FLEE:'Franklin FTSE Europe Hedged ETF',
+    FLEU:'Franklin FTSE Europe ETF', FLGR:'Franklin FTSE Germany ETF',
+    FLSW:'Franklin FTSE Switzerland ETF', FLCH:'Franklin FTSE China ETF',
+    FLIN:'Franklin FTSE India ETF', FLJP:'Franklin FTSE Japan ETF',
+    FLJH:'Franklin FTSE Japan Hedged ETF', FLLA:'Franklin FTSE Latin America ETF',
+    FLMX:'Franklin FTSE Mexico ETF', FLBR:'Franklin FTSE Brazil ETF',
+    ASN:'WisdomTree Asia Pacific ex-Japan ETF', GMF:'SPDR S&P Emerging Asia Pacific ETF',
+    CHH:'iShares MSCI China A ETF', MIN:'MSCI International Index ETF',
+    GXC:'SPDR S&P China ETF', VGK:'Vanguard FTSE Europe ETF',
+    SPEU:'SPDR Portfolio Europe ETF', MML:'iShares MSCI Mexico Small-Cap ETF',
+    VEA:'Vanguard FTSE Developed Markets ETF', VWO:'Vanguard FTSE Emerging Markets ETF',
+    VPL:'Vanguard FTSE Pacific ETF', EMCB:'WisdomTree EM Corporate Bond ETF',
+    URHT:'iShares MSCI World ESG Screened ETF', DJGY:'Dow Jones Global Yield Index ETF',
+    IEVR:'iShares Europe ETF (Hedged)', IEVS:'iShares Europe Small-Cap ETF',
+    EWF:'iShares MSCI South Africa ETF', ARFT:'Xtrackers MSCI Argentina ETF',
+    EOD:'WisdomTree EM ex-State-Owned ETF',
+};
+function etfName(sym) { return NAMES[sym] || sym; }
+
+/* ── PLACEHOLDER DATA ────────────────────────────────────── */
+/* Real symbols; seeded pseudo-random IR values.
+   Production: replace DATA arrays with fetch() from static
+   JSON pushed by database. Field names match spec exactly.  */
+let _seed = 20260421;
+function rand(lo, hi) {
+    _seed = (_seed * 1664525 + 1013904223) & 0xffffffff;
+    return Math.round(lo + ((_seed >>> 0) / 0xffffffff) * (hi - lo));
+}
+function clamp(v) { return Math.max(-99, Math.min(99, v)); }
+
+function mkRecord(sym) {
+    const ir_90 = rand(-85, 85), ir_10 = rand(-85, 85);
+    return {
+        symbol: sym, name: etfName(sym),
+        ir_90, ir_10,
+        ir_90_3mo: clamp(ir_90 + rand(-30, 30)),
+        ir_10_3mo: clamp(ir_10 + rand(-30, 30)),
+    };
+}
+function makeGroup(syms) { return syms.map(mkRecord); }
+
+const DATA = {
+    world: makeGroup([
+        'URTH','IEUR','IEUS','EWY','EWJ','INDA','EWZ','EWT','MCHI','FXI',
+        'ECNS','EWC','EWU','EWW','EWA','EWP','EWG','EWH','EIS','EZA',
+        'ECH','EWS','KSA','EPOL','EWI','THD','EIDO','EWN','EWD','TUR',
+        'EWM','EWQ','EPHE','EDEN','EWO','EIRL','KWT','QAT','ENZL','EFNL',
+        'ENOR','EWK','UAE','INDY','AIA','ARGT','GREK','COLO','NORW','CQQQ',
+        'PQJ','PIN','GLIN','DGIN','AFK','VNM','ISRA','IDX','BRF','MXWLD',
+        'MXEF','MXEA','MXUSA','MXACW','OOI','DJAT','HCX','CZH','FLAU','FLCA',
+        'FLSA','FLGB','FLKR','FLTW','FLEE','FLEU','FLGR','FLSW','FLCH','FLIN',
+        'FLJP','FLJH','FLLA','FLMX','FLBR','ASN','GMF','CHH','MIN','GXC',
+        'VGK','SPEU','MML','VEA','VWO','VPL','EMCB','URHT','DJGY'
+    ]),
+    chinaindia: makeGroup(['ECNS','FXI','MCHI','PGJ','CQQQ','INDA','INDY','PIN','GLIN','DGIN','HCX','CZH','FLCH','FLIN','CHH','MIN','GXC']),
+    asia:       makeGroup(['AIA','IDX','EWY','EWJ','EWT','EOD','EWQ','EPHE','VNM','EWH','EWS','THD','DJAT','FLKR','FLTW','FLJP','FLJH','ASN','GMF']),
+    usallies:   makeGroup(['MXUSA','QAT','UAE','EWC','EWW','EWA','EIS','ISRA','EIRL','ENZL','FLAU','FLCA','FLSA','FLGB']),
+    europe:     makeGroup(['IEVR','IEVS','EWG','EPOL','EWI','EWN','NORW','GREK','EWD','EWQ','EDEN','EWO','EFNL','ENOR','EWK','FLEE','FLEU','FLGR','FLSW','IEUR','IEUS','VGK','SPEU']),
+    latam:      makeGroup(['EWF','EWZ','BRF','ECH','ARFT','COLO','EWW','FLLA','FLMX','FLBR','MML']),
+};
+
+/* ── GENERAL TOOLTIP ENGINE ──────────────────────────────── */
+const tipEl = document.getElementById('tip');
+document.addEventListener('mouseover', e => {
+    const el = e.target.closest('[data-tip]');
+    if (el && el.dataset.tip && !el.closest('svg')) {
+        tipEl.textContent = el.dataset.tip;
+        tipEl.style.display = 'block';
+    } else if (!el) { tipEl.style.display = 'none'; }
+});
+document.addEventListener('mouseout', e => {
+    if (!e.target.closest('[data-tip]')) tipEl.style.display = 'none';
+});
+document.addEventListener('mousemove', e => {
+    tipEl.style.left = Math.min(e.clientX + 14, window.innerWidth  - tipEl.offsetWidth  - 8) + 'px';
+    tipEl.style.top  = Math.max(e.clientY - 36, 8) + 'px';
+});
+
+/* ── LEFT HAND TOGGLE ────────────────────────────────────── */
+let lhPeriod = '90', lhDir = 1;
+
+function handleLHPeriod(btn) {
+    lhPeriod = btn.dataset.period;
+    document.querySelectorAll('.sb-period-btns .toggle-btn')
+            .forEach(b => b.classList.toggle('active', b.dataset.period === lhPeriod));
+    renderLH();
+}
+
+function handleLHSort() {
+    lhDir *= -1;
+    renderLH();
+}
+
+function renderLH() {
+    const iF   = lhPeriod === '90' ? 'ir_90' : 'ir_10';
+    const rows = [...DATA.world].sort((a, b) => (b[iF] - a[iF]) * lhDir);
+    const arr  = document.getElementById('lh-arr');
+    arr.textContent = lhDir === 1 ? '↓' : '↑';
+
+    document.getElementById('lh-tbody').innerHTML = rows.map(r => {
+        const ir = r[iF], z = irToZone(ir);
+        return `<tr>
+          <td class="col-symbol" data-tip="${r.name}">
+            <a href="${homeURL(r.symbol)}" class="sym-link">${r.symbol}</a>${flagImg(r.symbol)}
+          </td>
+          <td class="col-ir"><span class="${irCls(ir)}">${irFmt(ir)}</span></td>
+          <td class="col-zone">${zoneBadge(z)}</td>
+        </tr>`;
+    }).join('');
+}
+
+/* ── REGULAR TOGGLES ─────────────────────────────────────── */
+const sortState = {}, periodState = {};
+
+function handleSortClick(g, field) {
+    if (!sortState[g]) sortState[g] = { field:'ir', dir:1 };
+    const s = sortState[g];
+    sortState[g] = (s.field === field) ? {field, dir: s.dir * -1} : {field, dir:1};
+    renderToggleTable(g);
+}
+
+function updateSortArrows(g) {
+    const {field, dir} = sortState[g];
+    ['ir','3mo'].forEach(f => {
+        const th  = document.getElementById(`${g}-th-${f}`);
+        const arr = document.getElementById(`${g}-arr-${f}`);
+        if (!th || !arr) return;
+        const on = f === field;
+        th.classList.toggle('sort-active', on);
+        arr.classList.toggle('active', on);
+        arr.textContent = on ? (dir === 1 ? '↓' : '↑') : '↕';
+    });
+}
+
+function handlePeriodToggle(btn) {
+    btn.closest('.toggle-btns').querySelectorAll('.toggle-btn')
+       .forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    periodState[btn.dataset.group] = btn.dataset.period;
+    renderToggleTable(btn.dataset.group);
+}
+
+function renderToggleTable(g) {
+    if (!sortState[g])   sortState[g]   = { field:'ir', dir:1 };
+    if (!periodState[g]) periodState[g] = '90';
+    const p  = periodState[g];
+    const iF = p === '90' ? 'ir_90'     : 'ir_10';
+    const mF = p === '90' ? 'ir_90_3mo' : 'ir_10_3mo';
+    const {field, dir} = sortState[g];
+    const sF = field === 'ir' ? iF : mF;
+
+    document.getElementById(`${g}-tbody`).innerHTML =
+        [...DATA[g]].sort((a,b) => (b[sF]-a[sF])*dir).map(r => {
+            const ir = r[iF], mo = r[mF], z = irToZone(ir);
+            return `<tr>
+              <td class="col-symbol" data-tip="${r.name}">
+                <a href="${homeURL(r.symbol)}" class="sym-link">${r.symbol}</a>${flagImg(r.symbol)}
+              </td>
+              <td class="col-ir"><span class="${irCls(ir)}">${irFmt(ir)}</span></td>
+              <td class="col-zone">${zoneBadge(z)}</td>
+              <td class="col-3mo" style="padding-left:14px"><span class="${irCls(mo)}">${irFmt(mo)}</span></td>
+            </tr>`;
+        }).join('');
+
+    updateSortArrows(g);
+}
+
+/* ── HISTOGRAM — HistoNH.1 (198-pt) ─────────────────────── */
+function buildHistogram() {
+    const svg = document.getElementById('mainHisto');
+
+    /* Geometry */
+    const W=920, OW=28, BX=OW, BW=W-2*OW, ZW=BW/6, SLOT_PITCH=BW/24;
+    const SH=13, BELL_A=168, BELL_FLOOR=16, BELL_SIG=ZW, BCX=BX+BW/2;
+    const ZCL=['#00cc55','#88cc44','#7a9aaa','#aa9a7a','#ddcc00','#e83535'];
+    const IR_RANGES=['+99 to +67','+66 to +34','+33 to +1','−1 to −33','−34 to −66','−67 to −99'];
+    const ZLB=['Zone 1','Zone 2','Zone 3','Zone 4','Zone 5','Zone 6'];
+
+    /* Assign to slots */
+    const slots=Array.from({length:24},()=>[]);
+    const oobL=[], oobR=[];
+    DATA.world.forEach(r => {
+        const sl=irToSlot(r.ir_90), z=irToZone(r.ir_90);
+        const tip=`${r.symbol} \u2014 ${r.name}  |  90-IR: ${irFmt(r.ir_90)}  |  Zone ${z}`;
+        const e={sym:r.symbol, tip};
+        if (sl==='L') oobL.push(e);
+        else if (sl==='R') oobR.push(e);
+        else slots[sl].push(e);
+    });
+    slots.forEach(sl => sl.sort((a,b)=>a.sym.localeCompare(b.sym)));
+
+    /* Dynamic height */
+    let BY=205;
+    const maxStk=Math.max(1,...slots.map(s=>s.length));
+    if (maxStk*SH+20>BY) BY=maxStk*SH+20;
+    const H=BY+63, LY_RANGE=BY+18, LY_ZONE=BY+31;
+    svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+    /* NEVER setAttribute('height') */
+
+    let s='';
+
+    /* Defs */
+    s+=`<defs>
+      <filter id="glow"><feGaussianBlur stdDeviation="2.8" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      <filter id="softglow"><feGaussianBlur stdDeviation="1.5" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    </defs>`;
+
+    /* OOB backgrounds */
+    s+=`<rect x="0" y="0" width="${OW}" height="${BY}" fill="${ZCL[0]}" opacity="0.08"/>`;
+    s+=`<rect x="${W-OW}" y="0" width="${OW}" height="${BY}" fill="${ZCL[5]}" opacity="0.08"/>`;
+
+    /* Zone fills */
+    for(let z=0;z<6;z++){
+        s+=`<rect x="${BX+z*ZW}" y="0" width="${ZW}" height="${BY}" fill="${ZCL[z]}" opacity="0.07"/>`;
+    }
+
+    /* Zone dividers (solid) */
+    for(let z=1;z<6;z++){
+        const x=BX+z*ZW;
+        s+=`<line x1="${x}" y1="0" x2="${x}" y2="${BY}" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>`;
+    }
+    s+=`<line x1="${BX}" y1="0" x2="${BX}" y2="${BY}" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>`;
+    s+=`<line x1="${BX+BW}" y1="0" x2="${BX+BW}" y2="${BY}" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>`;
+
+    /* Slot dividers (dashed) */
+    for(let i=1;i<24;i++){
+        if(i%4!==0){
+            const x=BX+i*SLOT_PITCH;
+            s+=`<line x1="${x}" y1="8" x2="${x}" y2="${BY}" stroke="rgba(255,255,255,0.055)" stroke-width="0.5" stroke-dasharray="3,6"/>`;
+        }
+    }
+
+    /* Baseline */
+    s+=`<line x1="0" y1="${BY}" x2="${W}" y2="${BY}" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>`;
+
+    /* Bell curve */
+    let d='';
+    for(let px=BX;px<=BX+BW;px+=2){
+        const dx=px-BCX;
+        const yv=BY-(BELL_A*Math.exp(-(dx*dx)/(2*BELL_SIG*BELL_SIG))+BELL_FLOOR);
+        d+=(px===BX?`M${px},${yv.toFixed(1)}`:`L${px},${yv.toFixed(1)}`);
+    }
+    s+=`<path d="${d}" fill="none" stroke="rgba(120,185,255,0.14)" stroke-width="8"/>`;
+    s+=`<path d="${d}" fill="none" stroke="rgba(155,210,255,0.72)" stroke-width="1.6" stroke-dasharray="8,4" filter="url(#glow)"/>`;
+    s+=`<path d="${d}" fill="none" stroke="rgba(205,235,255,0.38)" stroke-width="0.8" stroke-dasharray="8,4"/>`;
+
+    /* Stacked symbols */
+    slots.forEach((slot,i)=>{
+        const scx=BX+(i+0.5)*SLOT_PITCH;
+        const col=ZCL[Math.floor(i/4)];
+        slot.forEach((e,si)=>{
+            const sy=BY-(si+1)*SH+9;
+            const esc=e.tip.replace(/"/g,'&quot;');
+            s+=`<text x="${scx}" y="${sy}" text-anchor="middle" `
+             + `font-family="'Courier New',monospace" font-size="9" font-weight="bold" `
+             + `fill="${col}" filter="url(#softglow)" cursor="pointer" `
+             + `data-tip="${esc}" onclick="location.href='${homeURL(e.sym)}'">`
+             + `${e.sym.substring(0,3)}</text>`;
+        });
+    });
+
+    /* OOB labels */
+    const oobText=(x,col,arr,label)=>{
+        s+=`<text x="${x}" y="12" text-anchor="middle" fill="${col}" font-size="7" font-family="'Courier New',monospace">OOB</text>`;
+        s+=`<text x="${x}" y="22" text-anchor="middle" fill="${col}" font-size="7" font-family="'Courier New',monospace">${label}</text>`;
+        s+=`<text x="${x}" y="33" text-anchor="middle" fill="${col}" font-size="8" font-family="'Courier New',monospace">[${arr.length}]</text>`;
+        arr.forEach((e,i)=>{
+            const esc=e.tip.replace(/"/g,'&quot;');
+            s+=`<text x="${x}" y="${45+i*10}" text-anchor="middle" fill="${col}" font-size="7" `
+             + `font-family="'Courier New',monospace" cursor="pointer" data-tip="${esc}" `
+             + `onclick="location.href='${homeURL(e.sym)}'">${e.sym.substring(0,3)}</text>`;
+        });
+    };
+    oobText(OW/2, ZCL[0], oobL, 'Weak');
+    oobText(W-OW/2, ZCL[5], oobR, 'Str');
+
+    /* Zone labels */
+    for(let z=0;z<6;z++){
+        const cx=BX+z*ZW+ZW/2;
+        s+=`<text x="${cx}" y="${LY_RANGE}" text-anchor="middle" `
+         + `font-family="'Courier New',monospace" font-size="8.5" fill="rgba(255,255,255,0.48)">${IR_RANGES[z]}</text>`;
+        s+=`<text x="${cx}" y="${LY_ZONE}" text-anchor="middle" `
+         + `font-family="'Trebuchet MS',sans-serif" font-size="10.5" font-weight="bold" fill="${ZCL[z]}">${ZLB[z]}</text>`;
+    }
+
+    /* Direction legend */
+    s+=`<text x="${BX+4}" y="${H-5}" font-family="'Trebuchet MS',sans-serif" font-size="7.5" fill="rgba(0,212,160,0.40)">\u2190 Weak / Oversold</text>`;
+    s+=`<text x="${BX+BW-4}" y="${H-5}" text-anchor="end" font-family="'Trebuchet MS',sans-serif" font-size="7.5" fill="rgba(232,53,53,0.40)">Overbought / Strong \u2192</text>`;
+
+    svg.innerHTML = s;
+
+    /* Histogram tooltip */
+    const htip=document.getElementById('histo-tip');
+    svg.addEventListener('mouseover', e=>{
+        const t=e.target.closest('[data-tip]');
+        if(t){htip.textContent=t.dataset.tip; htip.style.display='block';}
+    });
+    svg.addEventListener('mouseout', e=>{
+        if(!e.target.closest('[data-tip]')) htip.style.display='none';
+    });
+    svg.addEventListener('mousemove', e=>{
+        htip.style.left=Math.min(e.clientX+14,window.innerWidth-htip.offsetWidth-8)+'px';
+        htip.style.top=Math.max(e.clientY-36,8)+'px';
+    });
+}
+
+/* ── SEARCH ──────────────────────────────────────────────── */
+function handleSearch() {
+    const q=document.getElementById('searchInput').value.trim().toUpperCase();
+    if(q) window.location.href=homeURL(q);
+}
+document.getElementById('searchInput').addEventListener('keydown',e=>{
+    if(e.key==='Enter') handleSearch();
+});
+
+/* ── INIT ────────────────────────────────────────────────── */
+renderLH();
+['chinaindia','asia','usallies','europe','latam'].forEach(g=>{
+    sortState[g]={field:'ir',dir:1}; periodState[g]='90'; renderToggleTable(g);
+});
+buildHistogram();
+</script>
+</body>
+</html>
