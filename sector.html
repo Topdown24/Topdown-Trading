@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sector | Top Down Trading</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+/* ── VARIABLES ── */
+:root{
+  --bg:#08111e; --panel:#0d1829; --panel-alt:#0a1420;
+  --border:#1a2d44; --border-li:#243c58;
+  --text:#ddeeff; --text-dim:#5a7a9a; --text-mid:#8aaccc;
+  --btn-act:#2a7abf; --btn-bdr:#3090d8;
+  --pos:#88cc44; --neg:#e83535;
+  --z1:#00cc55; --z2:#88cc44; --z3:#7a9aaa;
+  --z4:#aa9a7a; --z5:#ddcc00; --z6:#e83535;
+  --font-mono:'Courier New',monospace;
+  --font-ui:'Share Tech Mono',monospace;
+  --font-head:'Rajdhani',sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-ui);font-size:11px;min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border-li);border-radius:2px}
+a{color:var(--btn-bdr);text-decoration:none}
+a:hover{color:var(--text);text-decoration:underline}
+
+/* ── SLIDE MENU ── */
+#menu-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100}
+#menu-overlay.open{display:block}
+#slide-menu{position:fixed;top:0;left:-300px;width:300px;height:100vh;background:var(--panel);border-right:2px solid var(--border-li);z-index:101;transition:left .28s ease;padding:20px 16px 28px;overflow-y:auto}
+#slide-menu.open{left:0}
+.menu-close{position:absolute;top:12px;right:12px;background:none;border:none;color:var(--text-dim);font-size:20px;cursor:pointer}
+.menu-close:hover{color:var(--text)}
+.menu-section{font-size:9px;color:var(--text-dim);letter-spacing:.18em;text-transform:uppercase;margin:16px 0 7px}
+.menu-btn{display:block;width:100%;text-align:left;padding:8px 12px;margin-bottom:4px;border-radius:3px;border:1px solid var(--border);background:var(--panel-alt);color:var(--text);font-family:var(--font-ui);font-size:12px;cursor:pointer;text-decoration:none;transition:background .15s}
+.menu-btn:hover:not(.cur):not(.lock){background:var(--border-li);color:var(--text)}
+.menu-btn.cur{background:#040c15;color:var(--text-dim);border-color:var(--border);cursor:default}
+.menu-btn.lock{color:var(--text-dim);opacity:.42;cursor:not-allowed;pointer-events:none}
+.menu-div{border:none;border-top:1px solid var(--border);margin:16px 0}
+
+/* ── TOP NAV ── */
+#tnav{position:sticky;top:0;z-index:50;background:var(--panel-alt);border-bottom:2px solid var(--border-li);display:flex;align-items:stretch;min-height:58px}
+.t-ham{display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;color:var(--text-dim);padding:0 16px;flex-shrink:0;border-right:1px solid var(--border);transition:color .15s,background .15s}
+.t-ham:hover{color:var(--text);background:rgba(255,255,255,.04)}
+.t-search-wrap{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:3px;padding:0 14px;flex-shrink:0;border-right:1px solid var(--border);background:var(--panel);min-width:150px;transition:background .15s}
+.t-search-wrap:focus-within{background:var(--border-li)}
+.t-search-icon{font-size:13px;color:var(--text-dim)}
+.t-search-wrap input{background:transparent;border:none;color:var(--text);font-family:var(--font-head);font-size:13px;font-weight:700;letter-spacing:.05em;width:100%;outline:none;text-align:center}
+.t-search-wrap input::placeholder{color:var(--text-dim);font-size:11px;font-family:var(--font-ui)}
+.t-search-sub{font-size:9px;color:var(--text-dim);letter-spacing:.08em;font-family:var(--font-ui)}
+.t-boxes{display:flex;align-items:stretch;flex:1}
+.t-btn{flex:1;background:var(--panel);border:none;border-right:1px solid var(--border);color:var(--text);font-family:var(--font-head);font-size:15px;font-weight:700;letter-spacing:.05em;cursor:pointer;padding:0 6px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;line-height:1.2;transition:background .15s,color .15s;text-transform:uppercase}
+.t-btn:last-child{border-right:none}
+.t-btn:hover{background:var(--border-li);color:#fff}
+.t-btn .t2{font-family:var(--font-ui);font-size:9px;font-weight:400;color:var(--text-dim);letter-spacing:.08em;text-transform:none;margin-top:3px}
+.t-btn:hover .t2{color:var(--text-mid)}
+
+/* ── PAGE WRAPPER — matches State Street .main-body exactly ── */
+#pg{display:flex;height:calc(100vh - 58px);overflow:hidden}
+
+/* ── SIDEBAR — Left Hand Toggle (exact spec) ── */
+#sidebar{
+  width:285px;min-width:285px;
+  border-right:2px solid var(--border-li);
+  display:flex;flex-direction:column;overflow:hidden;
+  background:var(--panel-alt);flex-shrink:0
+}
+.sidebar-header{padding:8px 10px 6px;border-bottom:1px solid var(--border);background:var(--panel-alt);flex-shrink:0}
+.sidebar-title{display:block;text-align:center;font-family:var(--font-head);font-size:13px;font-weight:700;color:var(--text);margin-bottom:6px;letter-spacing:.06em}
+.sb-btn-row{display:flex;justify-content:center;gap:4px}
+
+/* ── PERIOD TOGGLE BUTTONS (shared) ── */
+.toggle-btn{background:var(--panel);border:1px solid var(--border);color:var(--text-dim);font-family:var(--font-ui);font-size:10px;padding:3px 10px;border-radius:2px;cursor:pointer;transition:background .15s}
+.toggle-btn.active{background:var(--btn-act);border-color:var(--btn-bdr);color:#fff}
+
+/* ── IR TABLE (shared by sidebar + regular toggles) ── */
+.ir-table{width:100%;border-collapse:collapse;font-family:var(--font-mono);font-size:11px}
+
+/* Sticky header */
+.ir-table thead th{
+  background:var(--panel-alt);color:var(--text-dim);
+  padding:4px 6px;text-align:left;
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:2;
+  font-size:10px;font-family:var(--font-mono);
+  letter-spacing:.04em;text-transform:uppercase;
+  white-space:nowrap
+}
+.ir-table th.sortable{cursor:pointer;user-select:none}
+.ir-table th.sortable:hover{color:var(--text)}
+.ir-table th.sort-active{color:var(--btn-bdr)}
+.sort-arrow{font-size:10px;margin-left:3px;opacity:0.5}
+.sort-arrow.active{opacity:1;color:var(--btn-bdr)}
+
+/* Data cells */
+.ir-table td{padding:3px 6px;border-bottom:1px solid #0e1a28;white-space:nowrap}
+.ir-table tr:hover td{background:#111e30}
+
+/* Cell type classes */
+.col-ticker{color:var(--text);font-weight:bold;text-align:left}
+.col-name{color:var(--text-dim);font-size:10px;text-align:left;max-width:140px;overflow:hidden;text-overflow:ellipsis}
+.col-ir{text-align:center}
+.col-zone{text-align:center}
+.col-3mo{text-align:center;font-size:10px;padding-left:14px!important}
+
+/* IR value colors */
+.pos{color:var(--pos)}   /* #88cc44 sage green */
+.neg{color:var(--neg)}   /* #e83535 red */
+.zer{color:#b8cce0}
+
+/* Zone badge */
+.zone-badge{display:inline-block;padding:1px 5px;font-size:10px;font-weight:bold;border-radius:2px;color:#000}
+
+/* Sidebar scroll area — fills remaining sidebar height, scrolls internally */
+.sidebar-scroll{overflow-y:auto;flex:1}
+.sidebar-scroll::-webkit-scrollbar{width:4px}
+.sidebar-scroll::-webkit-scrollbar-track{background:var(--bg)}
+.sidebar-scroll::-webkit-scrollbar-thumb{background:var(--border-li)}
+
+/* ── RIGHT CONTENT AREA — matches State Street .right-content ── */
+#right-content{flex:1;min-width:0;overflow-y:auto;padding:10px 14px}
+#right-content::-webkit-scrollbar{width:5px}
+#right-content::-webkit-scrollbar-track{background:var(--bg)}
+#right-content::-webkit-scrollbar-thumb{background:var(--border-li)}
+
+/* ── BREADCRUMB ── */
+.breadcrumb{text-align:center;padding:14px 0 12px;font-family:var(--font-head);font-size:22px;font-weight:700;letter-spacing:.06em}
+.breadcrumb .sep{color:var(--text-dim);margin:0 7px}
+.breadcrumb .cur{color:var(--text)}
+
+/* ── HISTOGRAM — State Street exact layout ── */
+.histo-wrap{margin-bottom:14px}
+.section-title{
+  font-family:var(--font-head);font-weight:700;font-size:13px;
+  color:var(--text);text-align:center;margin-bottom:6px;letter-spacing:.03em
+}
+.histo-svg-box{
+  background:var(--panel);border:1px solid var(--border);overflow:hidden
+}
+/* SVG fills 100% of its container — NO wrapper div, NO slider */
+
+/* ── TRADER'S SECTION TITLE ── */
+.trader-title{
+  font-family:var(--font-head);font-weight:700;font-size:17px;
+  color:var(--text);text-align:center;margin:18px 0 12px;letter-spacing:.06em
+}
+
+/* ── TWO-COL REGULAR TOGGLES — exact State Street rules ── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.toggle-wrap{background:var(--panel);border:1px solid var(--border);overflow:hidden}
+.toggle-header{
+  background:var(--panel-alt);border-bottom:1px solid var(--border);
+  padding:6px 10px;display:flex;align-items:center;justify-content:space-between
+}
+.toggle-title{font-weight:bold;font-size:12px;color:var(--text)}
+.toggle-btn-row{display:flex;gap:4px}
+.scroll-table{max-height:340px;overflow-y:auto}
+.scroll-table::-webkit-scrollbar{width:4px}
+.scroll-table::-webkit-scrollbar-track{background:var(--bg)}
+.scroll-table::-webkit-scrollbar-thumb{background:var(--border-li);border-radius:2px}
+
+/* ── MATCHUP SECTION TITLE ── */
+.matchup-title{
+  font-family:var(--font-head);font-weight:700;font-size:20px;
+  color:var(--text);text-align:center;margin:32px 0 14px;letter-spacing:.06em
+}
+
+/* ── COMPARISON CHARTS ── */
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.chart-box{background:var(--panel);border:1px solid var(--border);padding:12px 12px 8px}
+.chart-title{
+  text-align:center;font-family:var(--font-head);font-size:13px;font-weight:700;
+  color:var(--text);margin-bottom:5px;line-height:1.35;letter-spacing:.03em
+}
+.chart-key{display:flex;gap:18px;justify-content:center;font-size:9px;margin-bottom:7px;font-family:var(--font-mono)}
+.key-bar{color:var(--pos)}.key-line{color:var(--btn-bdr)}
+.chart-canvas-wrap{position:relative;height:215px}
+</style>
+</head>
+<body>
+
+<div id="htip" style="position:fixed;background:#0d1829;border:1px solid #3090d8;color:#ddeeff;font-family:'Courier New',monospace;font-size:11px;padding:5px 9px;border-radius:2px;box-shadow:0 2px 12px rgba(0,0,0,.6);white-space:nowrap;z-index:999;pointer-events:none;display:none"></div>
+<div id="menu-overlay" onclick="closeMenu()"></div>
+
+<!-- SLIDE MENU -->
+<nav id="slide-menu">
+  <button class="menu-close" onclick="closeMenu()">✕</button>
+  <div class="menu-section">Information</div>
+  <a href="about.html"    class="menu-btn">About Us</a>
+  <a href="zones.html"    class="menu-btn">The Zone System</a>
+  <a href="analysis.html" class="menu-btn">Stock Analysis</a>
+  <a href="options.html"  class="menu-btn" id="m-opt-info">Options Strategies</a>
+  <a href="resources.html"class="menu-btn">Resources</a>
+  <a href="contact.html"  class="menu-btn">Contacts</a>
+  <hr class="menu-div">
+  <div class="menu-section">Pages</div>
+  <a href="portfolio.html"class="menu-btn">My Portfolio</a>
+  <a href="front.html"    class="menu-btn">Front Page</a>
+  <a href="market.html"   class="menu-btn">Market</a>
+  <a href="sector.html"   class="menu-btn cur">Sector</a>
+  <a href="stock.html"    class="menu-btn">Stock</a>
+  <a href="options.html"  class="menu-btn" id="m-opt-page">Options</a>
+  <a href="game.html"     class="menu-btn" id="m-osg">Options Strategy Game</a>
+</nav>
+
+<!-- TOP NAV -->
+<header id="tnav">
+  <div class="t-ham" onclick="openMenu()">☰</div>
+  <div class="t-search-wrap">
+    <div class="t-search-icon">🔍</div>
+    <input type="text" id="srch" placeholder="TICKER OR NAME" oninput="handleSearch(this.value)">
+    <div class="t-search-sub">Search</div>
+  </div>
+  <div class="t-boxes">
+    <button class="t-btn" onclick="goTo('indexgroups.html')">Index Groups<span class="t2">ETFs &amp; Indexes</span></button>
+    <button class="t-btn" onclick="goTo('financeETFs.html')">Finance ETFs<span class="t2">Financial Sector</span></button>
+    <button class="t-btn" onclick="goTo('commodityETFs.html')">Commodity ETFs<span class="t2">Energy · Metals · Ag</span></button>
+    <button class="t-btn" onclick="goTo('newwaveETFs.html')">New Wave ETFs<span class="t2">Crypto · Blockchain</span></button>
+    <button class="t-btn" onclick="goTo('equitysector.html')">Equity Sector ETFs<span class="t2">Sectors &amp; Industries</span></button>
+  </div>
+</header>
+
+<div id="pg">
+  <!-- ── 4.7 LEFT SIDEBAR — LH Toggle ── -->
+  <aside id="sidebar">
+    <div class="sidebar-header">
+      <span class="sidebar-title">Listed ETFs &amp; Indexes</span>
+      <div class="sb-btn-row">
+        <button class="toggle-btn active" data-period="90" onclick="handleSB(this)">90 IR</button>
+        <button class="toggle-btn"        data-period="10" onclick="handleSB(this)">10 IR</button>
+      </div>
+    </div>
+    <div class="sidebar-scroll">
+      <table class="ir-table">
+        <thead><tr>
+          <th style="text-align:left">Tick</th>
+          <th style="text-align:left">Name</th>
+          <th class="sortable sort-active col-ir" id="sb-hdr" onclick="sbFlip()">IR ↓</th>
+          <th style="text-align:center">Zn</th>
+        </tr></thead>
+        <tbody id="sb-body"></tbody>
+      </table>
+    </div>
+  </aside>
+
+  <!-- ── RIGHT CONTENT — State Street .right-content pattern ── -->
+  <div id="right-content">
+
+    <!-- 4.6 Breadcrumb -->
+    <div class="breadcrumb">
+      <a href="market.html">Market</a><span class="sep">→</span>
+      <span class="cur">Sector</span><span class="sep">→</span>
+      <a href="stock.html">Stock</a>
+    </div>
+
+    <!-- 4.8 Histogram — SVG width="100%", no wrapper, no slider -->
+    <div class="histo-wrap">
+      <div class="section-title">Listed ETFs &amp; Indexes — 90-day Implied Risk Histogram</div>
+      <div class="histo-svg-box">
+        <svg id="mainHisto" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block"></svg>
+      </div>
+    </div>
+
+    <!-- 4.9 Trader's Page Title -->
+    <div class="trader-title">ETF and Index Trader's Page</div>
+
+    <!-- Row 1: 4.10 S&P + 4.11 Nasdaq -->
+    <div class="two-col">
+      <div class="toggle-wrap">
+        <div class="toggle-header">
+          <span class="toggle-title">S&amp;P Indexes and ETFs</span>
+          <div class="toggle-btn-row">
+            <button class="toggle-btn active" data-group="sp" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+            <button class="toggle-btn"        data-group="sp" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+          </div>
+        </div>
+        <div class="scroll-table"><table class="ir-table"><thead><tr>
+          <th style="text-align:left">Ticker</th>
+          <th style="text-align:left">Name</th>
+          <th class="sortable sort-active" id="sp-th-ir"  onclick="handleSortClick('sp','ir')"  style="text-align:center">IR <span class="sort-arrow active" id="sp-arr-ir">↓</span></th>
+          <th style="text-align:center">Zn</th>
+          <th class="sortable"            id="sp-th-3mo" onclick="handleSortClick('sp','3mo')" style="text-align:center;padding-left:14px">3Mo Ago <span class="sort-arrow" id="sp-arr-3mo">↕</span></th>
+        </tr></thead><tbody id="sp-tbody"></tbody></table></div>
+      </div>
+
+      <div class="toggle-wrap">
+        <div class="toggle-header">
+          <span class="toggle-title">Nasdaq ETFs and Indexes</span>
+          <div class="toggle-btn-row">
+            <button class="toggle-btn active" data-group="ndq" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+            <button class="toggle-btn"        data-group="ndq" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+          </div>
+        </div>
+        <div class="scroll-table"><table class="ir-table"><thead><tr>
+          <th style="text-align:left">Ticker</th>
+          <th style="text-align:left">Name</th>
+          <th class="sortable sort-active" id="ndq-th-ir"  onclick="handleSortClick('ndq','ir')"  style="text-align:center">IR <span class="sort-arrow active" id="ndq-arr-ir">↓</span></th>
+          <th style="text-align:center">Zn</th>
+          <th class="sortable"            id="ndq-th-3mo" onclick="handleSortClick('ndq','3mo')" style="text-align:center;padding-left:14px">3Mo Ago <span class="sort-arrow" id="ndq-arr-3mo">↕</span></th>
+        </tr></thead><tbody id="ndq-tbody"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- Row 2: 4.12 NYSE Arca + 4.13 Intellidex -->
+    <div class="two-col">
+      <div class="toggle-wrap">
+        <div class="toggle-header">
+          <span class="toggle-title">NYSE Arca Indexes</span>
+          <div class="toggle-btn-row">
+            <button class="toggle-btn active" data-group="nysa" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+            <button class="toggle-btn"        data-group="nysa" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+          </div>
+        </div>
+        <div class="scroll-table"><table class="ir-table"><thead><tr>
+          <th style="text-align:left">Ticker</th>
+          <th style="text-align:left">Name</th>
+          <th class="sortable sort-active" id="nysa-th-ir"  onclick="handleSortClick('nysa','ir')"  style="text-align:center">IR <span class="sort-arrow active" id="nysa-arr-ir">↓</span></th>
+          <th style="text-align:center">Zn</th>
+          <th class="sortable"            id="nysa-th-3mo" onclick="handleSortClick('nysa','3mo')" style="text-align:center;padding-left:14px">3Mo Ago <span class="sort-arrow" id="nysa-arr-3mo">↕</span></th>
+        </tr></thead><tbody id="nysa-tbody"></tbody></table></div>
+      </div>
+
+      <div class="toggle-wrap">
+        <div class="toggle-header">
+          <span class="toggle-title">NYSE Intellidex ETFs</span>
+          <div class="toggle-btn-row">
+            <button class="toggle-btn active" data-group="iidx" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+            <button class="toggle-btn"        data-group="iidx" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+          </div>
+        </div>
+        <div class="scroll-table"><table class="ir-table"><thead><tr>
+          <th style="text-align:left">Ticker</th>
+          <th style="text-align:left">Name</th>
+          <th class="sortable sort-active" id="iidx-th-ir"  onclick="handleSortClick('iidx','ir')"  style="text-align:center">IR <span class="sort-arrow active" id="iidx-arr-ir">↓</span></th>
+          <th style="text-align:center">Zn</th>
+          <th class="sortable"            id="iidx-th-3mo" onclick="handleSortClick('iidx','3mo')" style="text-align:center;padding-left:14px">3Mo Ago <span class="sort-arrow" id="iidx-arr-3mo">↕</span></th>
+        </tr></thead><tbody id="iidx-tbody"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- Row 3: 4.14 Interest Rate + 4.15 Commodity -->
+    <div class="two-col">
+      <div class="toggle-wrap">
+        <div class="toggle-header">
+          <span class="toggle-title">Interest Rate ETFs and Indexes</span>
+          <div class="toggle-btn-row">
+            <button class="toggle-btn active" data-group="irt" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+            <button class="toggle-btn"        data-group="irt" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+          </div>
+        </div>
+        <div class="scroll-table"><table class="ir-table"><thead><tr>
+          <th style="text-align:left">Ticker</th>
+          <th style="text-align:left">Name</th>
+          <th class="sortable sort-active" id="irt-th-ir"  onclick="handleSortClick('irt','ir')"  style="text-align:center">IR <span class="sort-arrow active" id="irt-arr-ir">↓</span></th>
+          <th style="text-align:center">Zn</th>
+          <th class="sortable"            id="irt-th-3mo" onclick="handleSortClick('irt','3mo')" style="text-align:center;padding-left:14px">3Mo Ago <span class="sort-arrow" id="irt-arr-3mo">↕</span></th>
+        </tr></thead><tbody id="irt-tbody"></tbody></table></div>
+      </div>
+
+      <div class="toggle-wrap">
+        <div class="toggle-header">
+          <span class="toggle-title">Commodity ETFs</span>
+          <div class="toggle-btn-row">
+            <button class="toggle-btn active" data-group="cmd" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+            <button class="toggle-btn"        data-group="cmd" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+          </div>
+        </div>
+        <div class="scroll-table"><table class="ir-table"><thead><tr>
+          <th style="text-align:left">Ticker</th>
+          <th style="text-align:left">Name</th>
+          <th class="sortable sort-active" id="cmd-th-ir"  onclick="handleSortClick('cmd','ir')"  style="text-align:center">IR <span class="sort-arrow active" id="cmd-arr-ir">↓</span></th>
+          <th style="text-align:center">Zn</th>
+          <th class="sortable"            id="cmd-th-3mo" onclick="handleSortClick('cmd','3mo')" style="text-align:center;padding-left:14px">3Mo Ago <span class="sort-arrow" id="cmd-arr-3mo">↕</span></th>
+        </tr></thead><tbody id="cmd-tbody"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- 4.16 Matchup Title -->
+    <div class="matchup-title">Matchup Market Snapshots</div>
+
+    <!-- Row 4: 4.17 SPX vs CBTX + 4.18 GLD vs CBTX -->
+    <div class="chart-row">
+      <div class="chart-box">
+        <div class="chart-title">S&amp;P 500 (SPX) vs. Bitcoin US (CBTX)</div>
+        <div class="chart-key"><span class="key-bar">■ SPX (bar)</span><span class="key-line">— CBTX (line)</span></div>
+        <div class="chart-canvas-wrap"><canvas id="c417"></canvas></div>
+      </div>
+      <div class="chart-box">
+        <div class="chart-title">Gold (GLD) vs. Bitcoin US (CBTX)</div>
+        <div class="chart-key"><span class="key-bar">■ GLD (bar)</span><span class="key-line">— CBTX (line)</span></div>
+        <div class="chart-canvas-wrap"><canvas id="c418"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Row 5: 4.19 SPX vs XOE + 4.20 GLD vs SLV -->
+    <div class="chart-row">
+      <div class="chart-box">
+        <div class="chart-title">S&amp;P 500 Cap Weighted (SPX) vs. Equal Weighted (XOE)</div>
+        <div class="chart-key"><span class="key-bar">■ SPX (bar)</span><span class="key-line">— XOE (line)</span></div>
+        <div class="chart-canvas-wrap"><canvas id="c419"></canvas></div>
+      </div>
+      <div class="chart-box">
+        <div class="chart-title">Gold (GLD) vs. Silver (SLV)</div>
+        <div class="chart-key"><span class="key-bar">■ GLD (bar)</span><span class="key-line">— SLV (line)</span></div>
+        <div class="chart-canvas-wrap"><canvas id="c420"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Row 6: 4.21 TNX vs IRX + 4.22 TLT vs SHV -->
+    <div class="chart-row">
+      <div class="chart-box">
+        <div class="chart-title">Long-term Interest Rates (TNX) vs. Short-term (IRX)</div>
+        <div class="chart-key"><span class="key-bar">■ TNX (bar)</span><span class="key-line">— IRX (line)</span></div>
+        <div class="chart-canvas-wrap"><canvas id="c421"></canvas></div>
+      </div>
+      <div class="chart-box">
+        <div class="chart-title">20-Year Bond (TLT) vs. 0-3-Year Bond (SHV)</div>
+        <div class="chart-key"><span class="key-bar">■ TLT (bar)</span><span class="key-line">— SHV (line)</span></div>
+        <div class="chart-canvas-wrap"><canvas id="c422"></canvas></div>
+      </div>
+    </div>
+
+  </div><!-- #right-content -->
+</div><!-- #pg -->
+
+<script>
+/* ── CONFIG ── */
+const SUBSCRIBER = 'stock';
+
+/* ── RNG ── */
+function mkRng(s){let v=s;return()=>{v=(v*1664525+1013904223)&0xffffffff;return(v>>>0)/0xffffffff;};}
+const rng=mkRng(42);
+function fakeIR(r){return Math.round(r()*198-99);}
+
+/* ── DATA ── */
+const RAW=[
+  ['MXWLD','MSCI World Index'],['MXEF','MSCI Emerging Markets Index'],
+  ['MXEA','MSCI EAFE Index'],['MXUSA','MXUSA Index'],
+  ['SPGM','MSCI Global Stock Market ETF'],['MXACW','MSCI ACWI Index'],
+  ['VEA','FTSE Developed Markets ETF'],['VWO','FTSE Emerging Markets ETF'],
+  ['VGK','FTSE Europe ETF'],['VPL','FTSE Pacific ETF'],['FLLA','FTSE Latin America ETF'],
+  ['SPX','S&P 500'],['MID','S&P Midcap 400'],['SML','S&P Smallcap 600'],
+  ['CBTX','CBOE Bitcoin US ETF Index'],['ZAX','ZAX Microcap'],
+  ['CZA','ZAX Mid-Cap ETF'],['IWC','Micro Cap ETF'],['MGC','Mega Cap ETF'],
+  ['SPTM','S&P Composite ETF'],['XOEF','S&P 500 ex-S&P 100 ETF'],
+  ['XOE','S&P 500 Equal Weighted ETF'],
+  ['XLC','Communication Services'],['XLY','Consumer Discretionary'],
+  ['XLP','Consumer Staples'],['XLE','Energy'],['XLF','Finance'],
+  ['XLV','Health Care'],['XLI','Industrials'],['XLB','Materials'],
+  ['XLRE','Real Estate'],['XLK','Tech'],['XLU','Utilities'],
+  ['GLD','Gold'],['SLV','Silver'],
+  ['NDX','Nasdaq 100 Index'],['FTXL','Nasdaq Semiconductor ETF'],
+  ['FTXH','Nasdaq Pharmaceuticals ETF'],['FTXR','Nasdaq Transportation ETF'],
+  ['FTXN','Nasdaq Oil & Gas ETF'],['FTXG','Nasdaq Food & Beverage ETF'],
+  ['FTXO','Nasdaq Bank ETF'],['EKG','Nasdaq Lux Digital Health ETF'],
+  ['CIBR','Nasdaq Cybersecurity ETF'],['ROBT','Nasdaq AI & Robotics ETF'],
+  ['XCI','Computer Technology'],['XBD','Broker/Dealer'],['XAL','Airline'],
+  ['XNG','Natural Gas'],['XOI','Oil'],['XTC','N. American Telecomm'],
+  ['STLL','Steel'],['DDX','Disk Drive'],['DFI','Defense'],
+  ['DRG','Pharmaceutical'],['GDM','Gold Miners'],['HUI','Gold BUGS'],
+  ['HWI','Computer Hardware'],['BTK','Biotechnology'],['NWX','Networking'],
+  ['ILX','Large Cap Growth ETF'],['ILW','Large Cap Value ETF'],
+  ['PXJ','Oil & Gas Services ETF'],['PSI','Semiconductor ETF'],
+  ['PBJ','Food & Beverage ETF'],['PEJ','Leisure & Entertainment ETF'],
+  ['PBE','Biotechnology & Genome ETF'],['PJP','Pharmaceutical ETF'],
+  ['TLT','20 Year Bond ETF'],['TLH','10-20 Year Bond ETF'],
+  ['IEF','7-10 Year Bond ETF'],['IEI','3-7 Year Bond ETF'],
+  ['SHY','1-3 Year Bond ETF'],['SHV','0-1 Year Bond ETF'],
+  ['IRX','13-week T-bill Index'],['FVX','5-Yr T-note Index'],['TNX','10 Yr T-note Index'],
+  ['USO','US Oil Fund'],['UNG','US Natural Gas Fund'],['BNO','US Brent Oil Fund'],
+  ['UGA','US Gasoline Fund'],['TAGS','Agricultural Fund'],['WEAT','Wheat Fund'],
+  ['CANE','Sugar Fund'],['CORN','Corn Fund'],['SOYB','Soybean Fund'],
+  ['FXB','British Pound Sterling Trust'],['FXC','Canadian Dollar Trust'],
+  ['FXE','Euro Trust'],['FXF','Swiss Franc Trust'],['FXY','Japanese Yen Trust'],
+  ['UDN','Dollar Index Bearish Fund'],['UUP','Dollar Index Bullish Fund'],
+  ['USDU','US Dollar Bullish Fund'],
+  ['GBTC','Bitcoin Trust'],['GBAT','Basic Attention Token Trust'],
+  ['BCHG','Bitcoin Cash Trust'],['GTAO','Bitensor Trust'],
+  ['MANA','Decentraland Trust'],['DEFG','Decentralized Finance Trust'],
+  ['ETCG','Ethereum Classic Trust'],['FILG','Filecoin Trust'],
+  ['HZEN','Horizen Trust'],['LTCN','Litecoin Trust'],
+  ['GLIV','Livepeer Trust'],['GSNR','Near Trust'],
+  ['STCK','Stacks Trust'],['GXLM','Stellar Lumens Trust'],['ZCSH','Zcash Trust']
+];
+const ALL=RAW.map(([sym,name])=>({sym,name,ir_90:fakeIR(rng),ir_10:fakeIR(rng),ir_90_3mo:fakeIR(rng),ir_10_3mo:fakeIR(rng)}));
+const DM={};ALL.forEach(d=>DM[d.sym]=d);
+
+/* ── GROUP DEFINITIONS ── */
+const GRPS={
+  sp:  ['XLC','XLY','XLP','XLE','XLF','XLV','XLI','XLB','XLRE','XLK','XLU','GLD','SLV','SPX','MID','SML'],
+  ndq: ['NDX','FTXL','FTXH','FTXR','FTXN','FTXG','FTXO','EKG','CIBR','ROBT'],
+  nysa:['XCI','XBD','XAL','XNG','XOI','XTC','STLL','DDX','DFI','DRG','GDM','HUI','HWI','BTK','NWX'],
+  iidx:['ILX','ILW','PXJ','PSI','PBJ','PEJ','PBE','PJP'],
+  irt: ['TLT','TLH','IEF','IEI','SHY','SHV','IRX','FVX','TNX'],
+  cmd: ['USO','UNG','BNO','UGA','TAGS','WEAT','CANE','CORN','SOYB']
+};
+
+/* ── UTILS ── */
+const ZC={1:'#00cc55',2:'#88cc44',3:'#7a9aaa',4:'#aa9a7a',5:'#ddcc00',6:'#e83535'};
+function zone(ir){return ir>=67?1:ir>=34?2:ir>=1?3:ir>=-33?4:ir>=-66?5:6;}
+function zbadge(z){return `<span class="zone-badge" style="background:${ZC[z]}">${z}</span>`;}
+function irc(v){return v>0?'pos':v<0?'neg':'zer';}
+function irs(v){return(v>0?'+':'')+v;}
+function trunc(s,n=22){return s.length>n?s.slice(0,n)+'…':s;}
+
+/* ── TOGGLE STATE ── */
+const sortState={},periodState={};
+function initGrp(g){if(!sortState[g])sortState[g]={field:'ir',dir:1};if(!periodState[g])periodState[g]='90';}
+
+function renderRow(r,iF,mF){
+  const ir=r[iF],mo=r[mF],z=zone(ir);
+  return `<tr>
+    <td class="col-ticker">${r.sym}</td>
+    <td class="col-name">${trunc(r.name)}</td>
+    <td class="col-ir"><span class="${irc(ir)}">${irs(ir)}</span></td>
+    <td class="col-zone">${zbadge(z)}</td>
+    <td class="col-3mo"><span class="${irc(mo)}">${irs(mo)}</span></td>
+  </tr>`;
+}
+
+function renderGroup(g){
+  initGrp(g);
+  const p=periodState[g],iF=p==='90'?'ir_90':'ir_10',mF=p==='90'?'ir_90_3mo':'ir_10_3mo';
+  const{field,dir}=sortState[g],sF=field==='ir'?iF:mF;
+  const rows=[...GRPS[g].map(s=>DM[s]).filter(Boolean)].sort((a,b)=>(b[sF]-a[sF])*dir);
+  document.getElementById(g+'-tbody').innerHTML=rows.map(r=>renderRow(r,iF,mF)).join('');
+  updateSortArrows(g);
+}
+
+function updateSortArrows(g){
+  const{field,dir}=sortState[g];
+  ['ir','3mo'].forEach(f=>{
+    const th =document.getElementById(`${g}-th-${f}`);
+    const arr=document.getElementById(`${g}-arr-${f}`);
+    if(!th||!arr)return;
+    const on=f===field;
+    if(on){th.classList.add('sort-active');arr.classList.add('active');arr.textContent=dir===1?'↓':'↑';}
+    else  {th.classList.remove('sort-active');arr.classList.remove('active');arr.textContent='↕';}
+  });
+}
+
+function handlePeriodToggle(btn){
+  btn.closest('.toggle-btn-row').querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  periodState[btn.dataset.group]=btn.dataset.period;
+  renderGroup(btn.dataset.group);
+}
+function handleSortClick(g,f){
+  initGrp(g);
+  const s=sortState[g];
+  sortState[g]=s.field===f?{field:f,dir:s.dir*-1}:{field:f,dir:1};
+  renderGroup(g);
+}
+
+/* ── SIDEBAR ── */
+let sbP='90',sbD=1;
+function renderSB(filter=''){
+  const iF=sbP==='90'?'ir_90':'ir_10';
+  let rows=[...ALL];
+  if(filter){const q=filter.toUpperCase();rows=rows.filter(d=>d.sym.includes(q)||d.name.toUpperCase().includes(q));}
+  rows.sort((a,b)=>(b[iF]-a[iF])*sbD);
+  document.getElementById('sb-body').innerHTML=rows.map(r=>{
+    const ir=r[iF],z=zone(ir);
+    return `<tr>
+      <td class="col-ticker">${r.sym}</td>
+      <td class="col-name">${trunc(r.name)}</td>
+      <td class="col-ir"><span class="${irc(ir)}">${irs(ir)}</span></td>
+      <td class="col-zone">${zbadge(z)}</td>
+    </tr>`;
+  }).join('');
+  const h=document.getElementById('sb-hdr');
+  h.textContent='IR '+(sbD===1?'↓':'↑');
+}
+function handleSB(btn){
+  btn.closest('.sb-btn-row').querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');sbP=btn.dataset.period;renderSB(document.getElementById('srch').value);
+}
+function sbFlip(){sbD*=-1;renderSB(document.getElementById('srch').value);}
+function handleSearch(q){renderSB(q);}
+
+/* ── HISTOGRAM — SVG width 100%, State Street style ── */
+function buildHisto(){
+  const W=920,OW=28,BX=OW,BW=W-2*OW,ZW=BW/6;
+  const SP=BW/24,SH=13,SFS=9;
+  const BA=168,BFL=16,BSG=ZW,BCX=BX+BW/2;
+  const ZCL=['#00cc55','#88cc44','#7a9aaa','#aa9a7a','#ddcc00','#e83535'];
+  const SB=[
+    [[99,91],[90,83],[82,75],[74,67]],[[66,59],[58,52],[51,43],[42,34]],
+    [[33,26],[25,18],[17,9],[8,1]],[[-1,-8],[-9,-17],[-18,-25],[-26,-33]],
+    [[-34,-42],[-43,-51],[-52,-58],[-59,-66]],[[-67,-74],[-75,-82],[-83,-90],[-91,-99]]
+  ];
+  const slots=Array.from({length:6},()=>Array.from({length:4},()=>[]));
+  const oobL=[],oobR=[];
+  ALL.forEach(d=>{
+    const ir=d.ir_90;
+    if(ir>99){oobL.push(d.sym);return;}
+    if(ir<-99){oobR.push(d.sym);return;}
+    for(let z=0;z<6;z++)for(let sl=0;sl<4;sl++){
+      const[hi,lo]=SB[z][sl];if(ir<=hi&&ir>=lo){slots[z][sl].push(d.sym);return;}
+    }
+  });
+  slots.forEach(z=>z.forEach(s=>s.sort()));
+  let BY=205;
+  const maxS=Math.max(1,...slots.flatMap(z=>z.map(s=>s.length)));
+  if(maxS*SH+20>BY)BY=maxS*SH+20;
+  const H=BY+63,LYR=BY+18,LYZ=BY+31;
+  const svg=document.getElementById('mainHisto');
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  let s=`<defs>
+    <filter id="gw"><feGaussianBlur stdDeviation="2.8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="sg"><feGaussianBlur stdDeviation="1.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>`;
+  s+=`<rect x="0" y="0" width="${OW}" height="${H}" fill="${ZCL[0]}" opacity="0.07"/>`;
+  s+=`<rect x="${W-OW}" y="0" width="${OW}" height="${H}" fill="${ZCL[5]}" opacity="0.07"/>`;
+  for(let z=0;z<6;z++)s+=`<rect x="${BX+z*ZW}" y="0" width="${ZW}" height="${BY}" fill="${ZCL[z]}" opacity="0.07"/>`;
+  for(let z=1;z<6;z++)s+=`<line x1="${BX+z*ZW}" y1="0" x2="${BX+z*ZW}" y2="${BY}" stroke="rgba(255,255,255,.22)" stroke-width="1"/>`;
+  s+=`<line x1="${BX}" y1="0" x2="${BX}" y2="${BY}" stroke="rgba(255,255,255,.45)" stroke-width="1.5"/>`;
+  s+=`<line x1="${BX+BW}" y1="0" x2="${BX+BW}" y2="${BY}" stroke="rgba(255,255,255,.45)" stroke-width="1.5"/>`;
+  for(let i=1;i<24;i++)s+=`<line x1="${(BX+i*SP).toFixed(1)}" y1="8" x2="${(BX+i*SP).toFixed(1)}" y2="${BY}" stroke="rgba(255,255,255,.055)" stroke-width="0.5" stroke-dasharray="3,6"/>`;
+  s+=`<line x1="0" y1="${BY}" x2="${W}" y2="${BY}" stroke="rgba(255,255,255,.35)" stroke-width="1"/>`;
+  const bell=px=>{const dx=px-BCX;return BY-(BA*Math.exp(-dx*dx/(2*BSG*BSG))+BFL);};
+  let pd='';for(let px=BX;px<=BX+BW;px+=2)pd+=(px===BX?'M':'L')+px.toFixed(1)+','+bell(px).toFixed(1);
+  s+=`<path d="${pd}" fill="none" stroke="rgba(120,185,255,.14)" stroke-width="8"/>`;
+  s+=`<path d="${pd}" fill="none" stroke="rgba(155,210,255,.72)" stroke-width="1.6" stroke-dasharray="8,4" filter="url(#gw)"/>`;
+  s+=`<path d="${pd}" fill="none" stroke="rgba(205,235,255,.38)" stroke-width="0.8" stroke-dasharray="8,4"/>`;
+  slots.forEach((zn,z)=>zn.forEach((slot,sl)=>{
+    const gi=z*4+sl,scx=(BX+(gi+0.5)*SP).toFixed(1);
+    [...slot].sort().forEach((sym,idx)=>{
+      const d=DM[sym],ir=d?d.ir_90:0;
+      s+=`<text x="${scx}" y="${(BY-(idx+1)*SH+4).toFixed(1)}" text-anchor="middle" font-family="'Courier New',monospace" font-size="${SFS}" font-weight="bold" fill="${ZCL[z]}" filter="url(#sg)" cursor="pointer" data-tip="${sym} — ${d?d.name:''} | 90-IR: ${irs(ir)} | Zone ${z+1}" class="hst">${sym.slice(0,3)}</text>`;
+    });
+  }));
+  oobL.forEach((sym,i)=>s+=`<text x="${(OW/2).toFixed(1)}" y="${(BY-(i+1)*SH+4).toFixed(1)}" text-anchor="middle" font-family="'Courier New',monospace" font-size="${SFS}" font-weight="bold" fill="${ZCL[0]}">${sym.slice(0,3)}</text>`);
+  oobR.forEach((sym,i)=>s+=`<text x="${(W-OW/2).toFixed(1)}" y="${(BY-(i+1)*SH+4).toFixed(1)}" text-anchor="middle" font-family="'Courier New',monospace" font-size="${SFS}" font-weight="bold" fill="${ZCL[5]}">${sym.slice(0,3)}</text>`);
+  const ZRNGS=['+99 to +67','+66 to +34','+33 to +1','-1 to -33','-34 to -66','-67 to -99'];
+  const ZNMS=['Zone 1','Zone 2','Zone 3','Zone 4','Zone 5','Zone 6'];
+  for(let z=0;z<6;z++){
+    const zx=(BX+z*ZW+ZW/2).toFixed(1);
+    s+=`<text x="${zx}" y="${LYR}" text-anchor="middle" font-family="'Courier New',monospace" font-size="8.5" fill="rgba(255,255,255,.48)">${ZRNGS[z]}</text>`;
+    s+=`<text x="${zx}" y="${LYZ}" text-anchor="middle" font-family="Trebuchet MS,sans-serif" font-size="10.5" font-weight="bold" fill="${ZCL[z]}">${ZNMS[z]}</text>`;
+  }
+  [[OW/2,ZCL[0],'OOB','Weak','≥+99'],[W-OW/2,ZCL[5],'OOB','Str','≤-99']].forEach(([x,c,a,b,thr])=>{
+    const xf=x.toFixed(1);
+    s+=`<text x="${xf}" y="${(BY/2-22).toFixed(1)}" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${c}">${a}</text>`;
+    s+=`<text x="${xf}" y="${(BY/2-12).toFixed(1)}" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${c}">${b}</text>`;
+    s+=`<text x="${xf}" y="${(BY/2).toFixed(1)}" text-anchor="middle" font-family="'Courier New',monospace" font-size="7" fill="${c}">${thr}</text>`;
+  });
+  s+=`<text x="${BX+8}" y="${H-5}" font-family="Trebuchet MS,sans-serif" font-size="7.5" fill="rgba(0,212,160,.40)">← Weak / Oversold</text>`;
+  s+=`<text x="${BX+BW-8}" y="${H-5}" text-anchor="end" font-family="Trebuchet MS,sans-serif" font-size="7.5" fill="rgba(232,53,53,.40)">Overbought / Strong →</text>`;
+  svg.innerHTML=s;
+  const tip=document.getElementById('htip');
+  svg.querySelectorAll('.hst').forEach(el=>{
+    el.addEventListener('mousemove',e=>{tip.style.display='block';tip.style.left=(e.clientX+12)+'px';tip.style.top=(e.clientY-10)+'px';tip.textContent=el.dataset.tip;});
+    el.addEventListener('mouseleave',()=>tip.style.display='none');
+  });
+}
+
+/* ── COMPARISON CHARTS ── */
+function mkRngS(sym,off){return mkRng(sym.split('').reduce((a,c)=>a+c.charCodeAt(0),0)+off);}
+function genSeries(sym,off){const r=mkRngS(sym,off);let v=(r()-0.5)*40;return Array.from({length:30},()=>{v=Math.max(-99,Math.min(99,v+(r()-0.5)*18));return Math.round(v);});}
+function dayLabels(){const now=new Date(),out=[];for(let i=29;i>=0;i--){const d=new Date(now);d.setDate(d.getDate()-i);out.push((d.getMonth()+1)+'/'+(d.getDate()));}return out;}
+const DAYS=dayLabels();
+
+const zband={id:'zband',beforeDraw(chart){
+  const{ctx,chartArea:{top,bottom,left,right},scales:{y}}=chart;
+  [[66,99,'#00cc55'],[33,66,'#88cc44'],[0,33,'#7a9aaa'],[-33,0,'#aa9a7a'],[-66,-33,'#ddcc00'],[-99,-66,'#e83535']].forEach(([mn,mx,col])=>{
+    const yT=y.getPixelForValue(mx),yB=y.getPixelForValue(mn);
+    ctx.save();ctx.fillStyle=col+'18';ctx.fillRect(left,Math.min(yT,yB),right-left,Math.abs(yB-yT));ctx.restore();
+  });
+}};
+Chart.register(zband);
+
+function makeChart(id,barSym,lineSym){
+  new Chart(document.getElementById(id).getContext('2d'),{
+    type:'bar',
+    data:{labels:DAYS,datasets:[
+      {type:'bar',label:barSym,data:genSeries(barSym,0),backgroundColor:'rgba(136,204,68,.45)',borderColor:'rgba(136,204,68,.8)',borderWidth:1,order:2},
+      {type:'line',label:lineSym,data:genSeries(lineSym,77),borderColor:'#3090d8',backgroundColor:'rgba(48,144,216,.04)',borderWidth:2,pointRadius:0,tension:0.3,fill:false,order:1}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,animation:false,
+      plugins:{legend:{display:false},tooltip:{backgroundColor:'#0d1829',borderColor:'#3090d8',borderWidth:1,titleColor:'#ddeeff',bodyColor:'#8aaccc',titleFont:{family:"'Courier New',monospace",size:10},bodyFont:{family:"'Courier New',monospace",size:10},callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y>0?'+':''}${c.parsed.y}`}}},
+      scales:{
+        x:{ticks:{color:'#5a7a9a',font:{family:"'Courier New',monospace",size:8},maxTicksLimit:10,maxRotation:0},grid:{color:'rgba(255,255,255,.04)'}},
+        y:{reverse:true,min:-99,max:99,
+          ticks:{color:'#5a7a9a',font:{family:"'Courier New',monospace",size:9},stepSize:33,callback:v=>{const m={99:'Z 1',66:'Z 2',33:'Z 3',0:'—','-33':'Z 4','-66':'Z 5','-99':'Z 6'};return m[String(v)]??'';}},
+          grid:{color:c=>c.tick.value===0?'rgba(255,255,255,.28)':'rgba(255,255,255,.07)'}
+        }
+      }
+    }
+  });
+}
+
+/* ── MENU ── */
+function openMenu(){document.getElementById('slide-menu').classList.add('open');document.getElementById('menu-overlay').classList.add('open');}
+function closeMenu(){document.getElementById('slide-menu').classList.remove('open');document.getElementById('menu-overlay').classList.remove('open');}
+function goTo(url){window.location.href=url;}
+
+/* ── SUBSCRIBER ── */
+function applySubscriber(){
+  ['m-opt-info','m-opt-page','m-osg'].forEach(id=>{
+    const el=document.getElementById(id);if(!el)return;
+    SUBSCRIBER==='options'?el.classList.remove('lock'):el.classList.add('lock');
+  });
+}
+
+/* ── INIT ── */
+document.addEventListener('DOMContentLoaded',()=>{
+  applySubscriber();
+  renderSB();
+  Object.keys(GRPS).forEach(renderGroup);
+  buildHisto();
+  makeChart('c417','SPX','CBTX');makeChart('c418','GLD','CBTX');
+  makeChart('c419','SPX','XOE'); makeChart('c420','GLD','SLV');
+  makeChart('c421','TNX','IRX'); makeChart('c422','TLT','SHV');
+});
+</script>
+</body>
+</html>
