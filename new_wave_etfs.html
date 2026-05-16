@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Top Down Trading — New Wave ETFs (pg. 20)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════════════════════════
+   NEW WAVE ETFs — pg. 20
+   Static Page identifier: NWETF
+   Layout: Fixed left sidebar (NW.4) + scrollable right content
+   ══════════════════════════════════════════════════════════ */
+
+:root {
+  --bg:       #08111e;
+  --panel:    #0d1829;
+  --panel-alt:#0a1420;
+  --border:   #1a2d44;
+  --bl:       #243c58;
+  --accent:   #3090d8;
+  --gold:     #c8a800;
+  --text:     #ddeeff;
+  --muted:    #5a7a9a;
+  --z1: #00cc55;
+  --z2: #88cc44;
+  --z3: #7a9aaa;
+  --z4: #aa9a7a;
+  --z5: #ddcc00;
+  --z6: #e83535;
+  --font-h:    'Rajdhani', sans-serif;
+  --font-mono: 'Courier New', monospace;
+  --r: 3px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-h);
+  font-size: 14px;
+  overflow: hidden;
+}
+
+/* ── PAGE WRAPPER ───────────────────────────────────────── */
+.page-wrap {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ══════════════════════════════════════════════════════════
+   NW.4 — LEFT SIDEBAR (Left Hand Toggle)
+   ══════════════════════════════════════════════════════════ */
+.sidebar {
+  width: 285px;
+  min-width: 285px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--panel-alt);
+  border-right: 2px solid var(--bl);
+}
+
+.sb-hdr {
+  padding: 8px 10px 6px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-alt);
+  flex-shrink: 0;
+}
+
+.sb-title {
+  text-align: center;
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--text);
+  letter-spacing: .04em;
+  margin-bottom: 5px;
+}
+
+.sb-btns { display: flex; justify-content: center; gap: 4px; }
+
+.sb-btn {
+  background: var(--border);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: var(--font-h);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 10px;
+  cursor: pointer;
+  border-radius: 2px;
+  transition: all .15s;
+}
+.sb-btn.active          { background: #2a7abf; border-color: var(--accent); color: #fff; }
+.sb-btn:hover:not(.active) { border-color: var(--accent); color: var(--text); }
+
+.sb-scroll {
+  flex: 1;
+  overflow-y: auto;
+}
+.sb-scroll::-webkit-scrollbar       { width: 4px; }
+.sb-scroll::-webkit-scrollbar-track { background: var(--bg); }
+.sb-scroll::-webkit-scrollbar-thumb { background: var(--bl); border-radius: 2px; }
+
+.sb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.sb-table thead { position: sticky; top: 0; z-index: 2; }
+
+.sb-table th {
+  background: var(--panel-alt);
+  color: var(--muted);
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--border);
+  font-size: 10px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+}
+.sb-table th.sortable          { cursor: pointer; user-select: none; }
+.sb-table th.sortable:hover    { color: var(--text); }
+.sb-table th.sort-active       { color: var(--accent); }
+
+.sb-sort-arrow        { font-size: 10px; margin-left: 3px; opacity: .5; }
+.sb-sort-arrow.active { opacity: 1; color: var(--accent); }
+
+.sb-table td { padding: 3px 6px; border-bottom: 1px solid #0e1a28; white-space: nowrap; }
+.sb-table tr:hover td { background: #111e30; }
+
+/* ══════════════════════════════════════════════════════════
+   MAIN CONTENT
+   ══════════════════════════════════════════════════════════ */
+.main-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 14px 24px;
+}
+.main-content::-webkit-scrollbar       { width: 4px; }
+.main-content::-webkit-scrollbar-track { background: var(--bg); }
+.main-content::-webkit-scrollbar-thumb { background: var(--bl); border-radius: 2px; }
+
+/* ── TOP BAR (NW.1 BACK + SEARCH) ──────────────────────── */
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.btn-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--panel);
+  border: 1px solid var(--bl);
+  color: var(--accent);
+  font-family: var(--font-h);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  padding: 5px 14px;
+  cursor: pointer;
+  text-decoration: none;
+  border-radius: var(--r);
+  transition: all .15s;
+}
+.btn-nav:hover { background: var(--border); color: var(--text); border-color: var(--accent); }
+
+.search-row { display: flex; gap: 6px; }
+
+.search-input {
+  background: var(--panel);
+  border: 1px solid var(--bl);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 5px 10px;
+  width: 160px;
+  border-radius: var(--r);
+  outline: none;
+  transition: border-color .15s;
+}
+.search-input::placeholder { color: var(--muted); }
+.search-input:focus        { border-color: var(--accent); }
+
+/* ── NW.2 PAGE TITLE ────────────────────────────────────── */
+.page-title {
+  text-align: center;
+  font-family: var(--font-h);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  color: var(--text);
+  margin-bottom: 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── SECTION TITLES ─────────────────────────────────────── */
+.section-title {
+  text-align: center;
+  font-family: var(--font-h);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+/* ── NW.3 HISTOGRAM ─────────────────────────────────────── */
+.histo-wrap    { margin-bottom: 16px; }
+.histo-svg-box { background: var(--panel); border: 1px solid var(--border); overflow: hidden; }
+
+/* ── TWO-COLUMN GRID ────────────────────────────────────── */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+/* ── SUB-GROUP LABELS (above toggles) ───────────────────── */
+.grp-label {
+  text-align: center;
+  font-family: var(--font-h);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .03em;
+  color: var(--text);
+  margin-bottom: 5px;
+}
+
+/* ── REGULAR TOGGLES (NW.5–NW.8) ───────────────────────── */
+.toggle-wrap {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  border-radius: var(--r);
+}
+
+.toggle-header {
+  background: var(--panel-alt);
+  border-bottom: 1px solid var(--border);
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.toggle-title { font-weight: 700; font-size: 12px; color: var(--text); }
+
+.toggle-btns { display: flex; }
+.toggle-btn {
+  background: var(--border);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: var(--font-h);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.toggle-btn:first-child             { border-radius: 2px 0 0 2px; }
+.toggle-btn:last-child              { border-radius: 0 2px 2px 0; border-left: none; }
+.toggle-btn.active                  { background: #2a7abf; border-color: var(--accent); color: #fff; }
+.toggle-btn:hover:not(.active)      { border-color: var(--accent); color: var(--text); }
+
+.scroll-table { max-height: 340px; overflow-y: auto; }
+.scroll-table::-webkit-scrollbar       { width: 4px; }
+.scroll-table::-webkit-scrollbar-track { background: var(--bg); }
+.scroll-table::-webkit-scrollbar-thumb { background: var(--bl); border-radius: 2px; }
+
+.ir-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.ir-table th {
+  background: var(--panel);
+  color: var(--muted);
+  padding: 4px 6px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  font-size: 10px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+}
+.ir-table th.sortable          { cursor: pointer; user-select: none; }
+.ir-table th.sortable:hover    { color: var(--text); }
+.ir-table th.sort-active       { color: var(--accent); }
+
+.sort-arrow        { font-size: 10px; margin-left: 3px; opacity: .5; }
+.sort-arrow.active { opacity: 1; color: var(--accent); }
+
+.ir-table td { padding: 3px 6px; border-bottom: 1px solid #0e1a28; white-space: nowrap; }
+.ir-table tr:hover td { background: #111e30; }
+
+.col-symbol { color: var(--text); font-weight: 700; }
+.col-ir     { text-align: center; }
+.col-zone   { text-align: center; }
+.col-3mo    { text-align: center; font-size: 10px; }
+
+.zone-badge {
+  display: inline-block;
+  padding: 1px 5px;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 2px;
+  color: #000;
+}
+
+.pos { color: #88cc44; }
+.neg { color: #e83535; }
+.zer { color: #b8cce0; }
+
+/* ── COMPARISON SECTION TITLES (NW.9, 12, 15, 18) ──────── */
+.cmp-title {
+  text-align: center;
+  font-family: var(--font-h);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  color: var(--text);
+  margin: 20px 0 10px;
+  padding: 9px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── COMBO CHARTS ───────────────────────────────────────── */
+.chart-wrap {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 10px 12px 12px;
+}
+
+.chart-title {
+  text-align: center;
+  font-family: var(--font-h);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.chart-canvas-wrap {
+  position: relative;
+  height: 210px;
+}
+
+/* ── TOOLTIP ────────────────────────────────────────────── */
+#histo-tip {
+  position: fixed;
+  background: var(--panel);
+  border: 1px solid var(--accent);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 5px 9px;
+  border-radius: 2px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.6);
+  white-space: nowrap;
+  z-index: 999;
+  pointer-events: none;
+  display: none;
+}
+</style>
+</head>
+<body>
+
+<div class="page-wrap">
+
+<!-- ════════════════════════════════════════════════════════
+     NW.4 — LEFT HAND TOGGLE (Full list, all 76 New Wave ETFs)
+     ════════════════════════════════════════════════════════ -->
+<aside class="sidebar">
+  <div class="sb-hdr">
+    <div class="sb-title">New Wave ETFs</div>
+    <div class="sb-btns">
+      <button class="sb-btn active" onclick="setSbPeriod('90',this)">90 IR</button>
+      <button class="sb-btn"        onclick="setSbPeriod('10',this)">10 IR</button>
+    </div>
+  </div>
+  <div class="sb-scroll">
+    <table class="sb-table">
+      <thead><tr>
+        <th style="text-align:left">Tick</th>
+        <th style="text-align:left">Name</th>
+        <th class="sortable sort-active" id="sb-th-ir" onclick="sbSortClick()"
+            style="text-align:center">IR&nbsp;<span class="sb-sort-arrow active" id="sb-arr">↓</span></th>
+        <th style="text-align:center">Zn</th>
+      </tr></thead>
+      <tbody id="sb-tbody"></tbody>
+    </table>
+  </div>
+</aside>
+
+<!-- ════════════════════════════════════════════════════════
+     MAIN CONTENT
+     ════════════════════════════════════════════════════════ -->
+<div class="main-content">
+
+  <!-- NW.1 — TOP BAR: BACK + SEARCH -->
+  <div class="top-bar">
+    <a href="etfs.html" class="btn-nav">← BACK</a>
+    <div class="search-row">
+      <input class="search-input" type="text" id="searchIn" placeholder="Search symbol…">
+      <button class="btn-nav" onclick="doSearch()">SEARCH</button>
+    </div>
+  </div>
+
+  <!-- NW.2 — PAGE TITLE -->
+  <div class="page-title">New Wave ETFs</div>
+
+  <!-- NW.3 — MAIN HISTOGRAM -->
+  <div class="histo-wrap">
+    <div class="section-title">New Wave ETFs — 90-Day Implied Risk Distribution</div>
+    <div class="histo-svg-box">
+      <svg id="mainHisto" width="100%" preserveAspectRatio="xMidYMid meet" style="display:block"></svg>
+    </div>
+  </div>
+
+  <!-- NW.5 + NW.6 — ROBOTICS | DIGITAL ECONOMY -->
+  <div class="two-col">
+
+    <!-- NW.5: Robotics ETFs -->
+    <div>
+      <div class="grp-label">Robotics ETFs</div>
+      <div class="toggle-wrap">
+        <div class="toggle-header">
+          <span class="toggle-title">Robotics ETFs</span>
+          <div class="toggle-btns">
+            <button class="toggle-btn active" data-group="rob" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+            <button class="toggle-btn"        data-group="rob" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+          </div>
+        </div>
+        <div class="scroll-table">
+          <table class="ir-table">
+            <thead><tr>
+              <th>Ticker</th>
+              <th>Name</th>
+              <th class="sortable sort-active" id="rob-th-ir"  onclick="handleSortClick('rob','ir')"  style="text-align:center">IR&nbsp;<span class="sort-arrow active" id="rob-arr-ir">↓</span></th>
+              <th style="text-align:center">Zn</th>
+              <th class="sortable"            id="rob-th-3mo" onclick="handleSortClick('rob','3mo')" style="text-align:center;padding-left:14px">3Mo Ago&nbsp;<span class="sort-arrow" id="rob-arr-3mo">↕</span></th>
+            </tr></thead>
+            <tbody id="rob-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- NW.6: Digital Economy ETFs -->
+    <div>
+      <div class="grp-label">Digital Economy ETFs</div>
+      <div class="toggle-wrap">
+        <div class="toggle-header">
+          <span class="toggle-title">Digital Economy ETFs</span>
+          <div class="toggle-btns">
+            <button class="toggle-btn active" data-group="dig" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+            <button class="toggle-btn"        data-group="dig" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+          </div>
+        </div>
+        <div class="scroll-table">
+          <table class="ir-table">
+            <thead><tr>
+              <th>Ticker</th>
+              <th>Name</th>
+              <th class="sortable sort-active" id="dig-th-ir"  onclick="handleSortClick('dig','ir')"  style="text-align:center">IR&nbsp;<span class="sort-arrow active" id="dig-arr-ir">↓</span></th>
+              <th style="text-align:center">Zn</th>
+              <th class="sortable"            id="dig-th-3mo" onclick="handleSortClick('dig','3mo')" style="text-align:center;padding-left:14px">3Mo Ago&nbsp;<span class="sort-arrow" id="dig-arr-3mo">↕</span></th>
+            </tr></thead>
+            <tbody id="dig-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /two-col row 1 -->
+
+  <!-- NW.7 + NW.8 — SUSTAINABILITY | FUTURE LIVING -->
+  <div class="two-col">
+
+    <!-- NW.7: Sustainability ETFs -->
+    <div>
+      <div class="grp-label">Sustainability ETFs</div>
+      <div class="toggle-wrap">
+        <div class="toggle-header">
+          <span class="toggle-title">Sustainability ETFs</span>
+          <div class="toggle-btns">
+            <button class="toggle-btn active" data-group="sus" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+            <button class="toggle-btn"        data-group="sus" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+          </div>
+        </div>
+        <div class="scroll-table">
+          <table class="ir-table">
+            <thead><tr>
+              <th>Ticker</th>
+              <th>Name</th>
+              <th class="sortable sort-active" id="sus-th-ir"  onclick="handleSortClick('sus','ir')"  style="text-align:center">IR&nbsp;<span class="sort-arrow active" id="sus-arr-ir">↓</span></th>
+              <th style="text-align:center">Zn</th>
+              <th class="sortable"            id="sus-th-3mo" onclick="handleSortClick('sus','3mo')" style="text-align:center;padding-left:14px">3Mo Ago&nbsp;<span class="sort-arrow" id="sus-arr-3mo">↕</span></th>
+            </tr></thead>
+            <tbody id="sus-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- NW.8: Future Living ETFs -->
+    <div>
+      <div class="grp-label">Future Living ETFs</div>
+      <div class="toggle-wrap">
+        <div class="toggle-header">
+          <span class="toggle-title">Future Living ETFs</span>
+          <div class="toggle-btns">
+            <button class="toggle-btn active" data-group="fut" data-period="90" onclick="handlePeriodToggle(this)">90 IR</button>
+            <button class="toggle-btn"        data-group="fut" data-period="10" onclick="handlePeriodToggle(this)">10 IR</button>
+          </div>
+        </div>
+        <div class="scroll-table">
+          <table class="ir-table">
+            <thead><tr>
+              <th>Ticker</th>
+              <th>Name</th>
+              <th class="sortable sort-active" id="fut-th-ir"  onclick="handleSortClick('fut','ir')"  style="text-align:center">IR&nbsp;<span class="sort-arrow active" id="fut-arr-ir">↓</span></th>
+              <th style="text-align:center">Zn</th>
+              <th class="sortable"            id="fut-th-3mo" onclick="handleSortClick('fut','3mo')" style="text-align:center;padding-left:14px">3Mo Ago&nbsp;<span class="sort-arrow" id="fut-arr-3mo">↕</span></th>
+            </tr></thead>
+            <tbody id="fut-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /two-col row 2 -->
+
+  <!-- NW.9 — FINX vs HEAL TITLE -->
+  <div class="cmp-title">FinTech ETF (FINX) vs. Health Tech ETF (HEAL)</div>
+
+  <!-- NW.10 + NW.11 — FINX vs HEAL -->
+  <div class="two-col">
+    <div class="chart-wrap">
+      <div class="chart-title">FINX vs. HEAL — 90-Day IR</div>
+      <div class="chart-canvas-wrap"><canvas id="c-finx-heal-90"></canvas></div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">FINX vs. HEAL — 10-Day IR</div>
+      <div class="chart-canvas-wrap"><canvas id="c-finx-heal-10"></canvas></div>
+    </div>
+  </div>
+
+  <!-- NW.12 — CTEC vs AQWA TITLE -->
+  <div class="cmp-title">CleanTech ETF (CTEC) vs. Clean Water ETF (AQWA)</div>
+
+  <!-- NW.13 + NW.14 — CTEC vs AQWA -->
+  <div class="two-col">
+    <div class="chart-wrap">
+      <div class="chart-title">CTEC vs. AQWA — 90-Day IR</div>
+      <div class="chart-canvas-wrap"><canvas id="c-ctec-aqwa-90"></canvas></div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">CTEC vs. AQWA — 10-Day IR</div>
+      <div class="chart-canvas-wrap"><canvas id="c-ctec-aqwa-10"></canvas></div>
+    </div>
+  </div>
+
+  <!-- NW.15 — MLN vs AGNG TITLE -->
+  <div class="cmp-title">Millennial Consumer ETF (MLN) vs. Aging Population ETF (AGNG)</div>
+
+  <!-- NW.16 + NW.17 — MLN vs AGNG -->
+  <div class="two-col">
+    <div class="chart-wrap">
+      <div class="chart-title">MLN vs. AGNG — 90-Day IR</div>
+      <div class="chart-canvas-wrap"><canvas id="c-mln-agng-90"></canvas></div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">MLN vs. AGNG — 10-Day IR</div>
+      <div class="chart-canvas-wrap"><canvas id="c-mln-agng-10"></canvas></div>
+    </div>
+  </div>
+
+  <!-- NW.18 — KRMA vs SHE TITLE -->
+  <div class="cmp-title">Conscious Companies ETF (KRMA) vs. MSCI USA Gender Diversity ETF (SHE)</div>
+
+  <!-- NW.19 + NW.20 — KRMA vs SHE -->
+  <div class="two-col">
+    <div class="chart-wrap">
+      <div class="chart-title">KRMA vs. SHE — 90-Day IR</div>
+      <div class="chart-canvas-wrap"><canvas id="c-krma-she-90"></canvas></div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-title">KRMA vs. SHE — 10-Day IR</div>
+      <div class="chart-canvas-wrap"><canvas id="c-krma-she-10"></canvas></div>
+    </div>
+  </div>
+
+</div><!-- /main-content -->
+</div><!-- /page-wrap -->
+
+<div id="histo-tip"></div>
+
+<!-- Chart.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+   ETF NAME DICTIONARY
+   ════════════════════════════════════════════════════════════ */
+const ETF_NAMES = {
+  AIQ:  'AI & Technology ETF',
+  BOTZ: 'Robotics & AI ETF',
+  LIT:  'Lithium & Battery Technology ETF',
+  CHPX: 'AI Semiconductor & Quantum ETF',
+  BUG:  'Cybersecurity ETF',
+  FINX: 'Fintech ETF',
+  HEAL: 'HealthTech ETF',
+  CLOU: 'Cloud Computing ETF',
+  BKCH: 'Blockchain ETF',
+  BITS: 'Blockchain & Bitcoin Strategy ETF',
+  MLN:  'Millennial Consumer ETF',
+  SNSR: 'Internet of Things ETF',
+  AGNG: 'Aging Population ETF',
+  CTEC: 'CleanTech ETF',
+  AQWA: 'Clean Water ETF',
+  RNRG: 'Renewable Energy Producers ETF',
+  HYDR: 'Hydrogen ETF',
+  DTCR: 'Data Center & Digital Infra ETF',
+  DRIV: 'Autonomous & Electric Vehicles ETF',
+  HERO: 'Video Games & ESports ETF',
+  SOCL: 'Social Media ETF',
+  GNOM: 'Genomics & Biotechnology ETF',
+  KROP: 'AgTech & Food Innovation ETF',
+  KRMA: 'Conscious Companies ETF',
+  SHE:  'MSCI USA Gender Diversity ETF',
+  XITL: 'FactSet Innovative Technology ETF',
+  CNRG: 'S&P Kensho Clean Power ETF',
+  ROKT: 'S&P Kensho Final Frontiers ETF',
+  FITE: 'S&P Kensho Future Security ETF',
+  SIMS: 'S&P Kensho Intelligent Structures ETF',
+  KOMP: 'S&P Kensho New Economies ETF',
+  HAIL: 'S&P Kensho Smart Mobility ETF',
+  ARTY: 'Future AI & Tech ETF',
+  IDRIV:'Self-Driving EV & Tech ETF',
+  IBAT: 'Energy Storage & Materials ETF',
+  IBLC: 'Blockchain & Tech ETF',
+  IDGT: 'U.S. Digital Infrastructure & RE ETF',
+  IDNA: 'Genomics Immunology & Healthcare ETF',
+  ESPO: 'Gaming & eSports ETF',
+  NODE: 'Onchain Economy ETF',
+  IBOT: 'Robotics ETF',
+  DAPP: 'Digital Transformation ETF',
+  NLR:  'Uranium & Nuclear ETF',
+  ODT:  'On Demand ETF',
+  TINY: 'Nanotechnology ETF',
+  DAT:  'Big Data Refiners ETF',
+  VERS: 'Metaverse ETF',
+  TINT: 'Smart Materials ETF',
+  MAKX: 'S&P Kensho Smart Factories ETF',
+  LGPT: 'AI & Next Gen Software ETF',
+  TEKX: 'Digital Transformative Tech ETF',
+  ARKB: '21Shares Bitcoin ETF',
+  ARKF: 'Blockchain & Fintech Innovation ETF',
+  ARKX: 'Space & Defense Innovation ETF',
+  PRNT: '3D Printing ETF',
+  ARKW: 'Next Generation Internet ETF',
+  XDAT: 'Exponential Data ETF',
+  IQM:  'Intelligent Machines ETF',
+  ARKK: 'Innovation ETF',
+  ARKG: 'Genomic Revolution ETF',
+  ARKQ: 'Autonomous Technology & Robotics ETF',
+  IZRL: 'Israel Innovative Technology ETF',
+  BUYZ: 'Disruptive Commerce ETF',
+  BNGE: 'S-Network Streaming & Gaming ETF',
+  ISHP: 'S-Network E-Commerce ETF',
+  CARZ: 'S-Network Future Vehicles ETF',
+  NXTG: 'Indxx NextG ETF',
+  MDEV: 'Indxx Medical Devices ETF',
+  FMTL: 'Indxx Critical Metals ETF',
+  XPND: 'Expanded Technology ETF',
+  FPWR: 'EIP Power Solutions ETF',
+  SKYY: 'Cloud Computing ETF',
+  FAI:  'Bloomberg Artificial Intelligence ETF',
+  EKG:  'Nasdaq Digital Health Solutions ETF',
+  CIBR: 'Nasdaq Cybersecurity ETF',
+  ROBT: 'Nasdaq AI & Robotics ETF'
+};
+
+/* ════════════════════════════════════════════════════════════
+   ALL ETF DATA — 76 issues, placeholder IR values
+   Distributed across all 6 zones for realistic histogram display.
+   ════════════════════════════════════════════════════════════ */
+const ALL_DATA = [
+  // ── Zone 1 (+67 to +99) — extreme oversold ───────────────
+  {sym:'BOTZ', ir_90:92,  ir_10:78,  ir_90_3mo:-45, ir_10_3mo:-38},
+  {sym:'AIQ',  ir_90:88,  ir_10:72,  ir_90_3mo:-51, ir_10_3mo:-42},
+  {sym:'CHPX', ir_90:84,  ir_10:91,  ir_90_3mo:-38, ir_10_3mo:-62},
+  {sym:'ARTY', ir_90:79,  ir_10:65,  ir_90_3mo:-29, ir_10_3mo:-18},
+  {sym:'LGPT', ir_90:75,  ir_10:82,  ir_90_3mo:-44, ir_10_3mo:-55},
+  {sym:'IQM',  ir_90:71,  ir_10:58,  ir_90_3mo:-35, ir_10_3mo:-28},
+  {sym:'FAI',  ir_90:68,  ir_10:74,  ir_90_3mo:-22, ir_10_3mo:-41},
+  // ── Zone 2 (+34 to +66) — oversold ───────────────────────
+  {sym:'HEAL', ir_90:62,  ir_10:44,  ir_90_3mo:-37, ir_10_3mo:-25},
+  {sym:'TINY', ir_90:61,  ir_10:53,  ir_90_3mo:-48, ir_10_3mo:-35},
+  {sym:'MLN',  ir_90:58,  ir_10:67,  ir_90_3mo:-28, ir_10_3mo:-48},
+  {sym:'ARKK', ir_90:56,  ir_10:71,  ir_90_3mo:-33, ir_10_3mo:-52},
+  {sym:'AGNG', ir_90:54,  ir_10:38,  ir_90_3mo:-19, ir_10_3mo:-12},
+  {sym:'GNOM', ir_90:51,  ir_10:43,  ir_90_3mo:-32, ir_10_3mo:-27},
+  {sym:'MDEV', ir_90:47,  ir_10:55,  ir_90_3mo:-14, ir_10_3mo:-33},
+  {sym:'EKG',  ir_90:44,  ir_10:36,  ir_90_3mo:-41, ir_10_3mo:-19},
+  {sym:'SNSR', ir_90:40,  ir_10:48,  ir_90_3mo:-26, ir_10_3mo:-38},
+  {sym:'IBOT', ir_90:37,  ir_10:29,  ir_90_3mo:-17, ir_10_3mo:-8},
+  {sym:'ROBT', ir_90:35,  ir_10:42,  ir_90_3mo:-53, ir_10_3mo:-31},
+  // ── Zone 3 (+1 to +33) — slightly oversold ───────────────
+  {sym:'ARKW', ir_90:32,  ir_10:17,  ir_90_3mo:-39, ir_10_3mo:-22},
+  {sym:'BKCH', ir_90:29,  ir_10:15,  ir_90_3mo:-44, ir_10_3mo:-21},
+  {sym:'PRNT', ir_90:27,  ir_10:34,  ir_90_3mo:-15, ir_10_3mo:-28},
+  {sym:'BITS', ir_90:25,  ir_10:38,  ir_90_3mo:-31, ir_10_3mo:-55},
+  {sym:'IBLC', ir_90:22,  ir_10:11,  ir_90_3mo:-18, ir_10_3mo:-9},
+  {sym:'XDAT', ir_90:20,  ir_10:31,  ir_90_3mo:-44, ir_10_3mo:-56},
+  {sym:'NODE', ir_90:18,  ir_10:28,  ir_90_3mo:-42, ir_10_3mo:-35},
+  {sym:'KRMA', ir_90:15,  ir_10:22,  ir_90_3mo:-61, ir_10_3mo:-47},
+  {sym:'SHE',  ir_90:12,  ir_10:7,   ir_90_3mo:-29, ir_10_3mo:-18},
+  {sym:'KROP', ir_90:9,   ir_10:19,  ir_90_3mo:-35, ir_10_3mo:-24},
+  {sym:'IDNA', ir_90:6,   ir_10:14,  ir_90_3mo:-52, ir_10_3mo:-38},
+  {sym:'ARKG', ir_90:3,   ir_10:21,  ir_90_3mo:-28, ir_10_3mo:-41},
+  // ── Zone 4 (-1 to -33) — slightly overbought ─────────────
+  {sym:'SOCL', ir_90:-3,  ir_10:-19, ir_90_3mo:26,  ir_10_3mo:43},
+  {sym:'SIMS', ir_90:-4,  ir_10:-22, ir_90_3mo:31,  ir_10_3mo:48},
+  {sym:'ESPO', ir_90:-7,  ir_10:-26, ir_90_3mo:33,  ir_10_3mo:55},
+  {sym:'FINX', ir_90:-8,  ir_10:-18, ir_90_3mo:42,  ir_10_3mo:31},
+  {sym:'DTCR', ir_90:-12, ir_10:-5,  ir_90_3mo:27,  ir_10_3mo:18},
+  {sym:'TEKX', ir_90:-14, ir_10:-31, ir_90_3mo:22,  ir_10_3mo:37},
+  {sym:'BUG',  ir_90:-15, ir_10:-24, ir_90_3mo:29,  ir_10_3mo:44},
+  {sym:'IDGT', ir_90:-17, ir_10:-28, ir_90_3mo:35,  ir_10_3mo:51},
+  {sym:'MAKX', ir_90:-19, ir_10:-9,  ir_90_3mo:48,  ir_10_3mo:25},
+  {sym:'DAT',  ir_90:-21, ir_10:-11, ir_90_3mo:44,  ir_10_3mo:29},
+  {sym:'HERO', ir_90:-25, ir_10:-13, ir_90_3mo:41,  ir_10_3mo:28},
+  {sym:'CLOU', ir_90:-27, ir_10:-15, ir_90_3mo:19,  ir_10_3mo:34},
+  {sym:'DAPP', ir_90:-28, ir_10:-6,  ir_90_3mo:52,  ir_10_3mo:36},
+  {sym:'XITL', ir_90:-30, ir_10:-7,  ir_90_3mo:55,  ir_10_3mo:41},
+  // ── Zone 5 (-34 to -66) — overbought ─────────────────────
+  {sym:'BNGE', ir_90:-35, ir_10:-58, ir_90_3mo:50,  ir_10_3mo:71},
+  {sym:'NLR',  ir_90:-36, ir_10:-44, ir_90_3mo:48,  ir_10_3mo:67},
+  {sym:'LIT',  ir_90:-38, ir_10:-52, ir_90_3mo:71,  ir_10_3mo:58},
+  {sym:'TINT', ir_90:-39, ir_10:-47, ir_90_3mo:44,  ir_10_3mo:58},
+  {sym:'CNRG', ir_90:-42, ir_10:-57, ir_90_3mo:59,  ir_10_3mo:82},
+  {sym:'ARKF', ir_90:-43, ir_10:-55, ir_90_3mo:58,  ir_10_3mo:74},
+  {sym:'CTEC', ir_90:-44, ir_10:-35, ir_90_3mo:62,  ir_10_3mo:43},
+  {sym:'XPND', ir_90:-47, ir_10:-64, ir_90_3mo:63,  ir_10_3mo:79},
+  {sym:'RNRG', ir_90:-49, ir_10:-61, ir_90_3mo:55,  ir_10_3mo:78},
+  {sym:'ARKB', ir_90:-51, ir_10:-37, ir_90_3mo:67,  ir_10_3mo:44},
+  {sym:'FMTL', ir_90:-53, ir_10:-38, ir_90_3mo:81,  ir_10_3mo:55},
+  {sym:'HYDR', ir_90:-55, ir_10:-42, ir_90_3mo:68,  ir_10_3mo:51},
+  {sym:'KOMP', ir_90:-57, ir_10:-41, ir_90_3mo:72,  ir_10_3mo:49},
+  {sym:'IBAT', ir_90:-60, ir_10:-48, ir_90_3mo:74,  ir_10_3mo:63},
+  {sym:'VERS', ir_90:-61, ir_10:-53, ir_90_3mo:77,  ir_10_3mo:69},
+  {sym:'ISHP', ir_90:-64, ir_10:-46, ir_90_3mo:83,  ir_10_3mo:62},
+  // ── Zone 6 (-67 to -99) — extreme overbought ─────────────
+  {sym:'FPWR', ir_90:-68, ir_10:-79, ir_90_3mo:76,  ir_10_3mo:88},
+  {sym:'ODT',  ir_90:-69, ir_10:-81, ir_90_3mo:73,  ir_10_3mo:86},
+  {sym:'AQWA', ir_90:-71, ir_10:-83, ir_90_3mo:88,  ir_10_3mo:79},
+  {sym:'DRIV', ir_90:-73, ir_10:-86, ir_90_3mo:81,  ir_10_3mo:95},
+  {sym:'CIBR', ir_90:-75, ir_10:-67, ir_90_3mo:82,  ir_10_3mo:78},
+  {sym:'ARKX', ir_90:-77, ir_10:-91, ir_90_3mo:84,  ir_10_3mo:97},
+  {sym:'IDRIV',ir_90:-79, ir_10:-65, ir_90_3mo:87,  ir_10_3mo:74},
+  {sym:'HAIL', ir_90:-81, ir_10:-74, ir_90_3mo:85,  ir_10_3mo:93},
+  {sym:'NXTG', ir_90:-83, ir_10:-72, ir_90_3mo:89,  ir_10_3mo:77},
+  {sym:'FITE', ir_90:-85, ir_10:-91, ir_90_3mo:77,  ir_10_3mo:88},
+  {sym:'IZRL', ir_90:-86, ir_10:-73, ir_90_3mo:95,  ir_10_3mo:81},
+  {sym:'ROKT', ir_90:-89, ir_10:-77, ir_90_3mo:94,  ir_10_3mo:82},
+  {sym:'ARKQ', ir_90:-92, ir_10:-84, ir_90_3mo:88,  ir_10_3mo:91},
+  {sym:'CARZ', ir_90:-94, ir_10:-88, ir_90_3mo:91,  ir_10_3mo:83},
+  {sym:'SKYY', ir_90:-24, ir_10:-33, ir_90_3mo:38,  ir_10_3mo:62},  // Zone 4
+  {sym:'BUYZ', ir_90:-76, ir_10:-68, ir_90_3mo:92,  ir_10_3mo:71},  // Zone 6
+];
+
+/* Build quick-lookup map */
+const ETF_MAP = {};
+ALL_DATA.forEach(d => { ETF_MAP[d.sym] = d; });
+
+/* ════════════════════════════════════════════════════════════
+   SUB-GROUP MEMBERSHIP (corrected from spec)
+   ════════════════════════════════════════════════════════════ */
+const GROUPS = {
+  // NW.5 Robotics ETFs (+ NXTG assigned here)
+  rob: ['AIQ','BOTZ','CHPX','BUG','CLOU','SNSR','DTCR','XITL','ARTY',
+        'IDGT','IBOT','DAPP','DRIV','TINY','DAT','TINT','MAKX','LGPT',
+        'TEKX','SIMS','ARKQ','IZRL','ROBT','FAI','CARZ','NXTG'],
+  // NW.6 Digital Economy ETFs (+ ODT assigned here)
+  dig: ['FINX','BKCH','BITS','HERO','SOCL','IBLC','ESPO','NODE','VERS',
+        'KOMP','ARKB','ARKF','ARKX','PRNT','ARKW','XDAT','IQM','BNGE',
+        'ISHP','SKYY','CIBR','ODT'],
+  // NW.7 Sustainability ETFs
+  sus: ['LIT','CTEC','AQWA','RNRG','HYDR','NLR','CNRG','IBAT','BUYZ',
+        'FMTL','XPND','FPWR'],
+  // NW.8 Future Living ETFs (SME corrected → SHE)
+  fut: ['HEAL','MLN','AGNG','DRIV','GNOM','KROP','KRMA','SHE','ROKT',
+        'FITE','HAIL','IDRIV','IDNA','ARKK','ARKG','MDEV','EKG'],
+};
+
+/* ════════════════════════════════════════════════════════════
+   30-DAY ZONE DATA FOR COMBO CHARTS
+   Y-axis: Zone number 1–6 (Z6 at top, Z1 at bottom)
+   Bar = first ETF, Line = second ETF
+   ════════════════════════════════════════════════════════════ */
+const today = new Date('2026-04-21');
+const DAYS = Array.from({length:30}, (_,i) => {
+  const d = new Date(today);
+  d.setDate(d.getDate() - (29-i));
+  return `${d.getMonth()+1}/${d.getDate()}`;
+});
+
+const CMP = {
+  /* FINX (Z4→Z5 trend) vs HEAL (stable Z2) */
+  FINX_90:[3,3,4,3,4,4,3,4,4,4,3,4,4,5,4,4,4,3,4,4,5,4,4,4,4,3,4,4,5,4],
+  HEAL_90:[2,2,2,3,2,2,2,3,2,2,3,2,2,2,3,2,3,2,2,2,2,3,2,2,2,3,2,2,3,2],
+  FINX_10:[3,4,3,4,4,3,4,5,4,3,4,4,5,4,4,3,4,5,4,4,3,4,4,5,4,3,4,4,5,4],
+  HEAL_10:[2,3,2,2,3,2,3,2,2,3,2,2,3,2,3,2,3,2,2,3,2,3,2,3,2,2,3,2,3,2],
+  /* MLN (Z3) vs AGNG (Z1–Z2) */
+  MLN_90: [3,3,3,4,3,3,3,4,3,3,3,3,4,3,3,3,4,3,3,3,3,3,4,3,3,3,4,3,3,3],
+  AGNG_90:[2,2,2,2,2,1,2,2,2,2,1,2,2,2,2,1,2,2,2,2,2,1,2,2,2,2,2,1,2,2],
+  MLN_10: [3,3,4,3,3,4,3,3,3,4,3,3,4,3,3,3,4,3,3,4,3,3,4,3,3,3,4,3,3,4],
+  AGNG_10:[2,1,2,2,2,2,1,2,2,2,2,1,2,2,2,2,2,1,2,2,2,2,1,2,2,2,2,2,1,2],
+  /* CTEC (Z5) vs AQWA (Z6) */
+  CTEC_90:[5,5,4,5,5,5,5,4,5,5,5,4,5,5,5,5,4,5,5,5,5,4,5,5,5,4,5,5,5,5],
+  AQWA_90:[6,6,6,6,6,5,6,6,6,6,5,6,6,6,6,6,5,6,6,6,5,6,6,6,6,6,5,6,6,6],
+  CTEC_10:[5,4,5,5,4,5,5,5,4,5,5,4,5,5,5,4,5,5,4,5,5,5,4,5,5,5,4,5,5,5],
+  AQWA_10:[6,6,5,6,6,6,5,6,6,6,6,5,6,6,6,5,6,6,6,6,5,6,6,6,5,6,6,6,6,5],
+  /* KRMA (Z3) vs SHE (Z3–Z4) */
+  KRMA_90:[3,3,2,3,3,3,2,3,3,2,3,3,3,2,3,3,2,3,3,3,2,3,3,2,3,3,3,2,3,3],
+  SHE_90: [3,4,3,3,4,3,3,3,4,3,3,4,3,3,3,4,3,3,4,3,3,3,4,3,3,4,3,3,3,4],
+  KRMA_10:[2,3,2,3,2,3,2,2,3,2,3,2,2,3,2,3,2,3,2,2,3,2,3,2,3,2,2,3,2,3],
+  SHE_10: [3,3,4,3,3,4,3,3,3,4,3,3,4,3,3,3,4,3,3,3,4,3,3,4,3,3,3,4,3,3],
+};
+
+/* ════════════════════════════════════════════════════════════
+   UTILITY FUNCTIONS
+   ════════════════════════════════════════════════════════════ */
+const ZCL = ['#00cc55','#88cc44','#7a9aaa','#aa9a7a','#ddcc00','#e83535'];
+
+function irToZone(ir) {
+  if (ir >= 67)  return 1;
+  if (ir >= 34)  return 2;
+  if (ir >= 1)   return 3;
+  if (ir >= -33) return 4;
+  if (ir >= -66) return 5;
+  return 6;
+}
+
+function zoneBadge(z) {
+  return `<span class="zone-badge" style="background:${ZCL[z-1]}">${z}</span>`;
+}
+
+function irFmt(v) { return (v > 0 ? '+' : '') + v; }
+function irCls(v) { return v > 0 ? 'pos' : v < 0 ? 'neg' : 'zer'; }
+
+function truncName(sym, maxLen) {
+  const nm = ETF_NAMES[sym] || sym;
+  return nm.length > maxLen ? nm.slice(0, maxLen) + '\u2026' : nm;
+}
+
+/* ════════════════════════════════════════════════════════════
+   SIDEBAR — LEFT HAND TOGGLE (NW.4)
+   All 76 ETFs, no 3Mo Ago column.
+   Default: weakest first (highest positive IR at top).
+   ════════════════════════════════════════════════════════════ */
+let sbPeriod = '90';
+let sbDir = 1; // 1 = desc (weakest/oversold first)
+
+function setSbPeriod(p, btn) {
+  sbPeriod = p;
+  btn.closest('.sb-btns').querySelectorAll('.sb-btn')
+     .forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderSb();
+}
+
+function sbSortClick() {
+  sbDir *= -1;
+  renderSb();
+}
+
+function renderSb() {
+  const iF = sbPeriod === '90' ? 'ir_90' : 'ir_10';
+  const sorted = [...ALL_DATA].sort((a, b) => (b[iF] - a[iF]) * sbDir);
+
+  const arr = document.getElementById('sb-arr');
+  arr.textContent = sbDir === 1 ? '\u2193' : '\u2191';
+  arr.className = 'sb-sort-arrow active';
+
+  document.getElementById('sb-tbody').innerHTML = sorted.map(d => {
+    const ir = d[iF];
+    const z  = irToZone(ir);
+    const nm = truncName(d.sym, 22);
+    return `<tr>
+      <td style="font-weight:700;color:var(--text)">${d.sym}</td>
+      <td style="color:var(--muted);font-size:10px">${nm}</td>
+      <td style="text-align:center"><span class="${irCls(ir)}">${irFmt(ir)}</span></td>
+      <td style="text-align:center">${zoneBadge(z)}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ════════════════════════════════════════════════════════════
+   REGULAR TOGGLES — NW.5, 6, 7, 8
+   Per Toggle Regular Spec v2 (3Mo Ago column, 340px scroll)
+   ════════════════════════════════════════════════════════════ */
+const sortState   = {};
+const periodState = {};
+
+function getGroupData(g) {
+  return GROUPS[g].map(sym => ETF_MAP[sym]).filter(Boolean);
+}
+
+function handleSortClick(g, field) {
+  if (!sortState[g]) sortState[g] = {field:'ir', dir:1};
+  const s = sortState[g];
+  sortState[g] = (s.field === field)
+    ? {field, dir: s.dir * -1}
+    : {field, dir: 1};
+  renderToggleTable(g);
+}
+
+function handlePeriodToggle(btn) {
+  btn.closest('.toggle-btns').querySelectorAll('.toggle-btn')
+     .forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  periodState[btn.dataset.group] = btn.dataset.period;
+  renderToggleTable(btn.dataset.group);
+}
+
+function updateSortArrows(g) {
+  const {field, dir} = sortState[g];
+  ['ir','3mo'].forEach(f => {
+    const th  = document.getElementById(`${g}-th-${f}`);
+    const arr = document.getElementById(`${g}-arr-${f}`);
+    if (!th || !arr) return;
+    const on = f === field;
+    if (on) {
+      th.classList.add('sort-active');
+      arr.classList.add('active');
+      arr.textContent = dir === 1 ? '\u2193' : '\u2191';
+    } else {
+      th.classList.remove('sort-active');
+      arr.classList.remove('active');
+      arr.textContent = '\u2195';
+    }
+  });
+}
+
+function renderToggleTable(g) {
+  if (!sortState[g])   sortState[g]   = {field:'ir', dir:1};
+  if (!periodState[g]) periodState[g] = '90';
+
+  const p  = periodState[g];
+  const iF = p === '90' ? 'ir_90'     : 'ir_10';
+  const mF = p === '90' ? 'ir_90_3mo' : 'ir_10_3mo';
+  const {field, dir} = sortState[g];
+  const sF = field === 'ir' ? iF : mF;
+
+  const rows = [...getGroupData(g)].sort((a, b) => (b[sF] - a[sF]) * dir);
+
+  document.getElementById(g + '-tbody').innerHTML = rows.map(r => {
+    const ir = r[iF], mo = r[mF];
+    const z  = irToZone(ir);
+    const nm = truncName(r.sym, 22);
+    return `<tr>
+      <td class="col-symbol">${r.sym}</td>
+      <td style="color:var(--muted);font-size:10px">${nm}</td>
+      <td class="col-ir"><span class="${irCls(ir)}">${irFmt(ir)}</span></td>
+      <td class="col-zone">${zoneBadge(z)}</td>
+      <td class="col-3mo" style="padding-left:14px"><span class="${irCls(mo)}">${irFmt(mo)}</span></td>
+    </tr>`;
+  }).join('');
+
+  updateSortArrows(g);
+}
+
+/* ════════════════════════════════════════════════════════════
+   HISTOGRAM — NW.3
+   Per Histogram Spec v2. 76 ETFs across 6 zones × 4 slots.
+   No height attribute on SVG — viewBox + width="100%" only.
+   ════════════════════════════════════════════════════════════ */
+function getZoneSlot(ir) {
+  if (ir >= 99)  return {oob:'left'};
+  if (ir <= -99) return {oob:'right'};
+  if (ir >= 67)  return {z:0, s: ir>=91?0:ir>=83?1:ir>=75?2:3};
+  if (ir >= 34)  return {z:1, s: ir>=59?0:ir>=52?1:ir>=43?2:3};
+  if (ir >= 1)   return {z:2, s: ir>=26?0:ir>=18?1:ir>=9?2:3};
+  if (ir >= -33) return {z:3, s: ir>=-8?0:ir>=-17?1:ir>=-25?2:3};
+  if (ir >= -66) return {z:4, s: ir>=-42?0:ir>=-51?1:ir>=-58?2:3};
+  /* Zone 6 */   return {z:5, s: ir>=-74?0:ir>=-82?1:ir>=-90?2:3};
+}
+
+function buildHistogram() {
+  const W = 920, OW = 28, BX = OW, BW = W - 2*OW;
+  const ZW = BW / 6, SLOT_PITCH = BW / 24, SH = 13;
+  const BCX = BX + BW/2;
+  const BELL_A = 168, BELL_FLOOR = 16, BELL_SIG = ZW;
+
+  /* ── Build slot arrays ─────────────────────────────────── */
+  const slots   = Array.from({length:6}, () => Array.from({length:4}, () => []));
+  const oobLeft = [], oobRight = [];
+
+  ALL_DATA.forEach(d => {
+    const p = getZoneSlot(d.ir_90);
+    if (p.oob === 'left')  { oobLeft.push(d.sym); return; }
+    if (p.oob === 'right') { oobRight.push(d.sym); return; }
+    slots[p.z][p.s].push(d.sym);
+  });
+
+  slots.forEach(z => z.forEach(sl => sl.sort()));
+
+  /* ── Dynamic height ──────────────────────────────────────── */
+  let BY = 205;
+  const maxStk = Math.max(1, ...slots.flatMap(z => z.map(s => s.length)));
+  if (maxStk * SH + 20 > BY) BY = maxStk * SH + 20;
+  const H = BY + 63;
+  const LY_RANGE = BY + 18;
+  const LY_ZONE  = BY + 31;
+
+  const ZONE_RANGES = ['+99 to +67','+66 to +34','+33 to +1','-1 to -33','-34 to -66','-67 to -99'];
+  const ZONE_LABELS = ['Zone 1','Zone 2','Zone 3','Zone 4','Zone 5','Zone 6'];
+
+  let s = '';
+
+  /* defs */
+  s += `<defs>
+    <filter id="glow"><feGaussianBlur stdDeviation="2.8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="softglow"><feGaussianBlur stdDeviation="1.5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>`;
+
+  /* OOB panel backgrounds */
+  s += `<rect x="0" y="0" width="${OW}" height="${BY}" fill="rgba(0,204,85,0.08)"/>`;
+  s += `<rect x="${W-OW}" y="0" width="${OW}" height="${BY}" fill="rgba(232,53,53,0.08)"/>`;
+
+  /* Zone backgrounds */
+  for (let z = 0; z < 6; z++) {
+    const zx = BX + z * ZW;
+    s += `<rect x="${zx}" y="0" width="${ZW}" height="${BY}" fill="${ZCL[z]}" opacity="0.07"/>`;
+  }
+
+  /* Zone dividers */
+  for (let z = 1; z < 6; z++) {
+    const dx = BX + z * ZW;
+    s += `<line x1="${dx}" y1="0" x2="${dx}" y2="${BY}" stroke="rgba(255,255,255,0.22)" stroke-width="1"/>`;
+  }
+  s += `<line x1="${BX}"    y1="0" x2="${BX}"    y2="${BY}" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>`;
+  s += `<line x1="${W-OW}"  y1="0" x2="${W-OW}"  y2="${BY}" stroke="rgba(255,255,255,0.45)" stroke-width="1.5"/>`;
+
+  /* Slot dividers (23 dashed lines) */
+  for (let i = 1; i <= 23; i++) {
+    const sx = BX + i * SLOT_PITCH;
+    s += `<line x1="${sx}" y1="8" x2="${sx}" y2="${BY}" stroke="rgba(255,255,255,0.055)" stroke-width="0.5" stroke-dasharray="3,6"/>`;
+  }
+
+  /* Baseline */
+  s += `<line x1="0" y1="${BY}" x2="${W}" y2="${BY}" stroke="rgba(255,255,255,0.35)" stroke-width="1"/>`;
+
+  /* Bell curve — three passes */
+  function bellY(px) {
+    const dx = px - BCX;
+    return BY - (BELL_A * Math.exp(-(dx*dx) / (2*BELL_SIG*BELL_SIG)) + BELL_FLOOR);
+  }
+  let halo = '', main = '', hl = '';
+  for (let px = BX; px <= BX+BW; px += 2) {
+    const by = bellY(px).toFixed(2);
+    const cmd = px === BX ? `M${px},${by}` : `L${px},${by}`;
+    halo += cmd; main += cmd; hl += cmd;
+  }
+  s += `<path d="${halo}" fill="none" stroke="rgba(120,185,255,0.14)" stroke-width="8"/>`;
+  s += `<path d="${main}" fill="none" stroke="rgba(155,210,255,0.72)" stroke-width="1.6" stroke-dasharray="8,4" filter="url(#glow)"/>`;
+  s += `<path d="${hl}"   fill="none" stroke="rgba(205,235,255,0.38)" stroke-width="0.8" stroke-dasharray="8,4"/>`;
+
+  /* Symbols */
+  for (let z = 0; z < 6; z++) {
+    for (let sl = 0; sl < 4; sl++) {
+      const gi  = z * 4 + sl;
+      const scx = BX + (gi + 0.5) * SLOT_PITCH;
+      slots[z][sl].forEach((sym, idx) => {
+        const sy  = BY - (idx + 1) * SH + 2;
+        const d   = ETF_MAP[sym];
+        const tip = `${sym} \u2014 ${ETF_NAMES[sym]||sym}  |  90-IR: ${irFmt(d?.ir_90||0)}  |  Zone ${z+1}`;
+        s += `<text x="${scx}" y="${sy}" text-anchor="middle" fill="${ZCL[z]}"
+          font-family="Courier New,monospace" font-size="9" font-weight="bold"
+          filter="url(#softglow)" cursor="pointer" data-tip="${tip}">${sym.slice(0,3)}</text>`;
+      });
+    }
+  }
+
+  /* OOB symbols if any */
+  oobLeft.forEach((sym, i) => {
+    s += `<text x="${OW/2}" y="${20+(i+1)*10}" text-anchor="middle" fill="${ZCL[0]}"
+      font-family="Courier New,monospace" font-size="8" font-weight="bold">${sym.slice(0,3)}</text>`;
+  });
+  oobRight.forEach((sym, i) => {
+    s += `<text x="${W-OW/2}" y="${20+(i+1)*10}" text-anchor="middle" fill="${ZCL[5]}"
+      font-family="Courier New,monospace" font-size="8" font-weight="bold">${sym.slice(0,3)}</text>`;
+  });
+
+  /* Zone range labels */
+  for (let z = 0; z < 6; z++) {
+    const zx = BX + z * ZW + ZW / 2;
+    s += `<text x="${zx}" y="${LY_RANGE}" text-anchor="middle"
+      fill="rgba(255,255,255,0.48)" font-family="Courier New,monospace" font-size="8.5">${ZONE_RANGES[z]}</text>`;
+    s += `<text x="${zx}" y="${LY_ZONE}" text-anchor="middle"
+      fill="${ZCL[z]}" font-family="Trebuchet MS,sans-serif" font-size="10.5" font-weight="bold">${ZONE_LABELS[z]}</text>`;
+  }
+
+  /* OOB panel labels */
+  s += `<text x="${OW/2}" y="11"       text-anchor="middle" fill="${ZCL[0]}" font-family="Courier New,monospace" font-size="6.5" font-weight="bold">OOB</text>`;
+  s += `<text x="${OW/2}" y="21"       text-anchor="middle" fill="${ZCL[0]}" font-family="Courier New,monospace" font-size="6.5">Weak</text>`;
+  s += `<text x="${OW/2}" y="${BY-8}"  text-anchor="middle" fill="${ZCL[0]}" font-family="Courier New,monospace" font-size="7">[${oobLeft.length}]</text>`;
+
+  s += `<text x="${W-OW/2}" y="11"       text-anchor="middle" fill="${ZCL[5]}" font-family="Courier New,monospace" font-size="6.5" font-weight="bold">OOB</text>`;
+  s += `<text x="${W-OW/2}" y="21"       text-anchor="middle" fill="${ZCL[5]}" font-family="Courier New,monospace" font-size="6.5">Str</text>`;
+  s += `<text x="${W-OW/2}" y="${BY-8}"  text-anchor="middle" fill="${ZCL[5]}" font-family="Courier New,monospace" font-size="7">[${oobRight.length}]</text>`;
+
+  /* Direction legend */
+  s += `<text x="${BX+8}" y="${H-5}" fill="rgba(0,212,160,0.40)" font-family="Trebuchet MS,sans-serif" font-size="7.5">\u2190 Weak / Oversold</text>`;
+  s += `<text x="${W-OW-8}" y="${H-5}" text-anchor="end" fill="rgba(232,53,53,0.40)" font-family="Trebuchet MS,sans-serif" font-size="7.5">Overbought / Strong \u2192</text>`;
+
+  /* Inject */
+  const svg = document.getElementById('mainHisto');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = s;
+
+  /* Tooltip handlers */
+  const tip = document.getElementById('histo-tip');
+  svg.addEventListener('mousemove', e => {
+    const el = e.target.closest('[data-tip]');
+    if (el) {
+      tip.textContent = el.dataset.tip;
+      tip.style.display = 'block';
+      tip.style.left = (e.clientX + 14) + 'px';
+      tip.style.top  = (e.clientY - 10) + 'px';
+    } else {
+      tip.style.display = 'none';
+    }
+  });
+  svg.addEventListener('mouseleave', () => { tip.style.display = 'none'; });
+}
+
+/* ════════════════════════════════════════════════════════════
+   COMBO CHARTS — NW.10/11, 13/14, 16/17, 19/20
+   Y-axis: Zone 1–6 (Z6 at top, Z1 at bottom)
+   Bar = first ETF (accent blue), Line = second ETF (gold)
+   ════════════════════════════════════════════════════════════ */
+const chartBaseOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  animation: { duration: 400 },
+  plugins: {
+    legend: {
+      display: true,
+      position: 'top',
+      labels: {
+        color: '#8aabcc',
+        font: { family: 'Rajdhani, sans-serif', size: 11, weight: '600' },
+        boxWidth: 14,
+        padding: 10,
+        usePointStyle: true
+      }
+    },
+    tooltip: {
+      backgroundColor: '#0d1829',
+      borderColor: '#3090d8',
+      borderWidth: 1,
+      titleColor: '#ddeeff',
+      bodyColor: '#8aabcc',
+      titleFont: { family: 'Courier New, monospace', size: 11 },
+      bodyFont:  { family: 'Courier New, monospace', size: 11 },
+      callbacks: {
+        label: ctx => ` ${ctx.dataset.label}: Zone ${ctx.parsed.y}`
+      }
+    }
+  },
+  scales: {
+    x: {
+      grid: { color: 'rgba(255,255,255,0.04)' },
+      ticks: {
+        color: '#5a7a9a',
+        font: { family: 'Courier New, monospace', size: 9 },
+        maxRotation: 45,
+        maxTicksLimit: 10
+      }
+    },
+    y: {
+      min: 0.5,
+      max: 6.5,
+      grid: { color: 'rgba(255,255,255,0.08)' },
+      ticks: {
+        color: '#8aabcc',
+        font: { family: 'Rajdhani, sans-serif', size: 11, weight: '600' },
+        stepSize: 1,
+        callback: v => Number.isInteger(v) ? `Z${v}` : ''
+      }
+    }
+  }
+};
+
+function makeComboChart(canvasId, label1, data1, label2, data2) {
+  const ctx = document.getElementById(canvasId);
+  if (!ctx) return;
+  new Chart(ctx, {
+    data: {
+      labels: DAYS,
+      datasets: [
+        {
+          type: 'bar',
+          label: label1,
+          data: data1,
+          backgroundColor: 'rgba(48,144,216,0.40)',
+          borderColor: '#3090d8',
+          borderWidth: 1,
+          borderRadius: 1,
+          order: 2
+        },
+        {
+          type: 'line',
+          label: label2,
+          data: data2,
+          borderColor: '#c8a800',
+          backgroundColor: 'rgba(200,168,0,0.08)',
+          borderWidth: 2,
+          pointRadius: 2.5,
+          pointBackgroundColor: '#c8a800',
+          pointBorderColor: '#c8a800',
+          fill: false,
+          tension: 0.25,
+          order: 1
+        }
+      ]
+    },
+    options: JSON.parse(JSON.stringify(chartBaseOptions))
+  });
+}
+
+/* ════════════════════════════════════════════════════════════
+   SEARCH
+   ════════════════════════════════════════════════════════════ */
+function doSearch() {
+  const q = (document.getElementById('searchIn').value || '').trim().toUpperCase();
+  if (q) window.alert(`Search routing for "${q}" — connect to issue page router.`);
+}
+
+/* ════════════════════════════════════════════════════════════
+   INITIALISE
+   ════════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+
+  /* Sidebar LH Toggle */
+  renderSb();
+
+  /* Regular Toggles */
+  ['rob','dig','sus','fut'].forEach(g => {
+    sortState[g]   = {field:'ir', dir:1};
+    periodState[g] = '90';
+    renderToggleTable(g);
+  });
+
+  /* Histogram */
+  buildHistogram();
+
+  /* Combo Charts */
+  makeComboChart('c-finx-heal-90', 'FINX', CMP.FINX_90, 'HEAL', CMP.HEAL_90);
+  makeComboChart('c-finx-heal-10', 'FINX', CMP.FINX_10, 'HEAL', CMP.HEAL_10);
+  makeComboChart('c-mln-agng-90',  'MLN',  CMP.MLN_90,  'AGNG', CMP.AGNG_90);
+  makeComboChart('c-mln-agng-10',  'MLN',  CMP.MLN_10,  'AGNG', CMP.AGNG_10);
+  makeComboChart('c-ctec-aqwa-90', 'CTEC', CMP.CTEC_90, 'AQWA', CMP.AQWA_90);
+  makeComboChart('c-ctec-aqwa-10', 'CTEC', CMP.CTEC_10, 'AQWA', CMP.AQWA_10);
+  makeComboChart('c-krma-she-90',  'KRMA', CMP.KRMA_90, 'SHE',  CMP.SHE_90);
+  makeComboChart('c-krma-she-10',  'KRMA', CMP.KRMA_10, 'SHE',  CMP.SHE_10);
+});
+</script>
+</body>
+</html>
